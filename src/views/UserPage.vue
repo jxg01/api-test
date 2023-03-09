@@ -1,0 +1,120 @@
+<template>
+    <div>
+        <div class="toolBar">
+            <el-col :span="2">
+                <el-input v-model="searchVal" class="searchInput"></el-input>
+            </el-col>
+            <el-button type="primary" @click="handleSearch">搜索</el-button>
+            <el-button type="primary" @click="openDialog">添加</el-button>
+        </div>
+        <el-table :data="pageData" border>
+            <el-table-column prop="id" label="编号"></el-table-column>
+            <el-table-column prop="name" label="姓名"></el-table-column>
+            <el-table-column prop="age" label="年龄"></el-table-column>
+            <el-table-column prop="sex" label="性别"></el-table-column>
+        </el-table>
+        <div class="pagination">
+            <el-pagination
+                layout="total, size, prev, pager, next, jumper"
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :total="filterData.length"
+                :current-change="handlePageChange"
+                background
+            ></el-pagination>
+        </div>
+        <AddUserDialog v-model:dialog-title="dialogTitle" v-model:dialog-visible="dialogVisible"></AddUserDialog>
+    </div>
+</template>
+
+<script lang="ts">
+import { computed, defineComponent, ref, watch } from 'vue'
+import AddUserDialog from '../components/AddUserDialog.vue';
+
+export default defineComponent({
+    components: {
+        AddUserDialog,
+    },
+    setup(){
+        const searchVal = ref('');
+
+        // 打开dialog的时候，需要给这两个赋值，dialog的标题和打开
+        const dialogTitle = ref('')
+        const dialogVisible = ref()
+
+        const tableData = ref([
+            {'id': 1, 'name': 'test1', 'age': 18, 'sex': 'man'},
+            {'id': 2, 'name': 'test2', 'age': 22, 'sex': 'feman'},
+        ]);
+
+        const currentPage = ref(1);
+        const pageSize = ref(10);
+
+        const handleSearch = () => {
+            console.log('搜索 >> ', searchVal.value)
+            console.log('搜索?? >> ', dialogVisible.value)
+        };
+
+        const pageData = computed(() => {
+            const start = (currentPage.value - 1) * pageSize.value;
+            const end = start + pageSize.value;
+            return filterData.value.slice(start, end);
+        })
+
+        const filterData = computed(() => {
+            return tableData.value.filter((item) => {
+                return item.name.includes(searchVal.value.trim());
+            });
+        });
+
+        const handlePageChange = (page: number) => {
+            currentPage.value = page
+        };
+
+        const openDialog = () => {
+            dialogTitle.value = '添加用户';
+            dialogVisible.value = true;
+            console.log('in open', dialogTitle.value)
+            console.log('in open', dialogVisible.value)
+        };
+
+        watch(() => dialogVisible.value, (val) => {
+            console.log('监听：', val)
+        });
+
+        return {
+            searchVal,
+            pageData,
+            currentPage,
+            pageSize,
+            handleSearch,
+            filterData,
+            handlePageChange,
+            dialogTitle,
+            dialogVisible,
+            openDialog,
+        };
+    }
+})
+</script>
+
+<style scoped>
+.toolBar {
+    display: flex;
+    margin-bottom: 20px;
+    width: 100%;
+    /* padding-left: 20px; */
+}
+
+.pagination {
+    /* display + justify-content => 组合写可以指定元素位置 */
+    display: flex;
+    justify-content: start;
+    padding: 20px;
+}
+
+.searchInput {
+    padding-right: 3px;
+}
+
+</style>
