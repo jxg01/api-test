@@ -1,17 +1,23 @@
 <template>
     <div>
         <div class="toolBar">
-            <el-col :span="2">
+            <el-col :span="4">
                 <el-input v-model="searchVal" class="searchInput"></el-input>
             </el-col>
             <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button type="primary" @click="openDialog">添加</el-button>
+            <el-button type="primary" @click="openAddDialog">添加</el-button>
         </div>
         <el-table :data="pageData" border>
-            <el-table-column prop="id" label="编号"></el-table-column>
+            <!-- <el-table-column prop="id" label="编号"></el-table-column> -->
             <el-table-column prop="name" label="姓名"></el-table-column>
             <el-table-column prop="age" label="年龄"></el-table-column>
             <el-table-column prop="sex" label="性别"></el-table-column>
+            <el-table-column label="操作">
+                <template #default="scoped">
+                    <el-button type="primary" size="small" @click="openEditDialog(scoped.$index, scoped.row)">编辑</el-button>
+                    <el-button type="danger" size="small" @click="openDeleteDialog(scoped.row)">删除</el-button>
+                </template>
+            </el-table-column>
         </el-table>
         <div class="pagination">
             <el-pagination
@@ -23,36 +29,51 @@
                 background
             ></el-pagination>
         </div>
-        <AddUserDialog v-model:dialog-title="dialogTitle" v-model:dialog-visible="dialogVisible"></AddUserDialog>
+        <AddUserDialog v-model:dialog-visible="dialogVisible" v-model:is-edit="isEdit" v-model:form-data="dialogData"></AddUserDialog>
+        <commonDialog v-model:showDeleteDialog="deleteDialogVisible"></commonDialog>
     </div>
 </template>
 
 <script lang="ts">
 import { computed, defineComponent, ref, watch } from 'vue'
 import AddUserDialog from '../components/AddUserDialog.vue';
+import commonDialog from '../components/commonDialog.vue'
+
+interface User {
+    name: string,
+    age: string,
+    sex: string
+}
+
+const initUserForm: User = {
+    name: '',
+    age: '',
+    sex: ''
+}
 
 export default defineComponent({
     components: {
         AddUserDialog,
+        commonDialog
     },
     setup(){
-        const searchVal = ref('');
+        const searchVal = ref<string>('');
+        const dialogVisible = ref<boolean>(false);
+        const dialogData = ref<User>(initUserForm)
+        const isEdit = ref<boolean>(false);
 
-        // 打开dialog的时候，需要给这两个赋值，dialog的标题和打开
-        const dialogTitle = ref('')
-        const dialogVisible = ref()
+        const deleteDialogVisible = ref<boolean>(false);
 
-        const tableData = ref([
-            {'id': 1, 'name': 'test1', 'age': 18, 'sex': 'man'},
-            {'id': 2, 'name': 'test2', 'age': 22, 'sex': 'feman'},
+        const tableData = ref<User[]>([
+            {'name': 'test1', 'age': '18', 'sex': 'man'},
+            {'name': 'test2', 'age': '22', 'sex': 'feman'},
         ]);
 
-        const currentPage = ref(1);
-        const pageSize = ref(10);
+        const currentPage = ref<number>(1);
+        const pageSize = ref<number>(10);
 
         const handleSearch = () => {
             console.log('搜索 >> ', searchVal.value)
-            console.log('搜索?? >> ', dialogVisible.value)
         };
 
         const pageData = computed(() => {
@@ -71,12 +92,25 @@ export default defineComponent({
             currentPage.value = page
         };
 
-        const openDialog = () => {
-            dialogTitle.value = '添加用户';
+        const openAddDialog = () => {
+            isEdit.value = false;
             dialogVisible.value = true;
-            console.log('in open', dialogTitle.value)
+            dialogData.value = initUserForm
             console.log('in open', dialogVisible.value)
         };
+
+        const openEditDialog = (index: Number, row: User) => {
+            isEdit.value = true;
+            dialogVisible.value = true;
+            console.log('row data: ', row)
+            dialogData.value = row
+        }
+        const openDeleteDialog = (row: User) => {
+            
+            deleteDialogVisible.value = true
+            console.log('click delete button  => ', deleteDialogVisible.value)
+        }
+
 
         watch(() => dialogVisible.value, (val) => {
             console.log('监听：', val)
@@ -90,9 +124,13 @@ export default defineComponent({
             handleSearch,
             filterData,
             handlePageChange,
-            dialogTitle,
             dialogVisible,
-            openDialog,
+            isEdit,
+            dialogData,
+            openAddDialog,
+            openEditDialog,
+            openDeleteDialog,
+            deleteDialogVisible
         };
     }
 })

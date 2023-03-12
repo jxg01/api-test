@@ -2,43 +2,31 @@
     <div class="container">
         <div class="left-sidebar">
             <el-scrollbar>
-                <!-- <el-menu v-for="n in myRouters" :key="n.path" router>
-                    <el-menu-item :index="n.path" v-if="n.children.length < 1">
-                        <el-icon>x</el-icon>
+                <el-menu v-for="n in myRouters" :key="n.path" 
+                    class="el-menu-vertical-demo"
+                    active-text-color="#ffd04b"
+                    background-color="#545c64"
+                    text-color="#fff"
+                    @select="handleMenuSelect"
+                    :default-active="activeMenu"
+                    router
+                >
+                    <el-menu-item :index="n.name" v-if="n.children.length<1">
+                        <el-icon><component :is="n.meta.icon"></component></el-icon>
                         <span>{{ n.meta.title }}</span>
                     </el-menu-item>
-                    <el-sub-menu v-else :index="n.path">
+                    
+                    <el-sub-menu v-else :index="n.name">
                         <template #title>
-                            <el-icon>2</el-icon>
-                            <el-span>{{ n.meta.title }}</el-span>
+                            <el-icon><component :is="n.meta.icon"></component></el-icon>
+                            <span>{{ n.meta.title }}</span>
                         </template>
-                        <el-menu-item v-for="cn in n.children" :key="cn.path" :index="cn.path">
-                            {{ cn.meta.title }}
-                        </el-menu-item>
-                    </el-sub-menu>
-                </el-menu> -->
-
-
-                <el-menu :default-active="activeMenu" class="el-menu-vertical-demo" @select="handleMenuSelect">
-                    <el-menu-item index="dashboard">
-                        <el-icon><i-ep-Histogram /></el-icon>
-                        <span>首页</span>
-                    </el-menu-item>
-                    <el-menu-item index="user">
-                        <el-icon><i-ep-User /></el-icon>
-                        <span>用户管理</span>
-                    </el-menu-item>
-                    <el-menu-item index="project">
-                        <el-icon><i-ep-ChromeFilled /></el-icon>
-                        <span>项目管理</span>
-                    </el-menu-item>
-                    <el-sub-menu index="automation">
-                        <template #title>
-                            <el-icon><i-ep-Aim /></el-icon>
-                            <span>自动化测试</span>
+                        <template v-for="cn in n.children" :key="cn.path">
+                            <el-menu-item :index="cn.path">
+                                <el-icon><component :is="cn.meta.icon"></component></el-icon>
+                                <span>{{ cn.meta.title }}</span>
+                            </el-menu-item>
                         </template>
-                        <el-menu-item index="interface">接口管理</el-menu-item>
-                        <el-menu-item index="testcase">用例管理</el-menu-item>
                     </el-sub-menu>
                 </el-menu>
             </el-scrollbar>
@@ -59,7 +47,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, onMounted } from 'vue'
 import router from '../router'
 import { useRouter} from 'vue-router'
 
@@ -78,20 +66,21 @@ export default defineComponent({
             activeMenu.value = index
             console.log('点击：', activeMenu.value)
             router.push(activeMenu.value)
-            console.log('my router >> ', myRouters)
-            console.log('current router: ', rt.currentRoute.value.path)
+            // 存储当前选中菜单的状态，不存储的话style会丢失
+            localStorage.setItem('selectMenu', index)
         };
 
+        onMounted(() => {
+            let selectMenu = localStorage.getItem('selectMenu')
+            activeMenu.value = selectMenu || ''
+        })
 
         return {
             activeMenu,
             handleMenuSelect,
             myRouters,
         }
-
     },
-
-
 })
 
 </script>

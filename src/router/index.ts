@@ -26,55 +26,82 @@ const routes: Array<RouteRecordRaw> = [
                 component: UserPageVue,
                 meta: {
                     title: '首页',
-                    isShow: true
+                    // 一级菜单才需要这个字段，用于是否显示这个菜单
+                    isShow: true,
+                    icon: 'Grid'
                 }
 
             },
             {
                 path: '/user',
-                name: 'User',
+                name: 'user',
                 component: UserPageVue,
                 meta: {
                     title: '用户管理',
-                    isShow: true
+                    isShow: true,
+                    icon: 'User'
                 }
             },
             {
                 path: '/project',
-                name: 'Project',
+                name: 'project',
                 component: ProjectPageVue,
                 meta: {
                     title: '项目管理',
-                    isShow: true
+                    isShow: true,
+                    icon: 'House'
                 }
             },
             {
-                path: '/automation',
-                name: 'automation',
+                path: '/interface',
+                name: 'interface',
+                component: UserPageVue,
+                meta: {
+                    title: '接口管理',
+                    isShow: true,
+                    icon: 'Tickets'
+                }
+            },
+            {
+                path: '/testcase',
+                name: 'testcase',
+                component: UserPageVue,
+                meta: {
+                    title: '用例管理',
+                    isShow: true,
+                    icon: 'Files'
+                }
+            },
+            {
+                path: '/suite',
+                name: 'suite',
+                component: UserPageVue,
+                meta: {
+                    title: '套件管理',
+                    isShow: true,
+                    icon: 'SetUp'
+                }
+            },
+            {
+                path: '/task',
+                name: 'task',
                 // component: UserPageVue,
                 meta: {
-                    title: '接口测试',
-                    isShow: true
+                    title: '任务管理',
+                    isShow: true,
+                    icon: 'Clock'
                 },
                 children: [
                     {
-                        path: '/interface',
-                        name: 'interface',
+                        path: '/test',
+                        name: 'test',
                         component: UserPageVue,
                         meta: {
-                            title: '接口管理'
-                        }
-                    },
-                    {
-                        path: '/testcase',
-                        name: 'testcase',
-                        component: UserPageVue,
-                        meta: {
-                            title: '用例管理'
+                            title: '子菜单',
+                            icon: 'Clock'
                         }
                     }
                 ]
-
             }
         ]
     },
