@@ -35,8 +35,9 @@
             <el-header>
                 <div class="header-right">
                     <el-icon><i-ep-user /></el-icon>
-                    <span>倾丶几回断肠</span>
-                    <el-button>退出登录</el-button>
+                    <span class="username">倾丶几回断肠</span>
+                    <el-button type="info">退出登录</el-button>
+                    <!-- <el-link>退出登录</el-link> -->
                 </div>
             </el-header>
             <el-main>
@@ -113,5 +114,8 @@ export default defineComponent({
     background-color: cornsilk;
 }
 
+.username {
+    padding: 0 20px 0 5px;
+}
 
 </style>

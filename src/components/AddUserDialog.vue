@@ -26,7 +26,7 @@
 
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, nextTick } from 'vue'
+import { defineComponent, ref, computed, nextTick } from 'vue'
 
 interface UserForm {
     'name': string,

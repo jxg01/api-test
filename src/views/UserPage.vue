@@ -30,14 +30,14 @@
             ></el-pagination>
         </div>
         <AddUserDialog v-model:dialog-visible="dialogVisible" v-model:is-edit="isEdit" v-model:form-data="dialogData"></AddUserDialog>
-        <commonDialog v-model:showDeleteDialog="deleteDialogVisible"></commonDialog>
+        <commonDialog v-model:deleteDialogVisible="deleteDialogVisible" v-model:form-data="dialogData"></commonDialog>
     </div>
 </template>
 
 <script lang="ts">
 import { computed, defineComponent, ref, watch } from 'vue'
 import AddUserDialog from '../components/AddUserDialog.vue';
-import commonDialog from '../components/commonDialog.vue'
+import CommonDialog from '../components/CommonDialog.vue'
 
 interface User {
     name: string,
@@ -54,7 +54,7 @@ const initUserForm: User = {
 export default defineComponent({
     components: {
         AddUserDialog,
-        commonDialog
+        CommonDialog
     },
     setup(){
         const searchVal = ref<string>('');
@@ -106,8 +106,8 @@ export default defineComponent({
             dialogData.value = row
         }
         const openDeleteDialog = (row: User) => {
-            
             deleteDialogVisible.value = true
+            dialogData.value = row
             console.log('click delete button  => ', deleteDialogVisible.value)
         }
 

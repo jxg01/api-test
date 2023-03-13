@@ -1,41 +1,70 @@
 <template>
     <el-dialog
-      v-model="dialogVisible"
+      v-model="visit"
       title="删除"
       width="30%"
+      :append-to-body="true"
     >
-      <span>确定删除？</span>
+      <div class="dialog-content">
+        <span>确定删除？</span>
+      </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="canceled">取消</el-button>
-          <el-button type="primary" @click="submited">确定</el-button>
+          <el-button type="danger" @click="submited">确定</el-button>
         </span>
       </template>
     </el-dialog>
   </template>
 
-<script lang="ts" setup>
-import { ref, defineProps, defineEmits } from 'vue'
+<script lang="ts">
+import { ref, defineComponent, computed } from 'vue'
 
-const emits = defineEmits(['showDeleteDialog'])
-
-const props = defineProps({
-    showDeleteDialog: {
-        type: Boolean,
-        default: false,
+export default defineComponent({
+  props: {
+    deleteDialogVisible: {
+      type: Boolean,
+      default: false
+    },
+    formData: {
+      type: Object,
     }
+  },
+  setup(props, {emit}){
+    const visit = computed({
+      get(){
+        return props.deleteDialogVisible
+      },
+      set(value){
+        emit('update:deleteDialogVisible', value)
+      }
+    });
+
+    const canceled = () => {
+      emit('update:deleteDialogVisible', false)
+    };
+
+    const submited = () => {
+      console.log('submit delete  => ', props.formData)
+      emit('update:deleteDialogVisible', false)
+    };
+
+
+
+    return {
+      visit,
+      canceled,
+      submited
+    }
+
+
+  }
+
+  
+
+
+
 })
-
-const dialogVisible = ref(props.showDeleteDialog)
-
-const canceled = () => {
-    dialogVisible.value = false
-    // emits('showDeleteDialog', false)
-}
-
-const submited = () => {
-    dialogVisible.value = false
-}
 
 
 
@@ -45,6 +74,12 @@ const submited = () => {
 .dialog-footer button:first-child {
   margin-right: 10px;
 }
+
+.dialog-content {
+  font-size: large;
+  text-align: center;
+}
+
 </style>
 
 

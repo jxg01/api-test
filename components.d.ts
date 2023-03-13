@@ -11,7 +11,7 @@ declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     AddUser: typeof import('./src/components/AddUser.vue')['default']
     AddUserDialog: typeof import('./src/components/AddUserDialog.vue')['default']
-    CommonDialog: typeof import('./src/components/commonDialog.vue')['default']
+    CommonDialog: typeof import('./src/components/CommonDialog.vue')['default']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
