@@ -6,14 +6,14 @@
         @open="open"
     >
         <el-form :model="form" :rules="rules" ref="dialogRef" label-width="80px">
-            <el-form-item label="Name" prop="name">
-                <el-input v-model="form.name"></el-input>
+            <el-form-item label="项目名称" prop="project_name">
+                <el-input v-model="form.project_name"></el-input>
             </el-form-item>
-            <el-form-item label="Age" prop="age">
-                <el-input v-model="form.age"></el-input>
+            <el-form-item label="项目地址" prop="project_url">
+                <el-input v-model="form.project_url"></el-input>
             </el-form-item>
-            <el-form-item label="Sex" prop="sex">
-                <el-input v-model="form.sex"></el-input>
+            <el-form-item label="描述" prop="description">
+                <el-input v-model="form.description"></el-input>
             </el-form-item>
             <el-form-item>
                 <el-button @click="cancel">取消</el-button>
@@ -28,16 +28,24 @@
 <script lang="ts">
 import { defineComponent, ref, computed, nextTick } from 'vue'
 
-interface UserForm {
-    'name': string,
-    'age': string,
-    'sex': string
+interface ProjectForm {
+    'id': number,
+    'project_name': string,
+    'project_url': string,
+    'description': string,
+    'owner': string,
+    'create_at': string,
+    'update_at': string,
 }
 
-const initialFormData: UserForm = {
-    name: '',
-    age: '',
-    sex: ''
+const initialFormData: ProjectForm = {
+    'id': 0,
+    'project_name': '',
+    'project_url': '',
+    'description': '',
+    'owner': '',
+    'create_at': '',
+    'update_at': '',
 }
 
 export default defineComponent({
@@ -55,16 +63,16 @@ export default defineComponent({
             type: Object,
             required: true
         }
-        // dialogData: Object
     },
+
     setup(props, { emit }){
         const dialogTitle = ref<string>('');
-        const form = ref<UserForm>(initialFormData);
+        const form = ref<ProjectForm>(initialFormData);
         const dialogRef = ref(null);
         const rules = {
-            name: [{required: true, message: '请输入名称', trigger: 'blur'}],
-            age: [{required: true, message: '请输入年龄', trigger: 'blur'}],
-            sex: [{required: true, message: '请输入性别', trigger: 'blur'}],
+            project_name: [{required: true, message: '请输入项目名称', trigger: 'blur'}],
+            project_url: [{required: true, message: '请输入项目地址', trigger: 'blur'}],
+            description: [{required: true, message: '请输入描述', trigger: 'blur'}],
         };
         const submitting = ref<boolean>(false);
         const cancel = () => {

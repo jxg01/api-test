@@ -11,7 +11,7 @@
                     :default-active="activeMenu"
                     router
                 >
-                    <el-menu-item :index="n.name" v-if="n.children.length<1">
+                    <el-menu-item :index="n.path" v-if="n.children.length<1">
                         <el-icon><component :is="n.meta.icon"></component></el-icon>
                         <span>{{ n.meta.title }}</span>
                     </el-menu-item>
@@ -22,7 +22,7 @@
                             <span>{{ n.meta.title }}</span>
                         </template>
                         <template v-for="cn in n.children" :key="cn.path">
-                            <el-menu-item :index="cn.path">
+                            <el-menu-item :index="`${n.path}/${cn.path}`">
                                 <el-icon><component :is="cn.meta.icon"></component></el-icon>
                                 <span>{{ cn.meta.title }}</span>
                             </el-menu-item>

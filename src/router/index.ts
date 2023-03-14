@@ -93,7 +93,7 @@ const routes: Array<RouteRecordRaw> = [
                 },
                 children: [
                     {
-                        path: '/test',
+                        path: 'test',
                         name: 'test',
                         component: UserPageVue,
                         meta: {

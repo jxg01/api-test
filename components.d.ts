@@ -9,6 +9,7 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
+    AddProjectDialog: typeof import('./src/components/AddProjectDialog.vue')['default']
     AddUser: typeof import('./src/components/AddUser.vue')['default']
     AddUserDialog: typeof import('./src/components/AddUserDialog.vue')['default']
     CommonDialog: typeof import('./src/components/CommonDialog.vue')['default']
