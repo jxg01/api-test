@@ -2,6 +2,7 @@ import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router'
 import Index from '../views/Index.vue';
 import ProjectPageVue from '../views/ProjectPage.vue';
 import UserPageVue from '../views/UserPage.vue'
+import InterfacePageVue from '../views/InterfacePage.vue';
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -53,39 +54,47 @@ const routes: Array<RouteRecordRaw> = [
                 }
             },
             {
-                path: '/interface',
-                name: 'interface',
-                component: UserPageVue,
+                path: '/automation',
+                name: 'automation',
+                redirect: '/automation/interface',
                 meta: {
-                    title: '接口管理',
+                    title: '接口自动化',
                     isShow: true,
-                    icon: 'Tickets'
-                }
-            },
-            {
-                path: '/testcase',
-                name: 'testcase',
-                component: UserPageVue,
-                meta: {
-                    title: '用例管理',
-                    isShow: true,
-                    icon: 'Files'
-                }
-            },
-            {
-                path: '/suite',
-                name: 'suite',
-                component: UserPageVue,
-                meta: {
-                    title: '套件管理',
-                    isShow: true,
-                    icon: 'SetUp'
-                }
+                    icon: 'Grid'
+                },
+                children: [
+                    {
+                        path: 'interface',
+                        name: 'interface',
+                        component: InterfacePageVue,
+                        meta: {
+                            title: '接口管理',
+                            icon: 'Tickets'
+                        }
+                    },
+                    {
+                        path: 'testcase',
+                        name: 'testcase',
+                        component: UserPageVue,
+                        meta: {
+                            title: '用例管理',
+                            icon: 'Files'
+                        }
+                    },
+                    {
+                        path: 'suite',
+                        name: 'suite',
+                        component: UserPageVue,
+                        meta: {
+                            title: '套件管理',
+                            icon: 'SetUp'
+                        }
+                    },
+                ]
             },
             {
                 path: '/task',
                 name: 'task',
-                // component: UserPageVue,
                 meta: {
                     title: '任务管理',
                     isShow: true,
@@ -97,11 +106,33 @@ const routes: Array<RouteRecordRaw> = [
                         name: 'test',
                         component: UserPageVue,
                         meta: {
-                            title: '子菜单',
+                            title: '任务配置',
                             icon: 'Clock'
                         }
                     }
                 ]
+            },
+            {
+                path: '/variables',
+                name: 'variables',
+                component: UserPageVue,
+                meta: {
+                    title: '全局变量',
+                    isShow: true,
+                    icon: 'Clock'
+                },
+
+            },
+            {
+                path: '/settings',
+                name: 'settings',
+                component: UserPageVue,
+                meta: {
+                    title: '系统设置',
+                    isShow: true,
+                    icon: 'Clock'
+                },
+
             }
         ]
     },

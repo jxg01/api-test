@@ -2,12 +2,12 @@
     <div class="login-container">
         <el-card class="login-card" shadow="hover">
             <h2>登录</h2>
-            <el-form :model="loginForm" label-width="80px" ref="loginForm">
+            <el-form :model="loginFormData" label-width="80px" ref="loginForm">
                 <el-form-item label="用户名" prop="username">
-                    <el-input v-model="loginForm.username" placeholder="请输入用户名"></el-input>
+                    <el-input v-model="loginFormData.username" placeholder="请输入用户名"></el-input>
                 </el-form-item>
                 <el-form-item label="密码" prop="password">
-                    <el-input v-model="loginForm.password" placeholder="请输入密码" type="password"></el-input>
+                    <el-input v-model="loginFormData.password" placeholder="请输入密码" type="password"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="submitLogin">登录</el-button>
@@ -18,13 +18,16 @@
                 <el-link type="primary" @click="showRegisterDialog">注册</el-link>
             </div>
         </el-card>
-        <el-dialog title="注册" v-model="registerDialogVisible" width="25%">
-            <el-form :model="registerFrom" label-width="80px" ref="registerForm">
+        <el-dialog :title="dialogTitle" v-model="registerDialogVisible" 
+            :close-on-click-modal="false" :append-to-body="true" width="30%"
+            :destroy-on-close="true"
+        >
+            <el-form :model="registerFormData" label-width="80px" ref="registerFormRef" :rules="rules">
                 <el-form-item label="用户名" prop="username">
-                    <el-input v-model="registerFrom.username" placeholder="请输入用户名"></el-input>
+                    <el-input v-model="registerFormData.username" placeholder="请输入用户名"></el-input>
                 </el-form-item>
                 <el-form-item label="密码" prop="password">
-                    <el-input v-model="registerFrom.password" type="password" placeholder="请输入密码"></el-input>
+                    <el-input v-model="registerFormData.password" type="password" placeholder="请输入密码"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="submitRegister">注册</el-button>
@@ -35,42 +38,60 @@
 
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script lang="ts" setup>
+import { ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
-export default defineComponent({
-    data(){
-        return {
-            loginForm: {
-                username: '',
-                password: ''
-            },
-            registerDialogVisible: false,
-            registerFrom: {
-                username: '',
-                password: ''
-            }
-        }
-    },
-    methods: {
-        submitLogin(){
-            console.log('提交表单', this.loginForm)
-        },
-        showRegisterDialog(){
-            console.log('打开注册弹窗')
-            this.registerDialogVisible = true;
-            console.log('>>> ', this.registerDialogVisible)
-        },
-        submitRegister(){
-            console.log('submit register >> ', this.registerFrom)
-            // 请求接口
-            this.registerDialogVisible = false
-        }
-    }
+interface LoginForm  {
+    username: string,
+    password: string
+}
+
+const InitLoginForm: LoginForm = {
+    username: '',
+    password: ''
+}
+
+interface RegisterForm {
+    username: string,
+    password: string
+}
+
+const InitRegisterForm: RegisterForm = {
+    username: '',
+    password: ''
+}
+
+const router = useRouter()
 
 
-})
+const loginFormData = ref<LoginForm>(InitLoginForm);
+const registerDialogVisible = ref<boolean>(false);
+const registerFormData = ref<RegisterForm>(InitRegisterForm);
+const dialogTitle = ref<string>('注册');
+const registerFormRef = ref(null);
+const rules = {
+    username: [{required: true, message: '请输入项目名称', trigger: 'blur'}],
+    password: [{required: true, message: '请输入项目地址', trigger: 'blur'}],
+};
+
+const submitLogin = () => {
+    console.log('提交表单', loginFormData)
+    router.push('/index')
+}
+
+const showRegisterDialog = () => {
+    console.log('打开注册弹窗')
+    registerDialogVisible.value = true;
+    registerFormData.value = { ...InitRegisterForm }
+
+}
+
+const submitRegister = () => {
+    console.log('submit register >> ', registerFormData)
+    // 请求接口
+    registerDialogVisible.value = false
+}
 
 </script>
 

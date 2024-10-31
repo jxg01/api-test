@@ -7,7 +7,6 @@
                     active-text-color="#ffd04b"
                     background-color="#545c64"
                     text-color="#fff"
-                    @select="handleMenuSelect"
                     :default-active="activeMenu"
                     router
                 >
@@ -48,37 +47,23 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue'
-import router from '../router'
-import { useRouter} from 'vue-router'
+import { defineComponent, ref, watch } from 'vue'
+import {useRouter,useRoute} from 'vue-router'
 
 export default defineComponent({
     setup(){
-        const rt = useRouter()
-
-        const myRouters = rt.getRoutes()
+        const router = useRouter()
+        const route = useRoute()
+        const myRouters = router.getRoutes()
         .filter(v => {
             return v.meta.isShow == true
         })
-
-        const activeMenu = ref<string>(rt.currentRoute.value.path);
-
-        const handleMenuSelect = (index: string) => {
-            activeMenu.value = index
-            console.log('点击：', activeMenu.value)
-            router.push(activeMenu.value)
-            // 存储当前选中菜单的状态，不存储的话style会丢失
-            localStorage.setItem('selectMenu', index)
-        };
-
-        onMounted(() => {
-            let selectMenu = localStorage.getItem('selectMenu')
-            activeMenu.value = selectMenu || ''
+        const activeMenu = ref<string>(route.path);
+        watch(() => route.path, (newPath) => {
+            activeMenu.value = newPath
         })
-
         return {
             activeMenu,
-            handleMenuSelect,
             myRouters,
         }
     },

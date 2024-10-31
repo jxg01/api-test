@@ -1,17 +1,15 @@
 <template>
     <div>
         <div class="toolBar">
-            <el-col :span="4">
-                <el-input v-model="searchVal" class="searchInput"></el-input>
-            </el-col>
+            <el-input v-model="searchVal" class="searchInput"></el-input>
             <el-button type="primary" @click="handleSearch">搜索</el-button>
             <el-button type="primary" @click="openAddDialog">添加</el-button>
         </div>
         <el-table :data="pageData" border>
             <el-table-column prop="id" label="编号" width="60"></el-table-column>
-            <el-table-column prop="project_name" label="项目名称"></el-table-column>
-            <el-table-column prop="project_url" label="项目地址"></el-table-column>
-            <el-table-column prop="description" label="描述"></el-table-column>
+            <el-table-column prop="api_name" label="接口名称"></el-table-column>
+            <el-table-column prop="path" label="接口路径"></el-table-column>
+            <el-table-column prop="method" label="请求方式"></el-table-column>
             <el-table-column prop="owner" label="创建人"></el-table-column>
             <el-table-column prop="create_at" label="创建时间"></el-table-column>
             <el-table-column prop="update_at" label="修改时间"></el-table-column>
@@ -32,40 +30,40 @@
                 background
             ></el-pagination>
         </div>
-        <AddProjectDialog v-model:dialog-visible="dialogVisible" v-model:is-edit="isEdit" v-model:form-data="dialogData"></AddProjectDialog>
+        <AddInterFaceDialog v-model:dialog-visible="dialogVisible" v-model:is-edit="isEdit" v-model:form-data="dialogData"></AddInterFaceDialog>
         <commonDialog v-model:deleteDialogVisible="deleteDialogVisible" v-model:form-data="dialogData"></commonDialog>
     </div>
 </template>
 
 <script lang="ts">
 import { computed, defineComponent, ref, watch } from 'vue'
-import AddUserDialog from '../components/AddUserDialog.vue';
+import AddInterFaceDialog from '../components/AddInterFaceDialog.vue';
 import CommonDialog from '../components/CommonDialog.vue'
 
-interface ProjectData {
+interface ApiData {
     id: number,
-    project_name: string,
-    project_url: string,
-    description: string,
+    api_name: string,
+    path: string,
+    method: string,
     owner: string,
     create_at: string,
     update_at: string,
 }
 
-const InitProjectFormData: ProjectData = {
+const ApiFormData: ApiData = {
     id: 0,
-    project_name: '',
-    project_url: '',
-    description: '',
+    api_name: '',
+    path: '',
+    method: '',
     owner: '',
     create_at: '',
-    update_at: ''
+    update_at: '',
 }
 
 
 export default defineComponent({
     components: {
-        AddUserDialog,
+        AddInterFaceDialog,
         CommonDialog
     },
     setup(){
@@ -73,14 +71,14 @@ export default defineComponent({
         const searchVal = ref<string>('');
         const dialogVisible = ref<boolean>(false);
         const deleteDialogVisible = ref<boolean>(false);
-        const dialogData = ref<ProjectData>(InitProjectFormData)
+        const dialogData = ref<ApiData>(ApiFormData)
         const isEdit = ref<boolean>(false);
 
         const currentPage = ref<number>(1);
         const pageSize = ref<number>(10);
-        const tableData = ref<ProjectData[]>([
-            {'id': 1, 'project_name': 'csm', 'project_url': 'http://www', 'description': '系统A', 'owner': 'eddy', 'create_at': '2023-03-13 20:00:00', 'update_at': '2023-03-13 23:00:00'},
-            {'id': 2, 'project_name': 'LTD', 'project_url': 'http://uuu', 'description': '系统B', 'owner': 'eddy', 'create_at': '2023-03-13 20:00:00', 'update_at': '2023-03-13 23:00:00'},
+        const tableData = ref<ApiData[]>([
+            {'id': 1, 'api_name': '获取用户', 'path': '/getUser/getPromotionDetail/isaid', 'method': 'get', 'owner': 'eddy', 'create_at': '2023-03-13 20:00:00', 'update_at': '2023-03-13 23:00:00'},
+            {'id': 2, 'api_name': '编辑用户', 'path': '/editUser', 'method': 'post', 'owner': 'eddy', 'create_at': '2023-03-13 20:00:00', 'update_at': '2023-03-13 23:00:00'},
         ]);
 
         const handleSearch = () => {
@@ -93,7 +91,7 @@ export default defineComponent({
 
         const filterData = computed(() => {
             return tableData.value.filter((item) => {
-                return item.project_name.includes(searchVal.value.trim());
+                return item.api_name.includes(searchVal.value.trim());
             });
         });
         const pageData = computed(() => {
@@ -105,17 +103,17 @@ export default defineComponent({
         const openAddDialog = () => {
             isEdit.value = false;
             dialogVisible.value = true;
-            dialogData.value = InitProjectFormData
+            dialogData.value = ApiFormData
             console.log('in open', dialogVisible.value)
         };
 
-        const openEditDialog = (index: Number, row: ProjectData) => {
+        const openEditDialog = (index: Number, row: ApiData) => {
             isEdit.value = true;
             dialogVisible.value = true;
             console.log('row data: ', row)
             dialogData.value = row
         }
-        const openDeleteDialog = (row: ProjectData) => {
+        const openDeleteDialog = (row: ApiData) => {
             deleteDialogVisible.value = true
             dialogData.value = row
             console.log('click delete button  => ', deleteDialogVisible.value)
@@ -151,7 +149,6 @@ export default defineComponent({
     display: flex;
     margin-bottom: 20px;
     width: 100%;
-    /* padding-left: 20px; */
 }
 
 .pagination {
@@ -163,6 +160,7 @@ export default defineComponent({
 
 .searchInput {
     padding-right: 3px;
+    width: 150px;
 }
 
 </style>
