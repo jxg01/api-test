@@ -1,168 +1,216 @@
 <template>
-    <div>
-        <div class="toolBar">
-            <el-col :span="4">
-                <el-input v-model="searchVal" class="searchInput"></el-input>
-            </el-col>
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button type="primary" @click="openAddDialog">添加</el-button>
-        </div>
-        <el-table :data="pageData" border>
-            <el-table-column prop="id" label="编号" width="60"></el-table-column>
-            <el-table-column prop="project_name" label="项目名称"></el-table-column>
-            <el-table-column prop="project_url" label="项目地址"></el-table-column>
-            <el-table-column prop="description" label="描述"></el-table-column>
-            <el-table-column prop="owner" label="创建人"></el-table-column>
-            <el-table-column prop="create_at" label="创建时间"></el-table-column>
-            <el-table-column prop="update_at" label="修改时间"></el-table-column>
-            <el-table-column label="操作" width="135">
-                <template #default="scoped">
-                    <el-button type="primary" size="small" @click="openEditDialog(scoped.$index, scoped.row)">编辑</el-button>
-                    <el-button type="danger" size="small" @click="openDeleteDialog(scoped.row)">删除</el-button>
-                </template>
-            </el-table-column>
-        </el-table>
-        <div class="pagination">
-            <el-pagination
-                layout="total, size, prev, pager, next, jumper"
-                v-model:current-page="currentPage"
-                v-model:page-size="pageSize"
-                :total="filterData.length"
-                :current-change="handlePageChange"
-                background
-            ></el-pagination>
-        </div>
-        <AddProjectDialog v-model:dialog-visible="dialogVisible" v-model:is-edit="isEdit" v-model:form-data="dialogData"></AddProjectDialog>
-        <commonDialog v-model:deleteDialogVisible="deleteDialogVisible" v-model:form-data="dialogData"></commonDialog>
+    <div class="project-management-container">
+      <!-- 筛选行 -->
+      <el-row class="filter-row" :gutter="20">
+        <el-col :span="4">
+          <el-button type="primary" @click="openAddDialog">添加项目</el-button>
+        </el-col>
+        <el-col :span="8">
+          <el-input
+            v-model="name"
+            placeholder="请输入项目名称"
+            clearable
+            @keyup.enter="fetchProjectData"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </el-col>
+      </el-row>
+  
+      <!-- 表格 -->
+      <BaseTable
+        :columns="tableColumns"
+        :table-data="tableData"
+        :loading="loading"
+        :pagination="pagination"
+        @page-change="handlePageChange"
+        @size-change="handleSizeChange"
+      >
+        <template #operation="scope">
+          <el-button type="primary" size="small" @click="openEditDialog(scope.row)">
+            编辑
+          </el-button>
+          <el-button type="danger" size="small" @click="handleDelete(scope.row)">
+            删除
+          </el-button>
+        </template>
+      </BaseTable>
+  
+      <!-- 表单弹窗 -->
+      <BaseDialog
+        ref="dialogRef"
+        :fields="formFields"
+        :rules="formRules"
+        title="项目"
+        @submit="handleSubmit"
+      />
     </div>
-</template>
-
-<script lang="ts">
-import { computed, defineComponent, ref, watch } from 'vue'
-import AddUserDialog from '../components/AddUserDialog.vue';
-import CommonDialog from '../components/CommonDialog.vue'
-
-interface ProjectData {
-    id: number,
-    project_name: string,
-    project_url: string,
-    description: string,
-    owner: string,
-    create_at: string,
-    update_at: string,
-}
-
-const InitProjectFormData: ProjectData = {
-    id: 0,
-    project_name: '',
-    project_url: '',
-    description: '',
-    owner: '',
-    create_at: '',
-    update_at: ''
-}
-
-
-export default defineComponent({
-    components: {
-        AddUserDialog,
-        CommonDialog
+  </template>
+  
+  <script lang="ts" setup>
+  import { ref, reactive, onMounted } from 'vue'
+  import BaseDialog from '@/components/BaseDialog.vue'
+  import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { projectApi } from '@/api/'
+  
+  type Project = {
+    id: number
+    name: string
+    base_url: string
+    description: string
+    creator: string
+    created_at: string
+    updated_at: string
+  }
+  
+  // 表格配置 =================================================================
+  const tableColumns: TableColumn[] = [
+    { prop: 'id', label: '#', width: 60 },
+    { prop: 'name', label: '项目名称' },
+    { prop: 'base_url', label: '项目地址' },
+    { prop: 'description', label: '描述' },
+    { prop: 'creator', label: '创建人' },
+    { prop: 'created_at', label: '创建时间' },
+    { prop: 'updated_at', label: '修改时间' },
+    { prop: 'operation', label: '操作', width: 135, slot: 'operation' }
+  ]
+  
+  // 表单配置 =================================================================
+  const formFields = [
+    { 
+      prop: 'name', 
+      label: '项目名称',
+      component: ElInput,
+      attrs: { placeholder: '请输入项目名称' } 
     },
-    setup(){
-    
-        const searchVal = ref<string>('');
-        const dialogVisible = ref<boolean>(false);
-        const deleteDialogVisible = ref<boolean>(false);
-        const dialogData = ref<ProjectData>(InitProjectFormData)
-        const isEdit = ref<boolean>(false);
-
-        const currentPage = ref<number>(1);
-        const pageSize = ref<number>(10);
-        const tableData = ref<ProjectData[]>([
-            {'id': 1, 'project_name': 'csm', 'project_url': 'http://www', 'description': '系统A', 'owner': 'eddy', 'create_at': '2023-03-13 20:00:00', 'update_at': '2023-03-13 23:00:00'},
-            {'id': 2, 'project_name': 'LTD', 'project_url': 'http://uuu', 'description': '系统B', 'owner': 'eddy', 'create_at': '2023-03-13 20:00:00', 'update_at': '2023-03-13 23:00:00'},
-        ]);
-
-        const handleSearch = () => {
-            console.log('搜索 >> ', searchVal.value)
-        };
-
-        const handlePageChange = (page: number) => {
-            currentPage.value = page
-        };
-
-        const filterData = computed(() => {
-            return tableData.value.filter((item) => {
-                return item.project_name.includes(searchVal.value.trim());
-            });
-        });
-        const pageData = computed(() => {
-            const start = (currentPage.value - 1) * pageSize.value;
-            const end = start + pageSize.value;
-            return filterData.value.slice(start, end);
-        })
-
-        const openAddDialog = () => {
-            isEdit.value = false;
-            dialogVisible.value = true;
-            dialogData.value = InitProjectFormData
-            console.log('in open', dialogVisible.value)
-        };
-
-        const openEditDialog = (index: Number, row: ProjectData) => {
-            isEdit.value = true;
-            dialogVisible.value = true;
-            console.log('row data: ', row)
-            dialogData.value = row
-        }
-        const openDeleteDialog = (row: ProjectData) => {
-            deleteDialogVisible.value = true
-            dialogData.value = row
-            console.log('click delete button  => ', deleteDialogVisible.value)
-        }
-        
-
-        return {
-            searchVal,
-            pageData,
-            currentPage,
-            pageSize,
-            handleSearch,
-            filterData,
-            handlePageChange,
-            dialogVisible,
-            isEdit,
-            dialogData,
-            openAddDialog,
-            openEditDialog,
-            openDeleteDialog,
-            deleteDialogVisible
-        };
-
+    { 
+      prop: 'base_url', 
+      label: '项目地址',
+      component: ElInput,
+      attrs: { 
+        placeholder: '请输入项目地址',
+        type: 'url'
+      }
     },
+    { 
+      prop: 'description', 
+      label: '描述',
+      component: ElInput,
+      attrs: { placeholder: '请输入项目描述' }
+    }
+  ]
+  
+  const formRules = {
+    name: [
+      { required: true, message: '请输入项目名称', trigger: 'blur' },
+      { min: 2, max: 10, message: '长度在2-10个字符', trigger: ['blur', 'change'] }
+    ],
+    base_url: [
+      { required: true, message: '请输入项目地址', trigger: 'blur' },
+      { type: 'url', message: '请输入有效的URL地址', trigger: 'blur' }
+    ]
+  }
+  
+  // 数据逻辑 =================================================================
+  const tableData = ref<Project[]>([])
+  const loading = ref(false)
+  const dialogRef = ref<InstanceType<typeof BaseDialog>>()
+  const pagination = reactive({
+    page: 1,
+    size: 20,
+    total: 0
+  })
+  
+  const name = ref('')
 
-
-})
-
-</script>
-
-<style scoped>
-.toolBar {
-    display: flex;
-    margin-bottom: 20px;
-    width: 100%;
-    /* padding-left: 20px; */
-}
-
-.pagination {
-    /* display + justify-content => 组合写可以指定元素位置 */
-    display: flex;
-    justify-content: start;
+    // 初始化数据
+  onMounted(() => {
+    fetchProjectData()
+  })
+  // 数据获取
+  const fetchProjectData = async () => {
+    try {
+      loading.value = true
+      const res = await projectApi.getProjectList({
+        name: name.value,
+        page: pagination.page,
+        size: pagination.size
+      })
+      
+      tableData.value = res.data
+      pagination.total = res.meta.pagination.total
+      pagination.page = res.meta.pagination.page
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  // 分页处理
+  const handlePageChange = (page: number) => {
+    pagination.page = page
+    fetchProjectData()
+  }
+  
+  const handleSizeChange = (size: number) => {
+    pagination.size = size
+    fetchProjectData()
+  }
+  
+  // 弹窗操作
+  const openAddDialog = () => dialogRef.value?.open('add', {})
+  const openEditDialog = (project: Project) => dialogRef.value?.open('edit', project)
+  
+  // 删除操作
+  const handleDelete = async (project: Project) => {
+    try {
+      await ElMessageBox.confirm(`确认删除项目 ${project.name} 吗？`, '提示', {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      })
+      
+      await projectApi.deleteProject(project.id)
+      ElMessage.success('删除成功')
+      fetchProjectData()
+    } catch (error) {
+      ElMessage.error(error.message || '删除失败')
+    }
+  }
+  
+  // 表单提交
+  const handleSubmit = async (data: Project, mode: 'add' | 'edit', done: (success?: boolean) => void) => {
+    try {
+      const action = mode === 'add' 
+        ? projectApi.createProject(data)
+        : projectApi.editProject(data.id, data)
+  
+      await action
+      ElMessage.success(`项目${mode === 'add' ? '添加' : '编辑'}成功`)
+      fetchProjectData()
+      done(true)
+    } catch (error) {
+      ElMessage.error(error.message || '操作失败')
+      done(false)
+    }
+  }
+  </script>
+  
+  <style scoped>
+  .project-management-container {
     padding: 20px;
-}
-
-.searchInput {
-    padding-right: 3px;
-}
-
-</style>
+    background: #fff;
+    border-radius: 4px;
+  }
+  
+  .filter-row {
+    margin-bottom: 20px;
+  
+    .el-col {
+      display: flex;
+      align-items: center;
+    }
+  }
+  </style>

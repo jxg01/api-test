@@ -1,8 +1,10 @@
 import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router'
-import Index from '../views/Index.vue';
-import ProjectPageVue from '../views/ProjectPage.vue';
-import UserPageVue from '../views/UserPage.vue'
-import InterfacePageVue from '../views/InterfacePage.vue';
+import Index from '@/views/Index.vue';
+import ProjectPageVue from '@/views/ProjectPage.vue';
+import UserPageVue from '@/views/UserPage.vue'
+import InterfacePageVue from '@/views/InterfacePage.vue';
+import MtTool from '@/views/MtTool.vue';
+import GlobalVariablePage from '@/views/GlobalVariablePage.vue';
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -24,7 +26,7 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: '/dashboard',
                 name: 'dashboard',
-                component: UserPageVue,
+                component: Index,
                 meta: {
                     title: '首页',
                     // 一级菜单才需要这个字段，用于是否显示这个菜单
@@ -113,9 +115,9 @@ const routes: Array<RouteRecordRaw> = [
                 ]
             },
             {
-                path: '/variables',
-                name: 'variables',
-                component: UserPageVue,
+                path: '/variable',
+                name: 'variable',
+                component: GlobalVariablePage,
                 meta: {
                     title: '全局变量',
                     isShow: true,
@@ -133,8 +135,24 @@ const routes: Array<RouteRecordRaw> = [
                     icon: 'Clock'
                 },
 
-            }
+            },
+            {
+                path: '/mt_tool',
+                name: 'mt_tool',
+                component: MtTool,
+                meta: {
+                    title: '交易工具',
+                    isShow: true,
+                    icon: 'Clock'
+                },
+
+            },
         ]
+    },
+    // 通配符路由，重定向到 /dashboard
+    {
+        path: '/:pathMatch(.*)*',
+        redirect: '/dashboard',
     },
     
 ]

@@ -5,6 +5,7 @@ import Components from 'unplugin-vue-components/vite'
 import Icons from 'unplugin-icons/vite'
 import IconsResolver from 'unplugin-icons/resolver'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -16,7 +17,7 @@ export default defineConfig({
         // 自动导出 element plus 组件
         ElementPlusResolver(), 
         // 自动导入 icon
-        IconsResolver({prefix: 'Icon'})
+        IconsResolver({prefix: 'Icon'}),
       ]
     }),
     
@@ -31,4 +32,9 @@ export default defineConfig({
       autoInstall: true,
     })
   ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  }
 })

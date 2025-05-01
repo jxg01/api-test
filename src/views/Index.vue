@@ -31,14 +31,10 @@
             </el-scrollbar>
         </div>
         <div class="right-content">
-            <el-header>
-                <div class="header-right">
-                    <el-icon><i-ep-user /></el-icon>
-                    <span class="username">倾丶几回断肠</span>
-                    <el-button type="info">退出登录</el-button>
-                    <!-- <el-link>退出登录</el-link> -->
-                </div>
+            <el-header style="text-align: right; font-size: 22px;">
+                <BaseHeader :name="name" @logout="logout" />
             </el-header>
+
             <el-main>
                 <RouterView></RouterView>
             </el-main>
@@ -46,28 +42,32 @@
     </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, watch } from 'vue'
+<script setup lang="ts">
+import { ref, watch } from 'vue'
 import {useRouter,useRoute} from 'vue-router'
+import BaseHeader from '../components/BaseHeader.vue'
+import { useUserStore } from '@/stores/user'
 
-export default defineComponent({
-    setup(){
-        const router = useRouter()
-        const route = useRoute()
-        const myRouters = router.getRoutes()
-        .filter(v => {
-            return v.meta.isShow == true
-        })
-        const activeMenu = ref<string>(route.path);
-        watch(() => route.path, (newPath) => {
-            activeMenu.value = newPath
-        })
-        return {
-            activeMenu,
-            myRouters,
-        }
-    },
+const userStore = useUserStore()
+
+const name = ref(localStorage.getItem('username') ||'倾丶几回断肠')
+
+const router = useRouter()
+const route = useRoute()
+const myRouters = router.getRoutes()
+.filter(v => {
+    return v.meta.isShow == true
 })
+
+const activeMenu = ref<string>(route.path);
+watch(() => route.path, (newPath) => {
+    activeMenu.value = newPath
+})
+
+const logout = () => {
+    userStore.logout()
+    router.push('/login');
+}
 
 </script>
 
@@ -96,11 +96,9 @@ export default defineComponent({
 }
 
 .el-header {
-    background-color: cornsilk;
-}
-
-.username {
-    padding: 0 20px 0 5px;
-}
+        background-color:#d4e6e6;
+        color: #333;
+        line-height: 60px;
+    }
 
 </style>

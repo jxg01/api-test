@@ -39,8 +39,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { userApi } from '../api'
+import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+const router = useRouter()
 
 interface LoginForm  {
     username: string,
@@ -62,9 +68,6 @@ const InitRegisterForm: RegisterForm = {
     password: ''
 }
 
-const router = useRouter()
-
-
 const loginFormData = ref<LoginForm>(InitLoginForm);
 const registerDialogVisible = ref<boolean>(false);
 const registerFormData = ref<RegisterForm>(InitRegisterForm);
@@ -75,9 +78,16 @@ const rules = {
     password: [{required: true, message: '请输入项目地址', trigger: 'blur'}],
 };
 
-const submitLogin = () => {
-    console.log('提交表单', loginFormData)
+// 带类型提示的调用
+const submitLogin = async () => {
+  try {
+    const res = await userApi.login(InitLoginForm)
+    ElMessage.success(res.message)
+    userStore.setToken(res.data.access, res.data.username)
     router.push('/index')
+  } catch (error) {
+    console.log('in catch -> ', error)
+  }
 }
 
 const showRegisterDialog = () => {

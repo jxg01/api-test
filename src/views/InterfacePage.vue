@@ -1,166 +1,129 @@
 <template>
-    <div>
-        <div class="toolBar">
-            <el-input v-model="searchVal" class="searchInput"></el-input>
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button type="primary" @click="openAddDialog">添加</el-button>
-        </div>
-        <el-table :data="pageData" border>
-            <el-table-column prop="id" label="编号" width="60"></el-table-column>
-            <el-table-column prop="api_name" label="接口名称"></el-table-column>
-            <el-table-column prop="path" label="接口路径"></el-table-column>
-            <el-table-column prop="method" label="请求方式"></el-table-column>
-            <el-table-column prop="owner" label="创建人"></el-table-column>
-            <el-table-column prop="create_at" label="创建时间"></el-table-column>
-            <el-table-column prop="update_at" label="修改时间"></el-table-column>
-            <el-table-column label="操作" width="135">
-                <template #default="scoped">
-                    <el-button type="primary" size="small" @click="openEditDialog(scoped.$index, scoped.row)">编辑</el-button>
-                    <el-button type="danger" size="small" @click="openDeleteDialog(scoped.row)">删除</el-button>
+    <div class="txx">
+        <el-table
+            :data="items"
+            style="width: 100%"
+            :row-class-name="tableRowClassName"
+            >
+            <el-table-column prop="date" label="Date" width="180" />
+            <el-table-column prop="name" label="Name" width="180" />
+            <el-table-column prop="address" label="Address" />
+
+            <el-table-column fixed="right" label="Operations" min-width="120">
+                <template #default="scope">
+                    <el-button
+                    link
+                    type="primary"
+                    size="small"
+                    @click.prevent="deleteRow(scope.$index)"
+                    >
+                    Remove
+                    </el-button>
+
+                    <el-icon @click="moveUp(scope.$index)" v-show="scope.$index"><CaretTop /></el-icon>
+
+                    <!-- <el-button type="primary" @click="moveUp(scope.$index)">Up</el-button> -->
+
+                        
+                    <el-icon @click="moveDown(scope.$index)" v-show="scope.$index !== items.length - 1"><CaretBottom /></el-icon>
+
+                    <!-- <el-button @click="moveDown(scope.$index)">Down </el-button> -->
                 </template>
             </el-table-column>
         </el-table>
-        <div class="pagination">
-            <el-pagination
-                layout="total, size, prev, pager, next, jumper"
-                v-model:current-page="currentPage"
-                v-model:page-size="pageSize"
-                :total="filterData.length"
-                :current-change="handlePageChange"
-                background
-            ></el-pagination>
-        </div>
-        <AddInterFaceDialog v-model:dialog-visible="dialogVisible" v-model:is-edit="isEdit" v-model:form-data="dialogData"></AddInterFaceDialog>
-        <commonDialog v-model:deleteDialogVisible="deleteDialogVisible" v-model:form-data="dialogData"></commonDialog>
     </div>
-</template>
+  </template>
 
-<script lang="ts">
-import { computed, defineComponent, ref, watch } from 'vue'
-import AddInterFaceDialog from '../components/AddInterFaceDialog.vue';
-import CommonDialog from '../components/CommonDialog.vue'
+  <script setup>
+  import { reactive, ref } from 'vue';
 
-interface ApiData {
-    id: number,
-    api_name: string,
-    path: string,
-    method: string,
-    owner: string,
-    create_at: string,
-    update_at: string,
+  const items = ref([
+  {
+    date: '2016-05-03',
+    name: 'Tom',
+    address: 'No. 189, Grove St, Los Angeles',
+  },
+  {
+    date: '2016-05-02',
+    name: 'Tom',
+    address: 'No. 189, Grove St, Los Angeles',
+  },
+  {
+    date: '2016-05-04',
+    name: 'Tom',
+    address: 'No. 189, Grove St, Los Angeles',
+  },
+  {
+    date: '2016-05-01',
+    name: 'Tom',
+    address: 'No. 189, Grove St, Los Angeles',
+  },
+])
+
+const tableRowClassName = ({
+  row,
+  rowIndex,
+}) => {
+  if (rowIndex === 1) {
+    return 'warning-row'
+  } else if (rowIndex === 2 || rowIndex === 3) {
+    return 'success-row'
+  }
+  return ''
 }
+   
+  const push_data = reactive({
+    case_id: 1,
+    order: 1,
+  });
+   
+  function moveUp(index) {
+    console.log('index => ', index)
+    if (index > 0) {
+      const item = items.value[index];
+      items.value.splice(index, 1); // 移除当前项
+      items.value.splice(index - 1, 0, item); // 在上一位置插入项
+    }
+  }
+   
+  function moveDown(index) {
+    if (index < items.value.length - 1) {
+      const item = items.value[index];
+      items.value.splice(index, 1); // 移除当前项
+      items.value.splice(index + 1, 0, item); // 在下一位置插入项
+    }
+  }
 
-const ApiFormData: ApiData = {
-    id: 0,
-    api_name: '',
-    path: '',
-    method: '',
-    owner: '',
-    create_at: '',
-    update_at: '',
-}
-
-
-export default defineComponent({
-    components: {
-        AddInterFaceDialog,
-        CommonDialog
-    },
-    setup(){
-    
-        const searchVal = ref<string>('');
-        const dialogVisible = ref<boolean>(false);
-        const deleteDialogVisible = ref<boolean>(false);
-        const dialogData = ref<ApiData>(ApiFormData)
-        const isEdit = ref<boolean>(false);
-
-        const currentPage = ref<number>(1);
-        const pageSize = ref<number>(10);
-        const tableData = ref<ApiData[]>([
-            {'id': 1, 'api_name': '获取用户', 'path': '/getUser/getPromotionDetail/isaid', 'method': 'get', 'owner': 'eddy', 'create_at': '2023-03-13 20:00:00', 'update_at': '2023-03-13 23:00:00'},
-            {'id': 2, 'api_name': '编辑用户', 'path': '/editUser', 'method': 'post', 'owner': 'eddy', 'create_at': '2023-03-13 20:00:00', 'update_at': '2023-03-13 23:00:00'},
-        ]);
-
-        const handleSearch = () => {
-            console.log('搜索 >> ', searchVal.value)
-        };
-
-        const handlePageChange = (page: number) => {
-            currentPage.value = page
-        };
-
-        const filterData = computed(() => {
-            return tableData.value.filter((item) => {
-                return item.api_name.includes(searchVal.value.trim());
-            });
-        });
-        const pageData = computed(() => {
-            const start = (currentPage.value - 1) * pageSize.value;
-            const end = start + pageSize.value;
-            return filterData.value.slice(start, end);
-        })
-
-        const openAddDialog = () => {
-            isEdit.value = false;
-            dialogVisible.value = true;
-            dialogData.value = ApiFormData
-            console.log('in open', dialogVisible.value)
-        };
-
-        const openEditDialog = (index: Number, row: ApiData) => {
-            isEdit.value = true;
-            dialogVisible.value = true;
-            console.log('row data: ', row)
-            dialogData.value = row
+    function deleteRow(index) {
+        console.log('item => ', items.value)
+        for (let i = 0; i < items.value.length; i++) {
+            if (i === index) {
+                items.value.splice(i, 1);
+            }
+            console.log('items.value => ', items.value)
         }
-        const openDeleteDialog = (row: ApiData) => {
-            deleteDialogVisible.value = true
-            dialogData.value = row
-            console.log('click delete button  => ', deleteDialogVisible.value)
-        }
-        
-
-        return {
-            searchVal,
-            pageData,
-            currentPage,
-            pageSize,
-            handleSearch,
-            filterData,
-            handlePageChange,
-            dialogVisible,
-            isEdit,
-            dialogData,
-            openAddDialog,
-            openEditDialog,
-            openDeleteDialog,
-            deleteDialogVisible
-        };
-
-    },
+    }
 
 
-})
-
-</script>
-
-<style scoped>
-.toolBar {
-    display: flex;
-    margin-bottom: 20px;
+  </script>
+  
+  <style scoped>
+  table {
     width: 100%;
-}
-
-.pagination {
-    /* display + justify-content => 组合写可以指定元素位置 */
-    display: flex;
-    justify-content: start;
+    border-collapse: collapse;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  button {
+    margin-right: 5px;
+  }
+  .txx {
     padding: 20px;
-}
-
-.searchInput {
-    padding-right: 3px;
-    width: 150px;
-}
-
-</style>
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    color: black;
+  }
+  </style>

@@ -11,10 +11,14 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.1.0",
     "axios": "^1.7.7",
+    "draggable": "^4.2.0",
     "element-plus": "^2.2.33",
+    "path": "^0.12.7",
+    "pinia": "^3.0.1",
     "unplugin-icons": "^0.15.3",
     "vue": "^3.2.45",
     "vue-router": "^4.1.6",
+    "vuedraggable": "^2.24.3",
     "vuex": "^4.1.0"
   },
   "devDependencies": {
