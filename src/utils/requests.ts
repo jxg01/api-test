@@ -38,13 +38,12 @@ let isRedirecting = false
 
 // 响应拦截器
 service.interceptors.response.use((response: AxiosResponse) => {
+  if (!('code' in response) && typeof response === 'object') {response}
     const data = response.data
     console.log('response => ', data)
-    console.log('response ccee => ', data.code)
     // 判断是否包含错误码
-    console.log('response data => ', data)
     if (typeof data === 'object' && data !== null && 'code' in data) {
-      console.log('in if code in data')
+      console.log('response error code => ', data.code)
       if (data.code !== 0) {  
         if (data.code === 'token_not_valid' || data.code === 401) {
           console.log('in if code token_not_valid')
@@ -63,11 +62,11 @@ service.interceptors.response.use((response: AxiosResponse) => {
         const errorMessage = data.message || DEFAULT_ERROR_MESSAGE
         ElMessage.error(errorMessage)
         return Promise.reject(errorMessage)
-    }
+      }
     // 接口成功，直接返回数据
     return data
 
-  //   // 情况1：存在错误码（业务失败）
+    //   // 情况1：存在错误码（业务失败）
   //   if (typeof data === 'object' && data !== null && 'code' in data) {
   //     if (data.code === 'token_not_valid') {
   //       console.log('in else if code token ')
@@ -102,7 +101,7 @@ service.interceptors.response.use((response: AxiosResponse) => {
 
   //   // 情况2：直接返回业务数据（场景1）
   //   return data
-  }
+    }
   return data
 },
   (error) => {
@@ -155,7 +154,10 @@ export const http = {
     request<T>({ ...config, url, method: 'PUT', data }),
 
   delete: <T = any>(url: string, params?: object, config?: AxiosRequestConfig) => 
-    request<T>({ ...config, url, method: 'DELETE', params })
+    request<T>({ ...config, url, method: 'DELETE', params }),
+
+  patch: <T = any>(url: string, data?: object, config?: AxiosRequestConfig) =>
+    request<T>({ ...config, url, method: 'PATCH', data })
 }
 
 export default http
