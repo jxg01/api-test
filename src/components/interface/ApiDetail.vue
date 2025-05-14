@@ -1,12 +1,6 @@
 <template>
     <div class="api-detail-container">
       <div class="request-line">
-        <el-input 
-          v-model="localDetail.name"
-          class="path-input1"
-          placeholder="请输入接口路径" 
-          style="width: 220px;"
-          />
         <el-button type="primary" @click="handleSaveInterface">保存</el-button>
       </div>
       <!-- 请求行 -->

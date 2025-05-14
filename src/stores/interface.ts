@@ -126,30 +126,46 @@ export const useInterfaceStore = defineStore('interface', {
     deleteModule(moduleId: number) {
       this.treeData = this.treeData.filter(m => m.id !== moduleId)
     },
-    // 编辑 tree name, node or case
-    editNode(node: number, newName: string, type: 'node' | 'case') {
-      console.log('Editing1 node:', node, 'to new name:', newName, 'type:', type)
-      console.log('this tabs:', this.tabs)
-      if (type === 'case') {
-        const tab = this.tabs.filter(t => t.detail.id === node)
-        if (tab) {
-          tab.label = newName 
-          console.log('tab111:', tab.label)
-        }
-      } else {
-        // 编辑模块名称
-        console.log('Editing node:', node, 'to new name:', newName)
-        const res = interfaceApi.reNameModule(node, { name: newName })
-        console.log('res for rename:', res)
 
-        const index = this.treeData.findIndex(n => n.id === node)
-        if (index !== -1) {
-          this.treeData[index].label = newName
-        }
+    // 编辑节点名称（同步更新标签页）
+    editNode(nodeId: number, newName: string, type: 'node' | 'case') {
+      try {
+        if (type === 'node') {
+          interfaceApi.renameModule(nodeId, { name: newName })
+          // 更新树形数据
+          const updateTree = (nodes: TreeNode[]): TreeNode[] => 
+            nodes.map(node => {
+              if (node.id === nodeId) {
+                node.label = newName
+              } else if (node.children) {
+                node.children = updateTree(node.children)
+              }
+              return node
+            })
+          this.treeData = updateTree(this.treeData)
+        } else {
+          interfaceApi.renameInterface(nodeId, { name: newName })
+          // 更新标签页名称
+          this.tabs = this.tabs.map(tab => 
+            tab.detail.id === nodeId ? { ...tab, label: newName } : tab
+          )
+          if (this.selectedProjectId) {
+            this.fetchModules(this.selectedProjectId)
+          }
+        }  
+      } catch (error) {
+        console.error('重命名失败:', error)
+        throw error
       }
-      
     },
+  
+  
+  
+  
+  
+  
+  }
 
     
-  }
+
 })
