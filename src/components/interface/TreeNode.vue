@@ -16,6 +16,7 @@
             @keyup.enter="handleSave"
             @keydown.esc="cancelEdit"
             :maxlength="50"
+            @click.stop
           />
         </template>
         <template v-else>
@@ -28,7 +29,8 @@
             <span class="label-text">{{ node.label }}</span>
           </el-tooltip>
           <el-dropdown trigger="click">
-            <el-icon class="more-btn"><more-filled /></el-icon>
+            <!-- 使用 click.stop 来阻止事件冒泡，不会触发上级元素的点击事件 -->
+            <el-icon class="more-btn" @click.stop><more-filled /></el-icon>
             <template #dropdown>
               <el-dropdown-menu>
                 <template v-if="data.type === 'node'">
