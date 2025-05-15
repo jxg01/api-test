@@ -16,19 +16,19 @@ export const interfaceApi = {
   
     /** 编辑接口 */
     updateInterface: (id: Number, params: Object) => 
-      http.put<BaseResponse>(`/interfaces/${id}/`, params),
+      http.put(`/interfaces/${id}/`, params),
 
     renameInterface: (id: number, params: any) =>
-      http.patch<BaseResponse>(`/interfaces/${id}/`, params),
+      http.patch(`/interfaces/${id}/`, params),
   
     /** 删除接口 */
     deleteInterface: (id: number) => 
-      http.delete<BaseResponse>(`/interfaces/${id}/`),
+      http.delete(`/interfaces/${id}/`),
 
     getModuleList: (params: any) =>
         http.get('/modules/', params),
 
     renameModule: (id: number, params: any) =>
-        http.patch<BaseResponse>(`/modules/${id}/`, params),
+        http.patch(`/modules/${id}/`, params),
   }
   

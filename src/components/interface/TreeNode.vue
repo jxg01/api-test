@@ -1,78 +1,67 @@
 <template>
   <div class="tree-node">
     <div class="node-content">
-      <el-icon :class="data.type">
+      <el-icon :class="data.type" :data-type="data.type">
         <component :is="data.type === 'case' ? 'Document' : 'Folder'" />
       </el-icon>
-      <span>{{ node.label }}</span>
-    </div>
-
-    <div class="node-actions">
-      <el-dropdown 
-        ref="dropdownRef"
-        trigger="click" 
-        placement="bottom-end"
-        @command="handleCommand"
-        :hide-on-click="false"
-      >
-        <el-button type="info" size="small" circle @click.stop>
-          <el-icon><MoreFilled /></el-icon>
-        </el-button>
-
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="rename" @click.stop="() => {}">重命名</el-dropdown-item>
-            <template v-if="data.type === 'node'">
-              <el-dropdown-item command="addModule">添加模块</el-dropdown-item>
-              <el-dropdown-item command="addInterface">添加接口</el-dropdown-item>
-            </template>
-            <el-dropdown-item 
-              command="delete" 
-              divided
-              style="color: #F56C6C;"
-            >
-              <span style="color: #F56C6C;">删除</span>
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
-    </div>
-
-    <!-- 重命名弹窗 -->
-    <el-dialog
-      v-model="renameDialogVisible"
-      title="重命名"
-      width="30%"
-      @closed="handleDialogClose"
-      append-to-body
-    >
-      <el-form @click.stop>
-        <el-form-item label="新名称">
-          <el-input 
-            v-model="newLabel" 
-            ref="renameInput"
-            placeholder="请输入新名称"
-            clearable
-            @click.stop
-          />
-        </el-form-item>
-      </el-form>
       
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="renameDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleRenameSubmit">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+      <!-- 可编辑的节点名称 -->
+      <div class="node-label">
+        <template v-if="isEditing">
+          <el-input 
+            ref="nameInput"
+            v-model="newLabel"
+            size="small"
+            @blur="handleSave"
+            @keyup.enter="handleSave"
+            @keydown.esc="cancelEdit"
+            :maxlength="50"
+          />
+        </template>
+        <template v-else>
+          <el-tooltip 
+            effect="dark" 
+            :content="node.label" 
+            placement="top"
+            :disabled="!isLabelOverflow"
+          >
+            <span class="label-text">{{ node.label }}</span>
+          </el-tooltip>
+          <el-dropdown trigger="click">
+            <el-icon class="more-btn"><more-filled /></el-icon>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <template v-if="data.type === 'node'">
+                  <el-dropdown-item @click="store.addModule">添加模块</el-dropdown-item>
+                  <el-dropdown-item @click="store.addInterface">添加接口</el-dropdown-item>
+                </template>
+                <el-dropdown-item @click="startEditing">重命名</el-dropdown-item>
+                <el-dropdown-item divided @click="handleDelete">删除</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { MoreFilled } from '@element-plus/icons-vue'
 import { useInterfaceStore } from '@/stores/interface'
-import { ElMessage, ElDropdown } from 'element-plus'
+import { ElMessage, ElDropdown, ElMessageBox } from 'element-plus'
+
+// 添加文本溢出检测
+const labelRef = ref<HTMLElement>()
+const isLabelOverflow = ref(false)
+
+onMounted(() => {
+  if (labelRef.value) {
+    isLabelOverflow.value = 
+      labelRef.value.scrollWidth > labelRef.value.clientWidth
+  }
+})
 
 const props = defineProps({
   node: {
@@ -88,79 +77,73 @@ const props = defineProps({
 
 const emit = defineEmits(['delete', 'add-module', 'add-interface'])
 
-// 弹窗控制
-const renameDialogVisible = ref(false)
+// 编辑状态控制
+const isEditing = ref(false)
 const newLabel = ref('')
-const renameInput = ref()
-const dropdownRef = ref<InstanceType<typeof ElDropdown>>()
+const nameInput = ref<HTMLInputElement>()
 const store = useInterfaceStore()
 
-// 处理下拉菜单命令
-const handleCommand = (command: string) => {
-  dropdownRef.value?.handleClose()
-  switch (command) {
-    case 'rename':
-      newLabel.value = props.data.label
-      renameDialogVisible.value = true
-      nextTick(() => {
-        renameInput.value?.focus()
-        renameInput.value?.select()
-      })
-      break
-    case 'addModule':
-      emit('add-module', props.data.id)
-      break
-    case 'addInterface':
-      emit('add-interface', props.data.id)
-      break
-    case 'delete':
-      handleDelete()
-      break
-  }
+// 进入编辑模式
+const startEditing = () => {
+  newLabel.value = props.data.label
+  isEditing.value = true
+  nextTick(() => {
+    if (nameInput.value) {
+      nameInput.value.focus()
+      nameInput.value.select()
+    }
+  })
 }
 
-// 提交重命名
-const handleRenameSubmit = async () => {
+// 保存修改
+const handleSave = async () => {
   if (!newLabel.value.trim()) {
     ElMessage.warning('名称不能为空')
     return
   }
-
   try {
-    await store.editNode(props.data.id, newLabel.value, props.data.type)
-    ElMessage.success('重命名成功')
-    renameDialogVisible.value = false
+    await store.renameNode(props.data.id, newLabel.value, props.data.type)
+    isEditing.value = false
   } catch (error) {
     ElMessage.error('重命名失败')
-    console.error('重命名失败:', error)
+    // 恢复原始值
+    newLabel.value = props.data.label
+    isEditing.value = false
+    console.log('重命名失败', error)
   }
 }
 
-// 关闭弹窗时重置
-const handleDialogClose = () => {
+// 取消编辑
+const cancelEdit = () => {
+  isEditing.value = false
   newLabel.value = props.data.label
 }
 
-// 删除处理（保持不变）
+// 删除处理
 const handleDelete = async () => {
   try {
-    await store.deleteNode(props.data.id)
+    await ElMessageBox.confirm(`确认删除 ${props.data.label} 吗？`, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
+    // await store.deleteNode(props.data.id)
     ElMessage.success('删除成功')
   } catch (error) {
-    ElMessage.error('删除失败')
+    // ElMessage.error('删除失败')
+    console.log('删除失败', error)
   }
 }
 </script>
 
-<style scoped>
-/* 保持原有样式不变 */
+<style scoped lang="scss">
 .tree-node {
   display: flex;
   align-items: center;
-  width: 100%;
+  width: 90%;
   padding: 4px 0;
   
-  &:hover .node-actions {
+  &:hover .more-btn {
     opacity: 1;
   }
 }
@@ -170,6 +153,7 @@ const handleDelete = async () => {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   
   .el-icon {
     color: #e6a23c;
@@ -180,21 +164,28 @@ const handleDelete = async () => {
   }
 }
 
-.node-actions {
-  opacity: 0;
-  transition: opacity 0.2s;
+.node-label {
+  flex: 1;
   display: flex;
-  gap: 4px;
-  margin-left: auto;
-  padding-right: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+
+  .label-text {
+    min-width: 0; /* 关键属性2：允许文本容器收缩 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .more-btn {
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
 }
 
-/* 弹窗样式优化 */
-:deep(.el-dialog__body) {
-  padding: 20px;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 0;
-}
 </style>

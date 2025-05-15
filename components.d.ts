@@ -88,6 +88,7 @@ declare module '@vue/runtime-core' {
     ProjectTree: typeof import('./src/components/interface/ProjectTree.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TemTest: typeof import('./src/components/interface/temTest.vue')['default']
     TreeNode: typeof import('./src/components/interface/TreeNode.vue')['default']
     UserFormDialog: typeof import('./src/components/UserFormDialog.vue')['default']
     VariableDialog: typeof import('./src/components/VariableDialog.vue')['default']

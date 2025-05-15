@@ -128,36 +128,95 @@ export const useInterfaceStore = defineStore('interface', {
     },
 
     // 编辑节点名称（同步更新标签页）
-    editNode(nodeId: number, newName: string, type: 'node' | 'case') {
+    async renameNode(nodeId: number, newName: string, type: 'node' | 'case') {
       try {
         if (type === 'node') {
-          interfaceApi.renameModule(nodeId, { name: newName })
-          // 更新树形数据
-          const updateTree = (nodes: TreeNode[]): TreeNode[] => 
-            nodes.map(node => {
-              if (node.id === nodeId) {
-                node.label = newName
-              } else if (node.children) {
-                node.children = updateTree(node.children)
-              }
-              return node
-            })
-          this.treeData = updateTree(this.treeData)
-        } else {
-          interfaceApi.renameInterface(nodeId, { name: newName })
-          // 更新标签页名称
-          this.tabs = this.tabs.map(tab => 
-            tab.detail.id === nodeId ? { ...tab, label: newName } : tab
-          )
-          if (this.selectedProjectId) {
-            this.fetchModules(this.selectedProjectId)
+          const res = await interfaceApi.renameModule(nodeId, { name: newName })
+          console.log('重命名模块:', res)
+          if (res.name) {
+            console.log('重命名模块成功:', res.name)
+            // 更新树形数据
+            const updateTree = (nodes: TreeNode[]): TreeNode[] => 
+              nodes.map(node => {
+                if (node.id === nodeId) {
+                  node.label = newName
+                } else if (node.children) {
+                  node.children = updateTree(node.children)
+                }
+                return node
+              })
+            this.treeData = updateTree(this.treeData)
           }
-        }  
+        } else {
+          const res = await interfaceApi.renameInterface(nodeId, { name: newName })
+          console.log('重命名接口:', res)
+          if (res.name) {
+            console.log('重命名接口？？？？？？？:', res)
+            // 更新标签页名称
+            this.tabs = this.tabs.map(tab => 
+              tab.detail.id === nodeId ? { ...tab, label: newName } : tab
+            )
+            if (this.selectedProjectId) {
+              this.fetchModules(this.selectedProjectId)
+            }
+          }
+        }
       } catch (error) {
         console.error('重命名失败:', error)
-        throw error
+        // throw error
       }
     },
+
+    // 添加接口
+      // 添加接口（需关联模块）
+    async addInterface(moduleId: number) {
+      try {
+        // 调用 API 创建接口
+        const newInterface = await interfaceApi.createInterface({
+          module_id: moduleId,
+          name: '新建接口',
+          method: 'GET',
+          path: '/api/example'
+        })
+
+        // 更新树形数据
+        const addCaseToTree = (nodes: TreeNode[]): TreeNode[] => {
+          return nodes.map(node => {
+            if (node.id === moduleId) {
+              node.children = node.children || []
+              node.children.push({
+                id: newInterface.id,
+                label: newInterface.name,
+                type: 'case',
+                originData: newInterface
+              })
+            } else if (node.children) {
+              node.children = addCaseToTree(node.children)
+            }
+            return node
+          })
+        }
+
+        this.treeData = addCaseToTree(this.treeData)
+
+        // 自动打开新接口的标签页
+        this.addTab({
+          id: newInterface.id,
+          label: newInterface.name,
+          detail: {
+            id: newInterface.id,
+            method: newInterface.method,
+            path: newInterface.path,
+            headers: newInterface.headers || {},
+            params: newInterface.params || {}
+          }
+        })
+      } catch (error) {
+        console.error('添加接口失败:', error)
+        throw error
+      }
+  },
+
   
   
   

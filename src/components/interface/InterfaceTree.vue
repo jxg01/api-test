@@ -4,6 +4,9 @@
       :filter-node-method="filterNode"
       @node-click="handleNodeClick"
       ref="treeRef"
+      :expand-on-click-node="false"
+      :highlight-current="true"
+      :default-expand-all="true"
     >
       <template #default="{ node, data }">
         <TreeNode :node="node" :data="data" @delete="handleDelete" />
