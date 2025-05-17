@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { projectApi, interfaceApi } from '@/api/'
+import { all } from 'axios'
 
 // 类型定义
 interface Project {
@@ -41,7 +42,8 @@ export const useInterfaceStore = defineStore('interface', {
     treeData: [] as TreeNode[],         // 树形数据
     tabs: [] as InterfaceTab[],         // 标签页列表
     activeTabId: null as number | string | null, // 当前激活的标签页ID
-    searchText: ''                     // 搜索文本
+    searchText: '',                     // 搜索文本
+    allLevelModules: [], // 所有模块数据
   }),
 
   getters: {
@@ -63,6 +65,15 @@ export const useInterfaceStore = defineStore('interface', {
       }
     },
 
+    async fetchAllLevelModules(project_id: number) {
+      try {
+        const res = await interfaceApi.getModuleAll({'project_id': project_id})
+        this.allLevelModules = res.data
+      } catch (error) {
+        console.error('获取全部模块数据失败:', error)
+      }
+    },
+
     // 获取模块数据
     async fetchModules(projectId: number) {
       try {
@@ -70,7 +81,6 @@ export const useInterfaceStore = defineStore('interface', {
         this.treeData = this.normalizeTree(res.data)
       } catch (error) {
         console.error('获取模块数据失败:', error)
-        throw error
       }
     },
 
@@ -111,30 +121,42 @@ export const useInterfaceStore = defineStore('interface', {
     },
 
     // 添加模块
-    addModule(module: TreeNode) {
-      this.treeData.push(module)
-    },
+    async addModule(data: any) {
+      try {
+        const res = await interfaceApi.createModule(data)
+        const newModule: TreeNode = {
+          id: res.id,
+          label: res.name,
+          type: 'node',
+          children: []
+        }
+        this.fetchModules(this.selectedProjectId || 0)
 
-    // 更新模块
-    updateModule(module: TreeNode) {
-      const index = this.treeData.findIndex(m => m.id === module.id)
-      if (index !== -1) {
-        this.treeData[index] = module
+      } catch (error) {
+        console.error('添加模块失败:', error)
       }
     },
+
     // 删除模块
-    deleteModule(moduleId: number) {
-      this.treeData = this.treeData.filter(m => m.id !== moduleId)
+    async deleteModule(moduleId: number, type: 'node' | 'case') {
+      try {
+        const action = type === 'node'
+        ? interfaceApi.deleteModule(moduleId)
+        : interfaceApi.deleteInterface(moduleId)
+        await action
+        this.fetchModules(this.selectedProjectId || 0)
+      } catch (error) {
+        console.error('删除模块失败:', error)
+      }
     },
+
 
     // 编辑节点名称（同步更新标签页）
     async renameNode(nodeId: number, newName: string, type: 'node' | 'case') {
       try {
         if (type === 'node') {
           const res = await interfaceApi.renameModule(nodeId, { name: newName })
-          console.log('重命名模块:', res)
           if (res.name) {
-            console.log('重命名模块成功:', res.name)
             // 更新树形数据
             const updateTree = (nodes: TreeNode[]): TreeNode[] => 
               nodes.map(node => {
@@ -149,12 +171,10 @@ export const useInterfaceStore = defineStore('interface', {
           }
         } else {
           const res = await interfaceApi.renameInterface(nodeId, { name: newName })
-          console.log('重命名接口:', res)
           if (res.name) {
-            console.log('重命名接口？？？？？？？:', res)
             // 更新标签页名称
             this.tabs = this.tabs.map(tab => 
-              tab.detail.id === nodeId ? { ...tab, label: newName } : tab
+              tab.detail.id === nodeId ? { ...tab, label: newName, detail: {...tab.detail, name: newName} } : tab
             )
             if (this.selectedProjectId) {
               this.fetchModules(this.selectedProjectId)
@@ -163,68 +183,46 @@ export const useInterfaceStore = defineStore('interface', {
         }
       } catch (error) {
         console.error('重命名失败:', error)
-        // throw error
       }
     },
 
-    // 添加接口
-      // 添加接口（需关联模块）
-    async addInterface(moduleId: number) {
+    async handleSaveInterface(localDetail: any) {
       try {
-        // 调用 API 创建接口
-        const newInterface = await interfaceApi.createInterface({
-          module_id: moduleId,
-          name: '新建接口',
-          method: 'GET',
-          path: '/api/example'
-        })
-
-        // 更新树形数据
-        const addCaseToTree = (nodes: TreeNode[]): TreeNode[] => {
-          return nodes.map(node => {
-            if (node.id === moduleId) {
-              node.children = node.children || []
-              node.children.push({
-                id: newInterface.id,
-                label: newInterface.name,
-                type: 'case',
-                originData: newInterface
-              })
-            } else if (node.children) {
-              node.children = addCaseToTree(node.children)
-            }
-            return node
-          })
+        if (!localDetail.name.trim()) {
+          
+          return '接口名称不能为空'
         }
+        if (!localDetail.path.trim()) {
+          return '接口路径不能为空'
+        }
+        const action = localDetail.id === -1 
+        ? await interfaceApi.createInterface(localDetail)
+        : await interfaceApi.updateInterface(localDetail.id, localDetail)
+        
+        const res = await action
 
-        this.treeData = addCaseToTree(this.treeData)
-
-        // 自动打开新接口的标签页
-        this.addTab({
-          id: newInterface.id,
-          label: newInterface.name,
-          detail: {
-            id: newInterface.id,
-            method: newInterface.method,
-            path: newInterface.path,
-            headers: newInterface.headers || {},
-            params: newInterface.params || {}
-          }
-        })
+        if (res) {
+          // 更新树形数据
+          this.fetchModules(this.selectedProjectId || 0)
+          this.tabs = this.tabs.map(tab => {
+            if (tab.detail.id === localDetail.id) {
+              tab.detail = {
+                id: res.id,
+                name: res.name,
+                path: res.path,
+                method: res.method,
+              }
+              tab.label = res.name
+              tab.id = res.id
+            }
+            return tab
+          })
+          this.activeTabId = res.id
+        }
+        return '接口已保存！'
       } catch (error) {
-        console.error('添加接口失败:', error)
-        throw error
+        console.log('保存接口失败:', error)
       }
-  },
-
-  
-  
-  
-  
-  
-  
+    },
   }
-
-    
-
 })

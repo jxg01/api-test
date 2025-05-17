@@ -34,8 +34,8 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <template v-if="data.type === 'node'">
-                  <el-dropdown-item @click="store.addModule">添加模块</el-dropdown-item>
-                  <el-dropdown-item @click="store.addInterface">添加接口</el-dropdown-item>
+                  <el-dropdown-item @click="openAddDialog">添加模块</el-dropdown-item>
+                  <el-dropdown-item @click="addInterface">添加接口</el-dropdown-item>
                 </template>
                 <el-dropdown-item @click="startEditing">重命名</el-dropdown-item>
                 <el-dropdown-item divided @click="handleDelete">删除</el-dropdown-item>
@@ -45,6 +45,15 @@
         </template>
       </div>
     </div>
+
+    <BaseDialog 
+      ref="dialogRef"
+      :fields="formFields"
+      :rules="formRules"
+      title="模块"
+      @submit="handleSubmit"
+      @click.stop />
+
   </div>
 </template>
 
@@ -53,6 +62,41 @@ import { ref, nextTick, onMounted } from 'vue'
 import { MoreFilled } from '@element-plus/icons-vue'
 import { useInterfaceStore } from '@/stores/interface'
 import { ElMessage, ElDropdown, ElMessageBox } from 'element-plus'
+import BaseDialog from '@/components/BaseDialog.vue'
+
+  // 表单配置 =================================================================
+  const dialogRef = ref()
+  const formFields = [
+    { 
+      prop: 'name', 
+      label: '模块名称',
+      component: ElInput,
+      attrs: { placeholder: '请输入模块名称' } 
+    },
+  ]
+  const formRules = {
+    name: [
+      { required: true, message: '请输入模块名称', trigger: 'blur' },
+      { min: 2, max: 30, message: '长度在2-30个字符', trigger: ['blur', 'change'] }
+    ]
+  }
+  // 表单提交
+  const handleSubmit = async (data: any, mode: 'add', done: (success?: boolean) => void) => {
+    try {
+      console.log('提交数据', props.data)
+      await store.addModule({
+        name: data.name,
+        project: store.selectedProjectId,
+        parent_module: props.data.id
+      })
+      ElMessage.success('模块添加成功')
+      done(true)
+    } catch (error) {
+      ElMessage.error(error.message || '操作失败')
+      done(false)
+    }
+  }
+  const openAddDialog = () => dialogRef.value?.open('add', {})
 
 // 添加文本溢出检测
 const labelRef = ref<HTMLElement>()
@@ -76,8 +120,6 @@ const props = defineProps({
     validator: (value) => ['node', 'case'].includes(value.type)
   }
 })
-
-const emit = defineEmits(['delete', 'add-module', 'add-interface'])
 
 // 编辑状态控制
 const isEditing = ref(false)
@@ -121,6 +163,47 @@ const cancelEdit = () => {
   newLabel.value = props.data.label
 }
 
+// 更新树形数据
+const addCaseToTree = (nodes: TreeNode[], newTabData: any): TreeNode[] => {
+  return nodes.map(node => {
+    if (node.id === props.data.id) {
+      node.children = node.children || []
+      node.children.push({
+        id: newTabData.id,
+        label: newTabData.label,
+        type: 'case',
+        originData: newTabData
+      })
+    } else if (node.children) {
+      node.children = addCaseToTree(node.children, newTabData)
+    }
+    return node
+  })
+}
+
+// 添加接口 区域展示
+const addInterface = () => {
+  try {
+    const tem_id = -1
+    const newTab = {
+      'id': tem_id,
+      'label': '新建接口',
+      'detail': {
+        'method': 'GET',
+        'path': '',
+        'module': props.data.id,
+        'name': '新建接口',
+        'id': tem_id
+      }
+    }
+    store.addTab(newTab)
+    // 更新树形数据
+    store.treeData = addCaseToTree(store.treeData, newTab)
+  } catch (error) {
+    console.log('打开添加接口页面失败 => ', error)
+  }
+}
+
 // 删除处理
 const handleDelete = async () => {
   try {
@@ -129,7 +212,7 @@ const handleDelete = async () => {
       confirmButtonText: '确定',
       cancelButtonText: '取消'
     })
-    // await store.deleteNode(props.data.id)
+    await store.deleteModule(props.data.id, props.data.type)
     ElMessage.success('删除成功')
   } catch (error) {
     // ElMessage.error('删除失败')

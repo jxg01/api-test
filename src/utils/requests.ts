@@ -3,13 +3,6 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { DEFAULT_ERROR_MESSAGE } from '@/constants/errorMessages'
 
-// 定义响应数据格式
-// export interface ResponseData<T = any> {
-//   code: number
-//   data: T
-//   message: string
-// }
-
 // 创建axios实例
 const service: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL, // 从环境变量获取基础URL
@@ -33,75 +26,15 @@ service.interceptors.request.use(
   }
 )
 
-// 标志位，防止多次跳转登录
-let isRedirecting = false
-
 // 响应拦截器
 service.interceptors.response.use((response: AxiosResponse) => {
-  if (!('code' in response) && typeof response === 'object') {response}
-    const data = response.data
-    console.log('response => ', data)
-    // 判断是否包含错误码
-    if (typeof data === 'object' && data !== null && 'code' in data) {
-      console.log('response error code => ', data.code)
-      if (data.code !== 0) {  
-        if (data.code === 'token_not_valid' || data.code === 401) {
-          console.log('in if code token_not_valid')
-          // 处理 token 过期
-          if (!isRedirecting) {
-            isRedirecting = true
-            ElMessage.error('登录已过期，请重新登录')
-            const userStore = useUserStore()
-            userStore.clearToken() // 清除本地 token
-            setTimeout(() => {
-              window.location.href = '/login' // 跳转到登录页面
-            }, 1000)
-          }
-        }
-        // 接口失败，抛出错误
-        const errorMessage = data.message || DEFAULT_ERROR_MESSAGE
-        ElMessage.error(errorMessage)
-        return Promise.reject(errorMessage)
-      }
-    // 接口成功，直接返回数据
-    return data
-
-    //   // 情况1：存在错误码（业务失败）
-  //   if (typeof data === 'object' && data !== null && 'code' in data) {
-  //     if (data.code === 'token_not_valid') {
-  //       console.log('in else if code token ')
-  //       let message = '认证失败，请重新登录'
-  //       ElMessage({
-  //         message,
-  //         type: 'error',
-  //         duration: 5 * 1000
-  //       })
-  //       // 清除token并跳转登录
-  //       useUserStore().clearToken()
-  //       window.location.href = '/login'
-  //       return Promise.reject('error reject')
-  //     }
-
-  //     else if (data.code !== 0) { // 假设0为成功码
-  //       // 创建增强错误对象
-  //       console.log('in if data code != 0')
-  //       const error = new Error(data.message || DEFAULT_ERROR_MESSAGE)
-  //       if (ERROR_MESSAGE_MAP[Number(data.code)]) {
-  //         ElMessage({
-  //           message: data.message,
-  //           type: 'error',
-  //           duration: 5 * 1000
-  //         })
-  //       }
-  //       return Promise.reject(error)
-  //     } 
-  //     // 返回包装结构中的有效数据（兼容场景2）
-  //     return data // 优先取data字段，不存在则返回整个对象
-  //   } 
-
-  //   // 情况2：直接返回业务数据（场景1）
-  //   return data
-    }
+  const data = response.data
+  console.log('response.data => ', response.data)
+  if (data.code) {
+    const errorMessage = data.message || DEFAULT_ERROR_MESSAGE
+    ElMessage.error(errorMessage)
+    return Promise.reject(errorMessage)
+  }
   return data
 },
   (error) => {
@@ -113,10 +46,12 @@ service.interceptors.response.use((response: AxiosResponse) => {
         message = '认证失败，请重新登录'
         // 清除token并跳转登录
         useUserStore().clearToken()
-        window.location.href = '/login'
+        setTimeout(() => {
+          window.location.href = '/login' // 跳转到登录页面
+        }, 1500)
         break
       case 403:
-        message = '拒绝访问'
+        message = '没有权限，拒绝访问'
         break
       case 404:
         message = '请求地址错误'

@@ -16,13 +16,28 @@
         <el-form-item 
           :label="field.label" 
           :prop="field.prop"
-          :rules="field.rules"
         >
-          <component
-            :is="field.component"
-            v-model="formData[field.prop]"
-            v-bind="field.attrs"
-          />
+          <template v-if="field.component.name === 'ElSelect'">
+            <el-select v-model="formData[field.prop]" v-bind="field.attrs" @change="field.onSelectChange(formData[field.prop])">
+              <template #default>
+                <el-option
+                  v-for="(option, index) in normalizedOptions(field.attrs?.options)"
+                  :key="index"
+                  :label="option.label"
+                  :value="option.value"
+                  :disabled="option.disabled"
+                />
+              </template>
+            </el-select>
+          </template>
+          <template v-else>
+            <component
+              :is="field.component || 'div'"
+              v-model="formData[field.prop]"
+              v-bind="field.attrs"
+              >
+            </component>
+          </template>
         </el-form-item>
       </template>
     </el-form>
@@ -41,8 +56,22 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import type { FormInstance } from 'element-plus'
+
+interface DialogField {
+  prop: string
+  label: string
+  component?: string
+  rules?: any[]
+  attrs?: {
+    options?: Array<{
+      label: string
+      value: any
+    }>
+  }
+  onSelectChange?: (value: any, fieldProp: string) => void // 新增回调类型
+}
 
 const props = defineProps({
   title: String,
@@ -55,13 +84,20 @@ const props = defineProps({
 
 const emit = defineEmits(['submit', 'update:visible'])
 
-interface DialogField {
-  prop: string
-  label: string
-  component?: string
-  attrs?: Record<string, any>
-  rules?: any[]
+// 新增选项标准化方法
+const normalizedOptions = (options: any) => {
+  if (!Array.isArray(options)) {
+    console.warn('Select options 必须是数组')
+    return []
+  }
+  return options.map(opt => ({
+    label: String(opt.label || ''),
+    value: opt.hasOwnProperty('value') ? opt.value : opt.label,
+    disabled: !!opt.disabled
+  }))
 }
+
+
 
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
@@ -71,10 +107,10 @@ const mode = ref('add') // 当前模式：add 或 edit
 const buttonText = computed(() => (mode.value === 'add' ? '添加' : '保存'))
 
 // 初始化默认数据结构
-const defaultFormData = reactive({})
+const defaultFormData = reactive<Record<string, any>>({})
 
 // 动态初始化表单数据
-const formData = reactive({ ...defaultFormData })
+const formData = reactive<Record<string, any>>({ ...defaultFormData })
 
 const computedTitle = computed(() => 
   (mode.value === 'add' ? '新增' : '编辑') + props.title
@@ -119,6 +155,16 @@ const handleClosed = () => {
 <style scoped>
 .common-form .el-form-item__content {
   width: 400px; /* 控制表单内容区宽度 */
+}
+
+/* 在 BaseDialog.vue 中添加 */
+:deep(.el-select) {
+  width: 100%;
+}
+
+:deep(.el-select__tags) {
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 </style>
 

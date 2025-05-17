@@ -1,33 +1,52 @@
 <template>
     <div class="api-detail-container">
-      <div class="request-line">
-        <el-button type="primary" @click="handleSaveInterface">保存</el-button>
-      </div>
-      <!-- 请求行 -->
-      <div class="request-line">
-        <el-select 
-          v-model="localDetail.method" 
-          class="method-select"
-          placeholder="Method"
-        >
-          <el-option
-            v-for="m in methods"
-            :key="m"
-            :label="m"
-            :value="m"
-          />
-        </el-select>
-        <el-input
-          v-model="localDetail.path"
-          class="path-input"
-          placeholder="请输入接口路径"
-        />
-        <el-button
-          type="primary"
-          @click="handleSend"
-          class="send-btn"
-        >发送</el-button>
-      </div>
+      <el-form 
+      ref="formRef" 
+      :model="localDetail" 
+      :rules="rules" 
+      >
+        <div class="request-line">
+          <el-form-item prop="name">
+            <el-input
+              v-model="localDetail.name"
+              class="interface-name"
+              placeholder="请输入接口名称"
+            />
+          </el-form-item>
+          <el-button type="primary" @click="submitForm">保存</el-button>
+        </div>
+
+        <div class="request-line">
+          <el-form-item prop="method">
+            <el-select 
+              v-model="localDetail.method" 
+              class="method-select"
+              placeholder="Method"
+            >
+              <el-option
+                v-for="m in methods"
+                :key="m"
+                :label="m"
+                :value="m"
+              />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item prop="path" class="path-form-item">
+            <el-input
+              v-model="localDetail.path"
+              class="path-input"
+              placeholder="请输入接口路径"
+            />
+          </el-form-item>
+
+          <el-button
+            type="primary"
+            @click="handleSend"
+            class="send-btn"
+          >调试一下</el-button>
+        </div>
+      </el-form>
   
       <!-- 标签页 -->
       <el-tabs v-model="activeTab">
@@ -107,11 +126,35 @@
   import KeyValueEditor from './KeyValueEditor.vue'
   import KeyValueViewer from './KeyValueViewer.vue'
   import VueJsonPretty from 'vue-json-pretty';
+  import { ElMessage } from 'element-plus'
+  import { useInterfaceStore } from '@/stores/interface'
+  import type { FormInstance, FormRules } from 'element-plus'
+
+  // 添加表单引用
+const formRef = ref<FormInstance>()
+
+// 校验规则定义
+const rules = reactive<FormRules>({
+  name: [
+    { required: true, message: '接口名称不能为空', trigger: 'blur' },
+    // { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  path: [
+    { required: true, message: '接口路径不能为空', trigger: 'blur' },
+    // { 
+    //   pattern: /^\/[a-zA-Z0-9_\-/]+$/,
+    //   message: '路径格式不正确，应以/开头，可包含字母、数字、-、_',
+    //   trigger: 'blur'
+    // }
+  ],
+})
+
+  const store = useInterfaceStore()
   
   const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD']
   
   interface ApiDetail {
-    method: string
+    method: string | 'GET'
     path: string
     headers?: Record<string, string>
     params?: Record<string, string>
@@ -123,8 +166,6 @@
   const props = defineProps<{
     detail: ApiDetail
   }>()
-  
-  const emit = defineEmits(['send', 'save'])
   
   // 深拷贝初始化本地数据
   const localDetail = reactive<ApiDetail>({
@@ -157,14 +198,12 @@
       method: newVal.method,
       path: newVal.path,
       headers: newVal.headers ? JSON.parse(JSON.stringify(newVal.headers)) : {},
-      params: newVal.params ? JSON.parse(JSON.stringify(newVal.params)) : {}
+      params: newVal.params ? JSON.parse(JSON.stringify(newVal.params)) : {},
+      name: newVal.name,
     })
   }, { deep: true })
 
-
-
-// --------------------
-
+  // -----------------------------------------------
 
 // 新增响应数据类型
 interface ResponseData {
@@ -206,16 +245,12 @@ const jsonDeep = ref(3)
 // 修改保存处理函数
 const handleSend = async () => {
   try {
+    if (!localDetail.path) {
+      ElMessage.error('接口路径不能为空')
+      return
+    }
+    console.log('发送请求:', localDetail)
     loading.value = true
-    
-    // 1. 保存配置
-    // emit('send', {
-    //   method: localDetail.method,
-    //   path: localDetail.path,
-    //   headers: localDetail.headers,
-    //   params: localDetail.params
-    // })
-
     // 2. 发送请求
     const startTime = Date.now()
     // const res = await interfaceApi.sendRequest({
@@ -255,16 +290,17 @@ const handleSend = async () => {
   }
 }
 
-const handleSaveInterface = () => {
-  // 处理保存接口逻辑
-  // 例如：调用API保存接口配置
-  console.log('保存接口 in api detail :', localDetail)
-  // interfaceApi.saveInterface(localDetail)
-  ElMessage.success('接口已保存！')
+const submitForm = async () => {
+  if (!formRef.value) return
+  
+  try {
+    await formRef.value.validate()
+    store.handleSaveInterface(localDetail)
+    ElMessage.success('保存成功')
+  } catch (error) {
+    console.error('表单验证失败', error)
+  }
 }
-
-
-
 
   </script>
   
@@ -287,10 +323,7 @@ const handleSaveInterface = () => {
   .method-select {
     width: 120px;
   }
-  
-  .path-input {
-    flex: 1;
-  }
+
   
   .send-btn {
     width: 100px;
@@ -333,6 +366,16 @@ const handleSaveInterface = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+  .interface-name {
+    width: 250px;
+  }
+  .path-form-item {
+    flex: 1;
+  }
+  /* 新增校验相关样式 */
+:deep(.el-form-item__error) {
+  padding-top: 4px;
 }
 
   </style>

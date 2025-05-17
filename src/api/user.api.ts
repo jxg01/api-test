@@ -19,7 +19,7 @@ export interface UserInfo {
 export const userApi = {
   /** 用户登录 */
   login: (data: LoginParams) => 
-    http.post<BaseResponse<{ token: string }>>('/login/', data),
+    http.post<BaseResponse>('/login/', data),
 
   /** 获取用户列表 */
   getUserList: (params: PaginationParams) => 

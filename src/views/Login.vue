@@ -41,7 +41,6 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { userApi } from '../api'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 
@@ -81,9 +80,8 @@ const rules = {
 // 带类型提示的调用
 const submitLogin = async () => {
   try {
-    const res = await userApi.login(InitLoginForm)
-    ElMessage.success(res.message)
-    userStore.setToken(res.data.access, res.data.username)
+    const res = await userStore.login(InitLoginForm)
+    ElMessage.success(res)
     router.push('/index')
   } catch (error) {
     console.log('in catch -> ', error)

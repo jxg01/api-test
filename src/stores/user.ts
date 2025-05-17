@@ -1,47 +1,63 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
+import { userApi } from '../api'
 
-export const useUserStore = defineStore('user', () => {
-  // 状态定义
-  const token = ref(localStorage.getItem('token') || '')
-  const userInfo = ref<{ name: string; roles: string[] } | null>(null)
-  const usernameDisplay = ref(localStorage.getItem('username') || '')
+interface TokenData {
+  access: string
+  refresh: string
+  expire: number
+  username: string
+}
 
-  // Actions
-  const setToken = (newToken: string, username: string) => {
-    token.value = newToken
-    localStorage.setItem('token', newToken)
-    localStorage.setItem('username', username)
-  }
 
-  const clearToken = () => {
-    token.value = ''
-    localStorage.removeItem('token')
-    localStorage.removeItem('username')
-    userInfo.value = null
-  }
 
-  const login = async (credentials: { username: string; password: string }) => {
-    // 实际应该调用登录接口
-    const mockToken = 'mock-token-123'
-    setToken(mockToken)
-    userInfo.value = {
-      name: 'Admin',
-      roles: ['admin']
-    }
-  }
+export const useUserStore = defineStore('user', {
+  // 定义 state
+  state: () =>
+    reactive({
+      token: localStorage.getItem('token') || '',
+      refreshToken: localStorage.getItem('refreshToken') || '',
+      usernameDisplay: localStorage.getItem('username') || '',
+      expire: 0,
+      pendingRequests: ref<Array<() => void>>([]),
+      isRefreshing: false
+    }),
 
-  const logout = () => {
-    clearToken()
-    // 这里可以添加其他清理逻辑
-  }
+  // 定义 actions
+  actions: {
+    // 设置 token 和 username
+    setToken(data: TokenData) {
+      this.token = data.access
+      this.refreshToken = data.refresh
+      this.usernameDisplay = data.username
+      localStorage.setItem('token', data.access)
+      localStorage.setItem('refreshToken', data.refresh)
+      localStorage.setItem('username', data.username)
+    },
 
-  return {
-    token,
-    userInfo,
-    setToken,
-    clearToken,
-    login,
-    logout
+    // 清除 token 和 username
+    clearToken() {
+      this.token = ''
+      this.usernameDisplay = ''
+      localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('username')
+      window.location.href = '/login'
+    },
+
+    // 登录
+    async login(InitLoginForm: { username: string; password: string }) {
+      const res = await userApi.login(InitLoginForm)
+      if (res) {
+        this.setToken(res.data)
+        return '登录成功'
+      }
+    },
+
+    // 登出
+    logout() {
+      this.clearToken()
+    },
+
   }
 })
