@@ -16,6 +16,7 @@ declare module '@vue/runtime-core' {
     ApiDetail: typeof import('./src/components/interface/ApiDetail.vue')['default']
     BaseDialog: typeof import('./src/components/BaseDialog.vue')['default']
     BaseHeader: typeof import('./src/components/BaseHeader.vue')['default']
+    BasePagination: typeof import('./src/components/BasePagination.vue')['default']
     BaseTable: typeof import('./src/components/BaseTable.vue')['default']
     CareTable: typeof import('./src/components/CareTable.vue')['default']
     CommonDialog: typeof import('./src/components/commonDialog.vue')['default']

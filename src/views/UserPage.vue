@@ -1,50 +1,26 @@
 <template>
   <div class="user-management-container">
-    <!-- 搜索区域 -->
-    <el-row class="filter-row" :gutter="20">
-      <el-col :span="4">
-        <el-button type="primary" @click="openAddDialog">添加用户</el-button>
-      </el-col>
-      <el-col :span="4">
-        <el-input
-          v-model="filterParams.username"
-          placeholder="请输入用户名"
-          clearable
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-      </el-col>
+    <div class="filter-section">
+      <el-row :gutter="20">
         <el-col :span="4">
-        <el-input
-          v-model="filterParams.email"
-          placeholder="请输入邮箱"
-          clearable
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-      </el-col>
-      <el-button type="primary" @click="fetchUserData">搜索</el-button>
-    </el-row>
+          <el-button type="primary" @click="openAddDialog" :icon="CirclePlus">添加用户</el-button>
+        </el-col>
+        <el-col :span="4">
+          <el-input v-model="filterParams.username" placeholder="请输入用户名" clearable />
+        </el-col>
+          <el-col :span="4">
+          <el-input v-model="filterParams.email" placeholder="请输入邮箱" clearable  />
+        </el-col>
+        <el-button type="primary" @click="fetchUserData" :icon="Search">搜索</el-button>
+      </el-row>
+    </div>
 
     <!-- 表格 -->
     <BaseTable
       :columns="tableColumns"
       :table-data="tableData"
       :loading="loading"
-      :pagination="pagination"
-      @page-change="handlePageChange"
-      @size-change="handleSizeChange"
     >
-      <template #status="scope">
-        <el-tag :type="scope.row.is_active ? 'success' : 'danger'">
-          {{ scope.row.is_active ? '激活' : '禁用' }}
-        </el-tag>
-      </template>
-
       <template #operation="scope">
         <el-button type="primary" size="small" @click="openEditDialog(scope.row)">
           编辑
@@ -54,6 +30,14 @@
         </el-button>
       </template>
     </BaseTable>
+    <!-- 表格分页 -->
+    <BasePagination
+      :current-page="pagination.page"
+      :page-size="pagination.size"
+      :total="pagination.total"
+      @page-change="handlePageChange"
+      @size-change="handleSizeChange"
+    />
 
     <!-- 表单弹窗 -->
     <BaseDialog
@@ -70,8 +54,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import BaseDialog from '@/components/BaseDialog.vue'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
+import BasePagination from '@/components/BasePagination.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { userApi } from '@/api/'
+import { CirclePlus, Search } from '@element-plus/icons-vue'
 
 type User = {
   id: number
@@ -97,13 +83,13 @@ const formFields = [
   { 
     prop: 'username', 
     label: '用户名',
-    component: 'ElInput',
+    component: ElInput,
     attrs: { placeholder: '请输入用户名' } 
   },
   { 
     prop: 'email', 
     label: '邮箱',
-    component: 'ElInput',
+    component: ElInput,
     attrs: { 
       type: 'email',
       placeholder: '请输入邮箱地址'
@@ -112,7 +98,7 @@ const formFields = [
   { 
     prop: 'password', 
     label: '密码',
-    component: 'ElInput',
+    component: ElInput,
     attrs: { 
       type: 'password',
       placeholder: '请输入密码',
@@ -121,7 +107,7 @@ const formFields = [
   { 
     prop: 'password_confirm', 
     label: '确认密码',
-    component: 'ElInput',
+    component: ElInput,
     attrs: { 
       type: 'password',
       placeholder: '请再次输入密码',
@@ -234,21 +220,18 @@ const handleSubmit = async (data: any, mode: 'add' | 'edit', done: (success?: bo
 
 <style scoped>
 .user-management-container {
-  padding: 20px;
-  background: #fff;
+  height: calc(100vh - 165px); /* 总高度减去header和footer */
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
+  background: #dddddd;
   border-radius: 4px;
+  overflow: hidden; /* 隐藏全局滚动条 */
 }
 
-.filter-row {
-  margin-bottom: 20px;
-
-  .el-col {
-    display: flex;
-    align-items: center;
-  }
-  .el-input {
-    width: 100%;
-    width: 150px;
-  }
+.filter-section {
+  flex-shrink: 0;
+  margin: 10px 0;
 }
+
 </style>

@@ -1,23 +1,17 @@
 <template>
     <div class="project-management-container">
       <!-- 筛选行 -->
-      <el-row class="filter-row" :gutter="20">
-        <el-col :span="4">
-          <el-button type="primary" @click="openAddDialog">添加项目</el-button>
-        </el-col>
-        <el-col :span="8">
-          <el-input
-            v-model="name"
-            placeholder="请输入项目名称"
-            clearable
-            @keyup.enter="fetchProjectData"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </el-col>
-      </el-row>
+      <div class="filter-section">
+        <el-row :gutter="20">
+          <el-col :span="4">
+            <el-button type="primary" @click="openAddDialog" :icon="CirclePlus">添加项目</el-button>
+          </el-col>
+          <el-col :span="4">
+            <el-input v-model="name" placeholder="请输入项目名称" clearable @keyup.enter="fetchProjectData"  :icon="Search" />
+          </el-col>
+          <el-button type="primary" @click="fetchProjectData" :icon="Search">搜索</el-button>
+        </el-row>
+      </div>
   
       <!-- 表格 -->
       <BaseTable
@@ -55,6 +49,7 @@
   import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { projectApi } from '@/api/'
+  import { CirclePlus, Search } from '@element-plus/icons-vue'
   
   type Project = {
     id: number
@@ -200,17 +195,18 @@
   
   <style scoped>
   .project-management-container {
-    padding: 20px;
-    background: #fff;
+    height: calc(100vh - 165px); /* 总高度减去header和footer */
+    display: flex;
+    flex-direction: column;
+    padding: 2px;
+    background: #dddddd;
     border-radius: 4px;
+    overflow: hidden; /* 隐藏全局滚动条 */
   }
   
-  .filter-row {
-    margin-bottom: 20px;
-  
-    .el-col {
-      display: flex;
-      align-items: center;
-    }
+  .filter-section {
+    flex-shrink: 0;
+    margin: 10px 0;
   }
+
   </style>

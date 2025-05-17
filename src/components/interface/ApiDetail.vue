@@ -17,34 +17,29 @@
         </div>
 
         <div class="request-line">
-          <el-form-item prop="method">
-            <el-select 
-              v-model="localDetail.method" 
-              class="method-select"
-              placeholder="Method"
-            >
-              <el-option
-                v-for="m in methods"
-                :key="m"
-                :label="m"
-                :value="m"
-              />
-            </el-select>
-          </el-form-item>
-
           <el-form-item prop="path" class="path-form-item">
             <el-input
               v-model="localDetail.path"
               class="path-input"
               placeholder="请输入接口路径"
-            />
+            >
+              <template #prepend=>
+                <el-select 
+                  v-model="localDetail.method" 
+                  class="method-select"
+                  placeholder="Method"
+                >
+                  <el-option
+                    v-for="m in methods"
+                    :key="m"
+                    :label="m"
+                    :value="m"
+                  />
+                </el-select>
+              </template>
+            </el-input>
           </el-form-item>
-
-          <el-button
-            type="primary"
-            @click="handleSend"
-            class="send-btn"
-          >调试一下</el-button>
+          <el-button type="primary" @click="handleSend" class="send-btn">调试一下</el-button>
         </div>
       </el-form>
   
@@ -324,7 +319,6 @@ const submitForm = async () => {
     width: 120px;
   }
 
-  
   .send-btn {
     width: 100px;
   }
