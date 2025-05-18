@@ -86,6 +86,7 @@
     height: 60px;
     background: #d6c8ed;
     z-index: 1000;
+    padding: 0;
 }
 
 .sidebar {

@@ -4,7 +4,6 @@
     <el-table
       v-loading="loading"
       :data="tableData"
-      border
       stripe
       :height="height"
       highlight-current-row

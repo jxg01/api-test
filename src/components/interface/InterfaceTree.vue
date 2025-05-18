@@ -58,7 +58,7 @@
 
 <style scoped>
 .tree-container {
-  height: 100%;
+  /* height: 100%; */
   overflow: hidden;
   border: 3px solid #8f8f8c;
   border-radius: 14px;

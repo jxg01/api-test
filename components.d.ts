@@ -19,6 +19,8 @@ declare module '@vue/runtime-core' {
     BasePagination: typeof import('./src/components/BasePagination.vue')['default']
     BaseTable: typeof import('./src/components/BaseTable.vue')['default']
     CareTable: typeof import('./src/components/CareTable.vue')['default']
+    CaseForm: typeof import('./src/components/testcase/CaseForm.vue')['default']
+    CaseTabs: typeof import('./src/components/testcase/CaseTabs.vue')['default']
     CommonDialog: typeof import('./src/components/commonDialog.vue')['default']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']

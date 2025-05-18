@@ -1,5 +1,4 @@
 import { http } from '@/utils/requests'
-import type { BaseResponse } from './types'
 
 // 接口集合
 export const interfaceApi = {

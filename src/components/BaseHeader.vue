@@ -53,7 +53,9 @@
   const userStore = useUserStore()
 
   const logo = ref('https://ww2.sinaimg.cn/mw690/61d7678dgy1hvt194v9kqj20p00uuape.jpg') // 替换为实际的logo地址
-  const brandText = ref('EsayAPI')
+  // const logo = ref('https://img2.baidu.com/it/u=2118627634,2226408035&fm=253&fmt=auto&app=120&f=JPEG?w=800&h=800')
+
+  const brandText = ref('EasyAPI')
   
   // 处理设置
   const handleSettings = () => {

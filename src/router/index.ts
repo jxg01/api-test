@@ -5,6 +5,7 @@ import UserPageVue from '@/views/UserPage.vue'
 import InterfacePageVue from '@/views/InterfacePage.vue';
 import MtTool from '@/views/MtTool.vue';
 import GlobalVariablePage from '@/views/GlobalVariablePage.vue';
+import TestCasePage from '@/views/TestCasePage.vue';
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -77,7 +78,7 @@ const routes: Array<RouteRecordRaw> = [
                     {
                         path: 'testcase',
                         name: 'testcase',
-                        component: UserPageVue,
+                        component: TestCasePage,
                         meta: {
                             title: '用例管理',
                             icon: 'Files'
