@@ -20,6 +20,7 @@ declare module '@vue/runtime-core' {
     BaseTable: typeof import('./src/components/BaseTable.vue')['default']
     CareTable: typeof import('./src/components/CareTable.vue')['default']
     CaseForm: typeof import('./src/components/testcase/CaseForm.vue')['default']
+    CaseSearch: typeof import('./src/components/testcase/CaseSearch.vue')['default']
     CaseTabs: typeof import('./src/components/testcase/CaseTabs.vue')['default']
     CommonDialog: typeof import('./src/components/commonDialog.vue')['default']
     ElAside: typeof import('element-plus/es')['ElAside']

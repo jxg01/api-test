@@ -17,6 +17,11 @@ export interface EditTab {
   formData: TestCase
 }
 
+export interface ApiList {
+  id: number
+  name: string
+}
+
 export const useCaseStore = defineStore('case', {
   state: () => ({
     cases: [] as TestCase[],
@@ -25,14 +30,18 @@ export const useCaseStore = defineStore('case', {
     pageSize: 10,
     total: 0,
     loading: false,
-    activeTab: 'list'
+    activeTab: 'list',
+    searchInput: '',
+    searchSelectProjectId: '',
+    searchInterfaceId: '',
+    interFaceList: [] as ApiList[]
   }),
 
   getters: {
-    paginatedCases: (state) => {
-      const start = (state.currentPage - 1) * state.pageSize
-      return state.cases.slice(start, start + state.pageSize)
-    },
+    // paginatedCases: (state) => {
+    //   const start = (state.currentPage - 1) * state.pageSize
+    //   return state.cases.slice(start, start + state.pageSize)
+    // },
     tabs: (state) => [
       { name: 'list', title: '用例列表' },
       ...state.editTabs.map(t => ({ name: t.name, title: t.title }))
@@ -45,7 +54,10 @@ export const useCaseStore = defineStore('case', {
         this.loading = true
         const res = await testCaseApi.getTestCaseList({
           page: this.currentPage,
-          size: this.pageSize
+          size: this.pageSize,
+          name: this.searchInput,
+          project_id: this.searchSelectProjectId,
+          interface_id: this.searchInterfaceId,
         })
         this.cases = res.data
         this.total = res.meta.pagination.total

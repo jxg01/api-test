@@ -35,5 +35,9 @@ export const userApi = {
 
   /** 删除用户 */
   deleteUser: (id: number) => 
-    http.delete<BaseResponse>(`/users/${id}/`)
+    http.delete<BaseResponse>(`/users/${id}/`),
+
+  /** 注册用户 */
+  registerUser: (params: Object) => 
+    http.post('/register/', params),
 }

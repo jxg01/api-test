@@ -27,7 +27,10 @@
                     <el-input v-model="registerFormData.username" placeholder="请输入用户名"></el-input>
                 </el-form-item>
                 <el-form-item label="密码" prop="password">
-                    <el-input v-model="registerFormData.password" type="password" placeholder="请输入密码"></el-input>
+                    <el-input v-model="registerFormData.password"  placeholder="请输入密码"></el-input>
+                </el-form-item>
+                <el-form-item label="邮箱" prop="email">
+                    <el-input v-model="registerFormData.email" placeholder="请输入邮箱"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="submitRegister">注册</el-button>
@@ -42,6 +45,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import type { FormInstance } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
@@ -60,22 +64,34 @@ const InitLoginForm: LoginForm = {
 interface RegisterForm {
     username: string,
     password: string
+    email: string
 }
 
 const InitRegisterForm: RegisterForm = {
     username: '',
-    password: ''
+    password: '',
+    email: ''
 }
 
 const loginFormData = ref<LoginForm>(InitLoginForm);
 const registerDialogVisible = ref<boolean>(false);
 const registerFormData = ref<RegisterForm>(InitRegisterForm);
 const dialogTitle = ref<string>('注册');
-const registerFormRef = ref(null);
+const registerFormRef = ref<FormInstance>();
 const rules = {
-    username: [{required: true, message: '请输入项目名称', trigger: 'blur'}],
-    password: [{required: true, message: '请输入项目地址', trigger: 'blur'}],
-};
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 4, max: 16, message: '长度在4-16个字符', trigger: ['blur', 'change'] }
+  ],
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '邮箱格式不正确', trigger: ['blur', 'change'] }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '长度在6-20个字符', trigger: ['blur', 'change'] }
+  ]
+}
 
 // 带类型提示的调用
 const submitLogin = async () => {
@@ -89,16 +105,20 @@ const submitLogin = async () => {
 }
 
 const showRegisterDialog = () => {
-    console.log('打开注册弹窗')
     registerDialogVisible.value = true;
     registerFormData.value = { ...InitRegisterForm }
-
 }
 
-const submitRegister = () => {
-    console.log('submit register >> ', registerFormData)
-    // 请求接口
-    registerDialogVisible.value = false
+const submitRegister = async () => {
+    try {
+        // 请求接口
+        await registerFormRef.value?.validate()
+        const res = await userStore.register(registerFormData.value)
+        ElMessage.success(res)
+        registerDialogVisible.value = false
+    }  catch (error) {
+        console.error('error => ', error)
+    }
 }
 
 </script>

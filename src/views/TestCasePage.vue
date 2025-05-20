@@ -9,15 +9,13 @@
 
     <!-- 列表视图 -->
     <div v-show="store.activeTab === 'list'">
-      <div class="searchTool" v-show="store.activeTab === 'list'">
-        <el-button type="primary">搜索</el-button>
-        <el-input></el-input>
-      </div>
+      <CaseSearch></CaseSearch>
       
       <BaseTable
         :columns="tableColumns"
-        :table-data="store.paginatedCases"
+        :table-data="store.cases"
         :loading="store.loading"
+        height="calc(100vh - 319px)"
       >
         <template #operation="scope">
           <el-button type="primary" size="small" @click.stop="handleEdit(scope.row)">
@@ -55,6 +53,7 @@
 import { useCaseStore, TestCase } from '@/stores/testcase'
 import CaseTabs from '@/components/testcase/CaseTabs.vue'
 import CaseForm from '@/components/testcase/CaseForm.vue'
+import CaseSearch from '@/components/testcase/CaseSearch.vue'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import { ref, onMounted } from 'vue'
@@ -105,11 +104,18 @@ const handleSubmit = async (tab: EditTab) => {
 </script>
 
 <style scoped>
+.case-management {
+  /* height: calc(100vh - 160px); */
+  /* overflow: hidden; */
+  background: #dddddd;
+}
 .table-container {
   padding-top: 5px;
 }
 .searchTool {
   display: flex;
   margin: 10px 0;
+  padding-left: 10px;
+  gap: 12px;
 }
 </style>

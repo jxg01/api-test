@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
-import { userApi } from '../api'
+import { userApi } from '@/api'
 
 interface TokenData {
   access: string
@@ -51,6 +51,18 @@ export const useUserStore = defineStore('user', {
       if (res) {
         this.setToken(res.data)
         return '登录成功'
+      }
+    },
+
+    async register(registerForm: { username: string; password: string; email: string }) {
+      const res = await userApi.registerUser({
+        username: registerForm.username,
+        email: registerForm.email,
+        password: registerForm.password,
+        password_confirm: registerForm.password
+      })
+      if (res) {
+        return '注册成功'
       }
     },
 
