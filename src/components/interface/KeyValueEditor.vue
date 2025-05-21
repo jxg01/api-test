@@ -1,6 +1,6 @@
 <template>
     <div class="key-value-editor">
-      <el-table :data="localItems" style="width: 100%">
+      <el-table :data="localItems" style="width: 100%" :max-height="tableMaxHeight">
         <el-table-column prop="key" width="200">
           <template #header>
             <el-button
@@ -9,23 +9,23 @@
                 @click="addRow"
                 icon="Plus"
               />
-            <div class="flex justify-between">
+            <!-- <div class="flex justify-between">
               
               <span>键</span>
-            </div>
+            </div> -->
           </template>
           <template #default="{ $index }">
-            <el-input v-model="localItems[$index].key" />
+            <el-input v-model="localItems[$index].key" placeholder="key" />
           </template>
         </el-table-column>
   
         <el-table-column prop="value">
-          <template #header>
+          <!-- <template #header>
             <span>值</span>
-          </template>
+          </template> -->
           <template #default="{ $index }">
             <div class="value-cell">
-              <el-input v-model="localItems[$index].value" />
+              <el-input v-model="localItems[$index].value" placeholder="value" />
               <el-button
                 type="danger"
                 size="small"
@@ -41,7 +41,7 @@
   </template>
   
   <script setup lang="ts">
-  import { ref, watch, nextTick } from 'vue'
+  import { ref, watch, nextTick, computed } from 'vue'
 
 interface KeyValueItem {
   key: string
@@ -91,6 +91,12 @@ const addRow = () => {
 const deleteRow = (index: number) => {
   localItems.value.splice(index, 1)
 }
+
+ // 计算最大高度（当行数≥6时，限制为5行高度以触发滚动条）
+const tableMaxHeight = computed(() => {
+  const ROW_HEIGHT = 40; // 根据实际行高调整此值
+  return localItems.value.length >= 5 ? ROW_HEIGHT * 8 : null;
+});
   </script>
   
   <style scoped>

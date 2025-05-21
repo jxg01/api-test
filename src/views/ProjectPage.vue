@@ -171,7 +171,8 @@
       ElMessage.success('删除成功')
       fetchProjectData()
     } catch (error) {
-      ElMessage.error(error.message || '删除失败')
+      // ElMessage.error(error.message || '删除失败')
+      console.log('error => ', error)
     }
   }
   
@@ -187,7 +188,8 @@
       fetchProjectData()
       done(true)
     } catch (error) {
-      ElMessage.error(error.message || '操作失败')
+      // ElMessage.error(error.message || '操作失败')
+      console.log('error => ', error)
       done(false)
     }
   }

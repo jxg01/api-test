@@ -88,7 +88,8 @@ const handleDelete = async (id: string) => {
     await store.deleteCase(id)
     ElMessage.success('删除成功')
   } catch (error) {
-    ElMessage.error('删除失败')
+    // ElMessage.error('删除失败')
+    console.log('error => ', error)
   }
 }
 
@@ -98,7 +99,8 @@ const handleSubmit = async (tab: EditTab) => {
     ElMessage.success('保存成功')
     store.setActiveTab('list')
   } catch (error) {
-    ElMessage.error('保存失败')
+    // ElMessage.error('保存失败')
+    console.log('error => ', error)
   }
 }
 </script>

@@ -196,7 +196,8 @@ const handleDelete = async (user: User) => {
     ElMessage.success('删除成功')
     fetchUserData()
   } catch (error) {
-    ElMessage.error(error.message || '删除失败')
+    // ElMessage.error(error.message || '删除失败')
+    console.log('error => ', error)
   }
 }
 
@@ -212,7 +213,8 @@ const handleSubmit = async (data: any, mode: 'add' | 'edit', done: (success?: bo
     fetchUserData()
     done(true)
   } catch (error) {
-    ElMessage.error(error.message || '操作失败')
+    // ElMessage.error(error.message || '操作失败')
+    console.log('error => ', error)
     done(false)
   }
 }

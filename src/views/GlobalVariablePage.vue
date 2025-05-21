@@ -173,7 +173,8 @@ const handleDelete = async (variable: GlobalVariable) => {
     ElMessage.success('删除成功')
     fetchVariableData()
   } catch (error) {
-    ElMessage.error(error.message || '删除失败')
+    // ElMessage.error(error.message || '删除失败')
+    console.log('error => ', error)
   }
 }
 
@@ -189,7 +190,8 @@ const handleSubmit = async (data: GlobalVariable, mode: 'add' | 'edit', done: (s
     fetchVariableData()
     done(true)
   } catch (error) {
-    ElMessage.error(error.message || '操作失败')
+    // ElMessage.error(error.message || '操作失败')
+    console.log('error => ', error)
     done(false)
   }
 }

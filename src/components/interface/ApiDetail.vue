@@ -46,7 +46,7 @@
       <!-- 标签页 -->
       <el-tabs v-model="activeTab">
         <!-- Headers 标签页 -->
-        <el-tab-pane label="请求头" name="headers">
+        <el-tab-pane label="headers" name="headers">
           <key-value-editor
             :items="localDetail.headers"
             @update:items="updateHandler('headers', $event)"
@@ -56,10 +56,20 @@
         </el-tab-pane>
   
         <!-- Params 标签页 -->
-        <el-tab-pane label="参数" name="params">
+        <el-tab-pane label="params" name="params">
           <key-value-editor
             :items="localDetail.params"
             @update:items="updateHandler('params', $event)"
+            key-placeholder="参数名"
+            value-placeholder="参数值"
+          />
+        </el-tab-pane>
+
+        <!-- body 标签页 -->
+        <el-tab-pane label="body" name="body">
+          <key-value-editor
+            :items="localDetail.body"
+            @update:items="updateHandler('body', $event)"
             key-placeholder="参数名"
             value-placeholder="参数值"
           />
@@ -153,6 +163,7 @@ const rules = reactive<FormRules>({
     path: string
     headers?: Record<string, string>
     params?: Record<string, string>
+    body?: Record<string, string>
     name: string
     module: number | string
     id: number | string
@@ -170,12 +181,13 @@ const rules = reactive<FormRules>({
     path: props.detail.path,
     headers: props.detail.headers ? JSON.parse(JSON.stringify(props.detail.headers)) : {},
     params: props.detail.params ? JSON.parse(JSON.stringify(props.detail.params)) : {},
+    body: props.detail.params ? JSON.parse(JSON.stringify(props.detail.params)) : {},
     id: props.detail.id
   })
   
   // 更新处理器（添加防抖）
   let updateLock = false
-  const updateHandler = (type: 'headers' | 'params', value: Record<string, string>) => {
+  const updateHandler = (type: 'headers' | 'params' | 'body', value: Record<string, string>) => {
     if (updateLock) return
     
     updateLock = true

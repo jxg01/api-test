@@ -92,7 +92,7 @@ import BaseDialog from '@/components/BaseDialog.vue'
       ElMessage.success('模块添加成功')
       done(true)
     } catch (error) {
-      ElMessage.error(error.message || '操作失败')
+      // ElMessage.error(error.message || '操作失败')
       done(false)
     }
   }
@@ -149,7 +149,7 @@ const handleSave = async () => {
     await store.renameNode(props.data.id, newLabel.value, props.data.type)
     isEditing.value = false
   } catch (error) {
-    ElMessage.error('重命名失败')
+    // ElMessage.error('重命名失败')
     // 恢复原始值
     newLabel.value = props.data.label
     isEditing.value = false

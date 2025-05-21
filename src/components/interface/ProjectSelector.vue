@@ -119,7 +119,7 @@ const store = useInterfaceStore()
       ElMessage.success('模块添加成功')
       done(true)
     } catch (error) {
-      ElMessage.error(error.message || '操作失败')
+      // ElMessage.error(error.message || '操作失败')
       done(false)
     }
   }
