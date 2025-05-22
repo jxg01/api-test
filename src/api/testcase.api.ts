@@ -6,6 +6,13 @@ export const testCaseApi = {
   getTestCaseList: (params: any) => 
     http.get('/testcases/', params),
 
-  createTestCaseList: (params: Object) => 
+  createTestCase: (params: Object) => 
     http.post('/testcases/', params),
+
+  updateTestCase: (id: number, params: Object) => 
+    http.patch(`/testcases/${id}/`, params),
+
+  deleteTestCase: (id: number) => 
+    http.delete(`/testcases/${id}/`),
+
 }

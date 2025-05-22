@@ -22,10 +22,10 @@
         </template>
 
         <template #operation="scope">
-          <el-button type="primary" size="small" @click.stop="handleEdit(scope.row)">
+          <el-button type="primary" size="small" @click.stop="store.editCase(scope.row)">
             编辑
           </el-button>
-          <el-button type="danger" size="small" @click.stop="handleDelete(scope.row.id)">
+          <el-button type="danger" size="small" @click.stop="handleDelete(scope.row)">
             删除
           </el-button>
         </template>
@@ -46,7 +46,7 @@
       <CaseForm
         v-if="store.activeTab === tab.name"
         :form-data="tab.formData"
-        @submit="handleSubmit(tab)"
+        :tabInfo="tab"
       />
     </div>
   </div>
@@ -59,7 +59,8 @@ import CaseForm from '@/components/testcase/CaseForm.vue'
 import CaseSearch from '@/components/testcase/CaseSearch.vue'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const store = useCaseStore()
 
@@ -79,33 +80,17 @@ onMounted(() => {
   store.fetchCaseList()
 })
 
-const handleAddNew = () => {
-  store.addNewCase()
-}
-
-const handleEdit = (row: TestCase) => {
-  console.log('edit case => ', row)
-  store.editCase(row)
-}
-
-const handleDelete = async (id: string) => {
-  try {
-    await store.deleteCase(id)
+const handleDelete = async (row: any) => {
+  try{
+    await ElMessageBox.confirm(`确认删除用例 ${row.name} 吗？`, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
+    await store.deleteCase(row.id)
     ElMessage.success('删除成功')
   } catch (error) {
-    // ElMessage.error('删除失败')
-    console.log('error => ', error)
-  }
-}
-
-const handleSubmit = async (tab: EditTab) => {
-  try {
-    await store.saveCase(tab)
-    ElMessage.success('保存成功')
-    store.setActiveTab('list')
-  } catch (error) {
-    // ElMessage.error('保存失败')
-    console.log('error => ', error)
+    console.error('error => ', error)
   }
 }
 
