@@ -40,4 +40,12 @@ export const userApi = {
   /** 注册用户 */
   registerUser: (params: Object) => 
     http.post('/register/', params),
+
+  /** 获取用户列表 */
+  createUserSuggestion: (params: Object) => 
+    http.post('/suggestion/', params),
+
+  /** 获取用户列表 */
+  getUserSuggestionList: (params: PaginationParams) => 
+    http.get('/suggestion/', params),
 }

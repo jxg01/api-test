@@ -6,6 +6,11 @@ import InterfacePageVue from '@/views/InterfacePage.vue';
 import MtTool from '@/views/MtTool.vue';
 import GlobalVariablePage from '@/views/GlobalVariablePage.vue';
 import TestCasePage from '@/views/TestCasePage.vue';
+import DashboardPageVue from '@/views/DashboardPage.vue';
+import SettingsPageVue from '@/views/SettingsPage.vue';
+import SuitePageVue from '@/views/SuitePage.vue';
+import TaskPageVue from '@/views/TaskPage.vue';
+import TraderToolsPageVue from '@/views/TraderToolsPage.vue';
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -27,7 +32,7 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: '/dashboard',
                 name: 'dashboard',
-                component: Index,
+                component: DashboardPageVue,
                 meta: {
                     title: '首页',
                     // 一级菜单才需要这个字段，用于是否显示这个菜单
@@ -87,7 +92,7 @@ const routes: Array<RouteRecordRaw> = [
                     {
                         path: 'suite',
                         name: 'suite',
-                        component: UserPageVue,
+                        component: SuitePageVue,
                         meta: {
                             title: '套件管理',
                             icon: 'SetUp'
@@ -107,7 +112,7 @@ const routes: Array<RouteRecordRaw> = [
                     {
                         path: 'test',
                         name: 'test',
-                        component: UserPageVue,
+                        component: TaskPageVue,
                         meta: {
                             title: '任务配置',
                             icon: 'Clock'
@@ -129,7 +134,7 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: '/settings',
                 name: 'settings',
-                component: UserPageVue,
+                component: SettingsPageVue,
                 meta: {
                     title: '系统设置',
                     isShow: true,
@@ -140,7 +145,7 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: '/mt_tool',
                 name: 'mt_tool',
-                component: MtTool,
+                component: TraderToolsPageVue,
                 meta: {
                     title: '交易工具',
                     isShow: true,
@@ -153,7 +158,7 @@ const routes: Array<RouteRecordRaw> = [
     // 通配符路由，重定向到 /dashboard
     {
         path: '/:pathMatch(.*)*',
-        redirect: '/dashboard',
+        redirect: '/login',
     },
     
 ]

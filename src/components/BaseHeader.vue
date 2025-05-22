@@ -10,6 +10,7 @@
         >
         <span class="brand-text">{{ brandText || 'API 测试工具' }}</span>
       </div>
+      <el-button type="primary" text class="suggestion" @click.stop="openDialog">优化建议</el-button>
       <el-dropdown trigger="click" placement="bottom-end">
         <!-- 用户信息 -->
         <span class="user-dropdown">
@@ -37,6 +38,22 @@
           </el-dropdown-menu>
         </template>
       </el-dropdown>
+
+      <el-dialog v-model="dialogVisit" title="建议" width="30%">
+        <el-form :model="form" ref="formRef">
+          <el-form-item label="内容" required>
+            <el-input v-model="form.content" autocomplete="off" type="textarea" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-button @click="dialogVisit = false">Cancel</el-button>
+            <el-button type="primary"  @click.stop="submit" >
+              Confirm
+            </el-button>
+          </div>
+        </template>
+      </el-dialog>
     </div>
   </template>
   
@@ -48,8 +65,9 @@
     SwitchButton
   } from '@element-plus/icons-vue'
   import { useUserStore } from '@/stores/user'
-  import { ref } from 'vue'
-  
+  import { ref,reactive } from 'vue'
+  import { ElMessage, type FormInstance } from 'element-plus'
+
   const userStore = useUserStore()
 
   const logo = ref('https://ww2.sinaimg.cn/mw690/61d7678dgy1hvt194v9kqj20p00uuape.jpg') // 替换为实际的logo地址
@@ -62,6 +80,37 @@
     console.log('打开设置页面')
   }
   
+
+  const formRef = ref<FormInstance>()
+const form = reactive({
+  content: '',
+})
+const dialogVisit = ref(false)
+const rules = {
+  content: [
+    { required: true, message: '内容不能为空', trigger: 'blur' },
+  ]
+}
+
+const openDialog = () => {
+  dialogVisit.value = true
+}
+const submit = async() => {
+  if (!form.content){ return }
+  try {
+    
+  } catch (error) {
+    console.error(error)
+  }
+  
+  
+
+
+}
+
+
+
+
   </script>
   
   <style scoped>
@@ -126,5 +175,8 @@
     font-size: 18px;
     font-weight: 500;
     color: var(--el-text-color-primary);
+}
+.suggestion {
+  font-size: large;
 }
   </style>

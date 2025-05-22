@@ -71,5 +71,15 @@ export const useUserStore = defineStore('user', {
       this.clearToken()
     },
 
+      // 未写完
+    async fetchCaseList(content: string) {
+      const res = await userApi.createUserSuggestion({
+        name: content
+      })
+
+    }
+
+    
+
   }
 })
