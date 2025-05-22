@@ -2,7 +2,7 @@
     <div class="login-container">
         <el-card class="login-card" shadow="hover">
             <h2>登录</h2>
-            <el-form :model="loginFormData" label-width="80px" ref="loginForm">
+            <el-form :model="loginFormData" label-width="80px" ref="loginFormRef" :rules="rules">
                 <el-form-item label="用户名" prop="username">
                     <el-input v-model="loginFormData.username" placeholder="请输入用户名"></el-input>
                 </el-form-item>
@@ -78,24 +78,26 @@ const registerDialogVisible = ref<boolean>(false);
 const registerFormData = ref<RegisterForm>(InitRegisterForm);
 const dialogTitle = ref<string>('注册');
 const registerFormRef = ref<FormInstance>();
+const loginFormRef = ref<FormInstance>();
 const rules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 4, max: 16, message: '长度在4-16个字符', trigger: ['blur', 'change'] }
+    { min: 4, max: 16, message: '长度在4-16个字符', trigger: ['blur'] }
   ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '邮箱格式不正确', trigger: ['blur', 'change'] }
+    { type: 'email', message: '邮箱格式不正确', trigger: ['blur'] }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '长度在6-20个字符', trigger: ['blur', 'change'] }
+    { min: 6, max: 20, message: '长度在6-20个字符', trigger: ['blur'] }
   ]
 }
 
 // 带类型提示的调用
 const submitLogin = async () => {
   try {
+    await loginFormRef.value?.validate()
     const res = await userStore.login(InitLoginForm)
     ElMessage.success(res)
     router.push('/index')

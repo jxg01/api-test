@@ -17,7 +17,6 @@
     <el-select
       v-model="store.searchInterfaceId"
       placeholder="选择接口"
-      @change="handleApiChange"
       class="search-info"
       filterable
       clearable
@@ -36,7 +35,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useCaseStore } from '@/stores/testcase'
 import { useInterfaceStore } from '@/stores/interface'
 import { interfaceApi } from '@/api'
@@ -64,6 +63,7 @@ const handleProjectChange = async(projectId: number) => {
   }
 }
 
+// 切换 接口 下拉框 回调
 const handleApiChange = async(interface_id: number) => {
 
 }

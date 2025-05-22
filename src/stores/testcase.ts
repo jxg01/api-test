@@ -2,13 +2,15 @@ import { defineStore } from 'pinia'
 import { testCaseApi } from '@/api/'
 
 export interface TestCase {
-  id: string
+  id: number | string
   name: string
+  enabled: number
   description: string
-  status: number
-  interface_name?: string
-  updated_by?: string
-  updated_at?: string
+  headers:  Record<string, string>
+  params:  Record<string, string>
+  body:  Record<string, string>
+  assertions: []
+  variable_extract: []
 }
 
 export interface EditTab {
@@ -38,10 +40,6 @@ export const useCaseStore = defineStore('case', {
   }),
 
   getters: {
-    // paginatedCases: (state) => {
-    //   const start = (state.currentPage - 1) * state.pageSize
-    //   return state.cases.slice(start, start + state.pageSize)
-    // },
     tabs: (state) => [
       { name: 'list', title: '用例列表' },
       ...state.editTabs.map(t => ({ name: t.name, title: t.title }))
@@ -81,6 +79,7 @@ export const useCaseStore = defineStore('case', {
     },
 
     editCase(caseData: TestCase) {
+      console.log('case data ', caseData)
       const existing = this.editTabs.find(tab => tab.formData.id === caseData.id)
       if (existing) {
         this.activeTab = existing.name

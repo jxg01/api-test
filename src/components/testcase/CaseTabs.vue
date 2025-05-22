@@ -101,6 +101,7 @@ const store = useCaseStore()
   align-items: center;
   height: 40px;
   background: #fff;
+  font-weight: 900;
 }
 
 
