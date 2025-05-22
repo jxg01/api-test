@@ -98,7 +98,11 @@ const openDialog = () => {
 const submit = async() => {
   if (!form.content){ return }
   try {
-    
+    const res = await userStore.createUserSuggestion(form.content)
+    if (res) {
+      ElMessage.success('创建成功')
+      dialogVisit.value = false
+    }
   } catch (error) {
     console.error(error)
   }

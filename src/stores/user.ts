@@ -72,10 +72,9 @@ export const useUserStore = defineStore('user', {
     },
 
       // 未写完
-    async fetchCaseList(content: string) {
-      const res = await userApi.createUserSuggestion({
-        name: content
-      })
+    async createUserSuggestion(content: string) {
+      const res = await userApi.createUserSuggestion({content: content})
+      return res
 
     }
 
