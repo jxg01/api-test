@@ -39,17 +39,17 @@
         </template>
       </el-dropdown>
 
-      <el-dialog v-model="dialogVisit" title="建议" width="30%">
-        <el-form :model="form" ref="formRef">
-          <el-form-item label="内容" required>
+      <el-dialog v-model="dialogVisit" title="建议" width="30%" @closed="closeDialog">
+        <el-form :model="form" ref="suggestionFormRef" :rules="rules">
+          <el-form-item label="内容" prop="content">
             <el-input v-model="form.content" autocomplete="off" type="textarea" />
           </el-form-item>
         </el-form>
         <template #footer>
           <div class="dialog-footer">
-            <el-button @click="dialogVisit = false">Cancel</el-button>
+            <el-button @click="closeDialog">取消</el-button>
             <el-button type="primary"  @click.stop="submit" >
-              Confirm
+              确认
             </el-button>
           </div>
         </template>
@@ -70,8 +70,7 @@
 
   const userStore = useUserStore()
 
-  const logo = ref('https://ww2.sinaimg.cn/mw690/61d7678dgy1hvt194v9kqj20p00uuape.jpg') // 替换为实际的logo地址
-  // const logo = ref('https://img2.baidu.com/it/u=2118627634,2226408035&fm=253&fmt=auto&app=120&f=JPEG?w=800&h=800')
+  const logo = ref('https://ww2.sinaimg.cn/mw690/61d7678dgy1hvt194v9kqj20p00uuape.jpg')
 
   const brandText = ref('EasyAPI')
   
@@ -81,7 +80,7 @@
   }
   
 
-  const formRef = ref<FormInstance>()
+const suggestionFormRef = ref<FormInstance>()
 const form = reactive({
   content: '',
 })
@@ -106,10 +105,11 @@ const submit = async() => {
   } catch (error) {
     console.error(error)
   }
-  
-  
+}
 
-
+const closeDialog = () => {
+  suggestionFormRef.value?.resetFields()
+  dialogVisit.value = false
 }
 
 

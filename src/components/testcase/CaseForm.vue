@@ -210,7 +210,6 @@ const store = useCaseStore()
 const assertionTypes = [
   { value: 'status_code', label: '状态码' },
   { value: 'jsonpath', label: 'JSONPath' },
-  { value: 'response_time', label: '响应时间' }
 ]
   // 参数提取类型配置
 const extractTypes = [

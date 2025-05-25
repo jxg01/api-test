@@ -15,4 +15,17 @@ export const projectApi = {
   /** 删除项目 */
   deleteProject: (id: number) => 
     http.delete<BaseResponse>(`/projects/${id}/`),
+
+  /** 获取项目环境列表 */
+  getProjectEnvList: (params: any) => 
+    http.get('/envs/', params),
+  /** 创建 */
+  createProjectEnv: (params: any) => 
+    http.post('/envs/', params),
+  /** 编辑 */
+  editProjectEnv: (id: number, params: any) => 
+    http.patch(`/envs/${id}/`, params),
+  /** 删除 */
+  delteProjectEnv: (id: number) => 
+    http.delete(`/envs/${id}/`),
 }

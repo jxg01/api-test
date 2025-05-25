@@ -11,6 +11,8 @@ import SettingsPageVue from '@/views/SettingsPage.vue';
 import SuitePageVue from '@/views/SuitePage.vue';
 import TaskPageVue from '@/views/TaskPage.vue';
 import TraderToolsPageVue from '@/views/TraderToolsPage.vue';
+import SuiteEditorVue from '@/components/suite/SuiteEditor.vue';
+import CareTableVue from '@/components/CareTable.vue';
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -32,7 +34,7 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: '/dashboard',
                 name: 'dashboard',
-                component: DashboardPageVue,
+                component: CareTableVue,
                 meta: {
                     title: '首页',
                     // 一级菜单才需要这个字段，用于是否显示这个菜单
@@ -95,8 +97,37 @@ const routes: Array<RouteRecordRaw> = [
                         component: SuitePageVue,
                         meta: {
                             title: '套件管理',
-                            icon: 'SetUp'
-                        }
+                            icon: 'SetUp',
+                            activeMenu: '/automation/suite',
+                            alwaysShow: true,
+
+                        },
+                        children: [
+                            
+                              {
+                                path: 'create',
+                                name: 'SuiteCreate',
+                                component: () => import('@/components/suite/SuiteEditor.vue'),
+                                meta: {
+                                  inheritParentMeta: true // 继承父级元信息
+                                }
+                              },
+                              {
+                                path: ':id',
+                                name: 'SuiteEdit',
+                                component:  () => import('@/components/suite/SuiteEditor.vue'),
+                                props: true,
+                                meta: {
+                                  inheritParentMeta: true, // 继承父级元信息
+                                  activeMenu: '/automation/suite'
+                                }
+                              },
+                              {
+                                path: '', // 默认子路由
+                                name: 'SuiteList',
+                                component:  () => import('@/components/suite/SuiteList.vue')
+                              },
+                        ]
                     },
                 ]
             },
@@ -112,7 +143,8 @@ const routes: Array<RouteRecordRaw> = [
                     {
                         path: 'test',
                         name: 'test',
-                        component: TaskPageVue,
+                        // component: TaskPageVue,
+                        component: () => import('@/components/suite/SuiteEditor.vue'),
                         meta: {
                             title: '任务配置',
                             icon: 'Clock'
@@ -167,5 +199,14 @@ const router = createRouter({
     history: createWebHistory(),
     routes
 })
+
+router.beforeEach((to) => {
+    // 自动补全激活标识
+    if (!to.meta.activeMenu) {
+      const parent = to.matched[to.matched.length - 2]
+      to.meta.activeMenu = parent?.meta.activeMenu || ''
+    }
+  })
+
 
 export default router;

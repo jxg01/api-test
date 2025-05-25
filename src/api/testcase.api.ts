@@ -15,4 +15,8 @@ export const testCaseApi = {
   deleteTestCase: (id: number) => 
     http.delete(`/testcases/${id}/`),
 
+    /** 获取接口列表,id name */
+    getTestCaseSimpleList: () => 
+      http.get('/testcases/simple-cases/'),
+
 }

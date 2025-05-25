@@ -7,11 +7,13 @@
       stripe
       :height="height"
       highlight-current-row
+      v-bind="$attrs"
+      show-overflow-tooltip
     >
       <template v-for="column in columns" :key="column.prop">
         <el-table-column v-bind="column">
           <template #default="scope" v-if="column.slot">
-            <slot :name="column.slot" :row="scope.row"></slot>
+            <slot :name="column.slot" :row="scope.row" :$index="scope.$index"></slot>
           </template>
         </el-table-column>
       </template>

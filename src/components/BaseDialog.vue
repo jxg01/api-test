@@ -2,7 +2,7 @@
   <el-dialog
     :title="computedTitle"
     v-model="visible"
-    width="600px"
+    width="500"
     @closed="handleClosed"
   >
     <el-form 
@@ -106,11 +106,17 @@ const visible = ref(false)
 const mode = ref('add') // 当前模式：add 或 edit
 const buttonText = computed(() => (mode.value === 'add' ? '添加' : '保存'))
 
-// 初始化默认数据结构
-const defaultFormData = reactive<Record<string, any>>({})
+// 修改初始化方式：使用深拷贝函数
+const initFormData = () => {
+  return props.fields.reduce((acc, field) => {
+    acc[field.prop] = '' // 根据字段类型初始化默认值
+    return acc
+  }, {} as Record<string, any>)
+}
 
 // 动态初始化表单数据
-const formData = reactive<Record<string, any>>({ ...defaultFormData })
+// 修改formData初始化
+const formData = reactive<Record<string, any>>(initFormData())
 
 const computedTitle = computed(() => 
   (mode.value === 'add' ? '新增' : '编辑') + props.title
@@ -126,6 +132,7 @@ const handleSubmit = async () => {
           visible.value = false
         }
       })
+    formRef.value?.resetFields()
   } catch (error) {
     submitting.value = false
   }
@@ -133,15 +140,18 @@ const handleSubmit = async () => {
 
 const handleClosed = () => {
   formRef.value?.resetFields()
-  Object.assign(formData, defaultFormData)
+  Object.keys(formData).forEach(key => delete formData[key])
+  Object.assign(formData, initFormData())
   visible.value = false
 }
 
   // 打开弹窗
   const open = (dialogMode: 'add' | 'edit', data: Object) => {
     mode.value = dialogMode
+    Object.keys(formData).forEach(key => delete formData[key])
     // 重置为默认值
-    Object.assign(formData, defaultFormData)
+    Object.assign(formData, initFormData()) // 重新初始化
+    Object.assign(formData, data) // 合并传入数据
     // 合并传入数据
     if (data) Object.assign(formData, data)
     visible.value = true

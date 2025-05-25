@@ -58,12 +58,20 @@
   const router = useRouter()
   const route = useRoute()
 
-  // 优化后的激活菜单计算
+
   const activeMenu = computed(() => {
-    // 获取当前匹配的路由记录
-    const matched = route.matched
-    return matched[matched.length - 1]?.path || '/'
+  return route.meta.activeMenu || 
+    route.path.split('/').slice(0,3).join('/')
   })
+
+
+
+  // 优化后的激活菜单计算
+  // const activeMenu = computed(() => {
+  //   // 获取当前匹配的路由记录
+  //   const matched = route.matched
+  //   return matched[matched.length - 1]?.path || '/'
+  // })
   
   // 过滤显示的路由
   const filteredRoutes = computed(() => 
