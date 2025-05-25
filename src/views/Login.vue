@@ -131,6 +131,7 @@ const submitRegister = async () => {
     justify-content: center;
     align-items: center;
     height: 100vh;
+    background-image: url('@/assets/login1.png');
 }
 
 .login-card {
