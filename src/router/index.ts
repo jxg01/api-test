@@ -34,7 +34,7 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: '/dashboard',
                 name: 'dashboard',
-                component: CareTableVue,
+                component: DashboardPageVue,
                 meta: {
                     title: '首页',
                     // 一级菜单才需要这个字段，用于是否显示这个菜单
