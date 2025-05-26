@@ -32,7 +32,7 @@
         </template>
         <template v-else>
           <el-button type="primary" @click="handleSubmit">保存</el-button>
-          <el-button @click="cancelEdit">取消</el-button>
+          <el-button @click="cancelEdit" v-if="formData.id">取消</el-button>
         </template>
       </div>
     </div>
@@ -50,13 +50,35 @@
               <!-- <label>基础信息</label> -->
               <span class="editor-title"><el-icon><HomeFilled /></el-icon> 基础信息</span>
             </div>
-            
+
+            <el-form-item label="所属项目" prop="name">
+              <el-select
+                v-model="formData.project"
+                placeholder="选择项目"
+                class="run-env"
+                @change="getCasesByProject"
+                v-if="!formData.id"
+                >
+                
+                <el-option
+                  v-for="project in store.projectList"
+                  :key="project.id"
+                  :label="project.name"
+                  :value="project.id" />
+              </el-select>
+              <!-- <el-input v-model="formData.name" :disabled="!isEditing" /> -->
+              <span style="color: black;" v-else> {{ formData.project_name }}</span>
+            </el-form-item>
             <el-form-item label="套件名称" prop="name">
-              <el-input v-model="formData.name" :disabled="!isEditing" />
+              <span style="color: black;" v-if="!isEditing">{{ formData.name }}</span>
+              <el-input v-else v-model="formData.name" />
+              <!-- <el-input v-model="formData.name" :disabled="!isEditing" /> -->
             </el-form-item>
 
             <el-form-item label="套件描述">
-              <el-input type="textarea" v-model="formData.description" :disabled="!isEditing" />
+              <span style="color: black;" v-if="!isEditing">{{ formData.description }}</span>
+              <el-input v-else v-model="formData.description" />
+              <!-- <el-input type="textarea" v-model="formData.description" :disabled="!isEditing" /> -->
             </el-form-item>
 
             <el-form-item label="套件状态" v-if="formData.execution_status">
@@ -85,7 +107,7 @@
                   link
                   type="primary"
                   size="small"
-                  @click.prevent=""
+                  @click.stop="removeRelatedCase(scope.row)"
                   class="action-buttons"
                   :disabled="!isEditing"
                   >
@@ -99,6 +121,32 @@
         </el-row>
       </el-form>
     </div>
+
+    <el-dialog v-model="dialogFormVisible" title="关联用例" width="30%" @close="handleCloseRelatedCaseDialog">
+      <el-form>
+        <el-form-item label="用例">
+          <el-select
+            v-model="relatedCaseIdSelect"
+            placeholder="选择用例"
+            >
+            <el-option
+              v-for="cx in store.casesRelatedProject"
+              :key="cx.id"
+              :label="cx.name"
+              :value="cx.id" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="handleCloseRelatedCaseDialog">取消</el-button>
+        <el-button 
+          type="primary" 
+          @click="addToTable"
+        >
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -118,7 +166,8 @@ const formData = ref<Suite>({
   description: '',
   execution_status: '',
   cases: [],
-  project: ''
+  project: '',
+  project_name: ''
 })
 
 // 页面只读配置 ================================================================
@@ -138,7 +187,6 @@ const cancelEdit = () => {
   if (originalData.value) {
     // 恢复原始数据
     formData.value = JSON.parse(JSON.stringify(originalData.value))
-    selectedCases.value = [...formData.value.cases].map(String)
   }
 }
 // 页面只读配置 ================================================================
@@ -153,14 +201,9 @@ const tableColumns: TableColumn[] = [
 const relatedCasesList = computed(() => {
   // 根据 formData.value.cases 的顺序过滤和排序
   return formData.value.cases
-    .map(id => store.allCases.find((c: TestCase) => c.id === id))
+    .map(id => store.casesRelatedProject.find((c: TestCase) => c.id === id))
     .filter(c => c !== undefined) as TestCase[];
 });
-
-// watch(() => formData.value.cases, (newVal) => {
-//   // 当cases变化时自动更新关联列表
-//   console.log('关联用例更新:', newVal)
-// }, { deep: true })
 
 const moveUp = (index: number) => {
   if (index > 0) {
@@ -193,8 +236,51 @@ const moveDown = (index: number) => {
 }
 
 const addRelatedCases = () => {
-  console.log('in addRelatedCases')
+  dialogFormVisible.value = true;
 }
+
+const relatedCaseIdSelect = ref<string>('')
+
+const dialogFormVisible = ref(false)
+
+const addToTable = () => {
+  if (!relatedCaseIdSelect.value) {
+    ElMessage.error('请选择用例')
+    return
+  }
+  
+  // 检查是否已存在
+  if (formData.value.cases.includes(Number(relatedCaseIdSelect.value))) {
+    ElMessage.warning('该用例已关联')
+    // dialogFormVisible.value = false
+    return
+  }
+
+  // 添加到 cases 数组
+  formData.value.cases.push(Number(relatedCaseIdSelect.value))
+  
+  // 重置表单
+  relatedCaseIdSelect.value = ''
+  
+  dialogFormVisible.value = false
+}
+
+const handleCloseRelatedCaseDialog = () => {
+  dialogFormVisible.value = false
+  relatedCaseIdSelect.value = ''
+}
+
+const removeRelatedCase = (row: TestCase) => {
+  const caseId = row.id;
+  // 从 cases 数组中移除
+  formData.value.cases = formData.value.cases.filter(id => id !== caseId);
+}
+
+const getCasesByProject = async (projectId: string) => {
+  store.detailDefaultProjectId = projectId
+  await store.fetchCases(projectId);
+}
+
 // 关联用例列表 配置 ================================================================
 
 const route = useRoute()
@@ -218,25 +304,26 @@ const initData = async () => {
   }
 }
 
+
+// 标题栏    ================================================================
 // 提交处理
 const handleSubmit = async () => {
-  console.log('in submit1 ', formData.value)
-  console.log('envs ', store.projectEnvsSelect)
-  isEditing.value = false
-  originalData.value = null
-  console.log('in submit2 ', formData.value)
-  // try {
-  //   if (route.params.id) {
-  //     await suiteApi.update(formData.value)
-  //     ElMessage.success('更新成功')
-  //   } else {
-  //     await suiteApi.create(formData.value)
-  //     ElMessage.success('创建成功')
-  //   }
-  //   router.push({ name: 'SuiteList' })
-  // } catch (error) {
-  //   console.error('保存失败:', error)
-  // }
+  console.log('提交数据:', formData.value)
+  try {
+    const res = await store.saveSuite(formData.value)
+    if (res) {
+      if (!formData.value.id) {
+        router.push({ name: 'SuiteList' })
+        originalData.value = null
+        isEditing.value = false
+      } else {
+        isEditing.value = false
+      }
+      console.log('保存成功')
+    }
+  } catch (error) {
+    console.error('保存失败:', error)
+  }
 }
 
 const handleCancel = () => {
@@ -245,43 +332,14 @@ const handleCancel = () => {
 }
 
 
-
-// 用例选择区域
-const caseOptions = ref<Array<{
-  key: string
-  label: string
-  // creator: string
-}>>([])
-
-const selectedCases = ref<string[]>(
-  formData.value.cases.map(String)
-)
-
-// 同步外部值变化
-watch(() => formData.value.cases, (newVal) => {
-  // 使用扩展运算符创建新数组触发响应式更新
-  selectedCases.value = [...newVal].map(String)
-}, { 
-  deep: true, // 深度监听数组变化
-  immediate: true // 初始化立即执行
-})
-
-
-
 onMounted(async () => {
   isEditing.value = !route.params.id
   await initData();
-  await store.fetchCases();
+  
+  
   if (formData.value.project) {
     await store.fetchEnvs(formData.value.project)
   }
-  caseOptions.value = store.allCases.map((c: TestCase) => ({
-    key: String(c.id),  // 转换为字符串
-    label: c.name,
-  }))
-  // 强制同步初始值
-  selectedCases.value = [...formData.value.cases].map(String)
-
 })
 
 

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { suiteApi, testCaseApi, projectApi } from '@/api/'
+import { useInterfaceStore } from './interface'
 
 export interface Suite {
   id?: number | string
@@ -8,6 +9,7 @@ export interface Suite {
   execution_status: string
   cases: number[]
   project: number | string
+  project_name?: string
 }
 
 export interface TestCase {
@@ -25,14 +27,27 @@ export const useSuiteStore = defineStore('suite', {
   state: () => ({
     testSuites: [] as Suite[],
     allCases: [] as TestCase[],
+    casesRelatedProject: [] as TestCase[],
+    detailDefaultProjectId: null as number | string | null,
     currentSuite: null as Suite | null,
     formVisible: false,
     projectEnvs: [] as Envs[],
     projectEnvsSelect: '',
-
+    projectList: [] as { id: number, name: string }[],
   }),
 
   actions: {
+
+    async fetchProjectList() {
+      try {
+        const res = await projectApi.getProjectList({})
+        this.projectList = res.data
+      } catch (error) {
+        console.error('获取项目列表失败', error)
+      }
+    },
+
+
     async fetchSuites() {
       try {
         const res = await suiteApi.getSuiteList({})
@@ -42,10 +57,24 @@ export const useSuiteStore = defineStore('suite', {
       }
     },
 
-    async fetchCases() {
+    async fetchCases(projectId: number | string) {
       try {
-        const res = await testCaseApi.getTestCaseSimpleList()
-        this.allCases = res.data
+        const res = await testCaseApi.getTestCaseSimpleList({ 'project_id': projectId })
+        if (projectId) {
+          this.casesRelatedProject = res.data
+        } else {
+          this.allCases = res.data
+        }
+
+        // if (projectId) {
+        //   const res = await testCaseApi.getTestCaseSimpleList({ 'project_id': projectId })
+        //   this.casesRelatedProject = res.data
+        //   return
+        // } else {
+        //   const res = await testCaseApi.getTestCaseSimpleList({ 'project_id': projectId })
+        //   this.allCases = res.data
+        // }
+        
       } catch (error) {
         console.error('获取用例失败', error)
       }
@@ -57,12 +86,14 @@ export const useSuiteStore = defineStore('suite', {
 
     async saveSuite(suite: Suite) {
       try {
-        if (suite.id) {
-          await updateSuite(suite.id, suite)
-        } else {
-          await createSuite(suite)
-        }
+        const action = suite.id
+        ? await suiteApi.updateSuite(Number(suite.id), suite)
+        : await suiteApi.createSuite(suite)
+
+        const res = await action
+
         await this.fetchSuites()
+        return res
       } catch (error) {
         console.error('保存套件失败', error)
       }
@@ -70,7 +101,7 @@ export const useSuiteStore = defineStore('suite', {
 
     async removeSuite(id: number) {
       try {
-        await deleteSuiteById(id)
+        await suiteApi.deleteSuite(id)
         await this.fetchSuites()
       } catch (error) {
         console.error('删除套件失败', error)

@@ -14,7 +14,7 @@
         <el-button link type="primary" size="small" @click.stop="openForm(scope.row)">
           编辑
         </el-button>
-        <el-button link type="danger" size="small" @click.stop="suiteStore.removeSuite">
+        <el-button link type="danger" size="small" @click.stop="deleteSuite(scope.row)">
           删除
         </el-button>
       </template>
@@ -36,6 +36,7 @@ import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import TestSuiteForm from '@/components/suite/TestSuiteForm.vue'
 import { useSuiteStore, type Suite } from '@/stores/suiteStore'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 const router = useRouter()
 const route = useRoute()
 
@@ -56,8 +57,9 @@ const suiteStore = useSuiteStore()
 
 
 
-const openForm = (suite: Suite) => {
+const openForm = async (suite: Suite) => {
   suiteStore.currentSuite = suite
+  await suiteStore.fetchCases(Number(suite.project));
   router.push(`/automation/suite/${suite.id}`)
 }
 
@@ -70,10 +72,28 @@ const closeForm = () => {
   suiteStore.setCurrentSuite(null)
 }
 
+const deleteSuite = async (row: Suite) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除套件 "${row.name}" 吗？`,
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    await suiteStore.removeSuite(Number(row.id))
+    ElMessage.success('删除成功')
+  } catch (error) {
+    console.error('删除失败:', error)
+  }
+}
+
 // 初始化数据
 onMounted(() => {
   suiteStore.fetchSuites()
-  suiteStore.fetchCases()
+  suiteStore.fetchProjectList()
 })
 
 </script>
