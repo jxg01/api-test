@@ -30,7 +30,7 @@ export const useCaseStore = defineStore('case', {
     cases: [] as TestCase[],
     editTabs: [] as EditTab[],
     currentPage: 1,
-    pageSize: 10,
+    pageSize: 20,
     total: 0,
     loading: false,
     activeTab: 'list',

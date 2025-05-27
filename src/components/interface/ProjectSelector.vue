@@ -79,6 +79,7 @@ const store = useInterfaceStore()
           },
         attrs: { 
           placeholder: '请选择模块',
+          clearable: true,
           options: computed(() => {
             return store.allLevelModules.map(module => ({
               label: module.name,

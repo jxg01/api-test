@@ -22,10 +22,10 @@
       :loading="loading"
     >
       <template #operation="scope">
-        <el-button type="primary" size="small" @click="openEditDialog(scope.row)">
+        <el-button link type="primary" size="small" @click="openEditDialog(scope.row)">
           编辑
         </el-button>
-        <el-button type="danger" size="small" @click="handleDelete(scope.row)">
+        <el-button link type="danger" size="small" @click="handleDelete(scope.row)">
           删除
         </el-button>
       </template>

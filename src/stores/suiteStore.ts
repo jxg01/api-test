@@ -34,10 +34,14 @@ export const useSuiteStore = defineStore('suite', {
     projectEnvs: [] as Envs[],
     projectEnvsSelect: '',
     projectList: [] as { id: number, name: string }[],
+    currentPage: 1,
+    pageSize: 20,
+    total: 0,
+    searchPoject: '',
+    searchSuiteName: '', 
   }),
 
   actions: {
-
     async fetchProjectList() {
       try {
         const res = await projectApi.getProjectList({})
@@ -50,8 +54,15 @@ export const useSuiteStore = defineStore('suite', {
 
     async fetchSuites() {
       try {
-        const res = await suiteApi.getSuiteList({})
+        const res = await suiteApi.getSuiteList({
+          project: this.searchPoject,
+          name: this.searchSuiteName,
+          page: this.currentPage,
+          size: this.pageSize
+        })
         this.testSuites = res.data
+        this.total = res.meta.pagination.total
+        this.currentPage = res.meta.pagination.page
       } catch (error) {
         console.error('获取套件失败', error)
       }
@@ -65,16 +76,6 @@ export const useSuiteStore = defineStore('suite', {
         } else {
           this.allCases = res.data
         }
-
-        // if (projectId) {
-        //   const res = await testCaseApi.getTestCaseSimpleList({ 'project_id': projectId })
-        //   this.casesRelatedProject = res.data
-        //   return
-        // } else {
-        //   const res = await testCaseApi.getTestCaseSimpleList({ 'project_id': projectId })
-        //   this.allCases = res.data
-        // }
-        
       } catch (error) {
         console.error('获取用例失败', error)
       }
@@ -124,6 +125,19 @@ export const useSuiteStore = defineStore('suite', {
       } catch (error) {
         console.error('运行套件失败', error)
       }
-    }
+    },
+    setCurrentPage(page: number) {
+      this.currentPage = page
+      this.fetchSuites()
+    },
+
+    setPageSize(size: number) {
+      this.pageSize = size
+      this.currentPage = 1
+      this.fetchSuites()
+    },
+
+
+
   },
 })

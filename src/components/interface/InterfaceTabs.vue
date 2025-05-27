@@ -10,7 +10,7 @@
         class="demo-tabs"
         >
           <template #add-icon>
-            <el-icon><Delete/></el-icon>
+            <el-icon style="color: red"><Delete/></el-icon>
           </template>
           <el-tab-pane
               v-for="tab in store.tabs"

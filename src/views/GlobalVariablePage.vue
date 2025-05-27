@@ -1,21 +1,23 @@
 <template>
   <div class="global-variable-management-container">
     <!-- 筛选行 -->
-    <el-row class="filter-row" :gutter="20">
+    <el-row class="filter-row" :gutter="10">
       <el-col :span="4">
-        <el-button type="primary" @click="openAddDialog">添加变量</el-button>
+        <el-button type="primary" @click="openAddDialog" :icon="Plus">添加变量</el-button>
       </el-col>
-      <el-col :span="8">
+      <el-col :span="8" style="gap: 10px;">
         <el-input
           v-model="filterParams.name"
           placeholder="请输入变量名称"
           clearable
           @keyup.enter="fetchVariableData"
+           style="max-width: 200px;"
         >
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
+        <el-button type="primary" @click.stop="fetchVariableData" :icon="Search">搜索</el-button>
       </el-col>
     </el-row>
 
@@ -24,15 +26,13 @@
       :columns="tableColumns"
       :table-data="tableData"
       :loading="loading"
-      :pagination="pagination"
-      @page-change="handlePageChange"
-      @size-change="handleSizeChange"
+      height="calc(100vh - 314px)"
     >
       <template #operation="scope">
-        <el-button type="primary" size="small" @click="openEditDialog(scope.row)">
+        <el-button link type="primary" size="small" @click="openEditDialog(scope.row)">
           编辑
         </el-button>
-        <el-button type="danger" size="small" @click="handleDelete(scope.row)">
+        <el-button link type="danger" size="small" @click="handleDelete(scope.row)">
           删除
         </el-button>
       </template>
@@ -46,6 +46,14 @@
       title="全局变量"
       @submit="handleSubmit"
     />
+
+    <BasePagination
+      :current-page="pagination.page"
+      :page-size="pagination.size"
+      :total="pagination.total"
+      @page-change="handlePageChange"
+      @size-change="handleSizeChange"
+    />
   </div>
 </template>
 
@@ -53,8 +61,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import BaseDialog from '@/components/BaseDialog.vue'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
+import BasePagination from '@/components/BasePagination.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { variableApi } from '@/api/'
+import { Search, Plus } from '@element-plus/icons-vue'
 
 type GlobalVariable = {
   id: number

@@ -1,13 +1,36 @@
 <template>
   <div class="p-4">
-    <el-button type="primary" @click="openCreateForm">新建</el-button>
+    <div class="searchTool">
+      <div class="searchTool">
+        <el-select
+          v-model="suiteStore.searchPoject"
+          placeholder="选择项目"
+          class="search-info"
+          clearable
+        >
+          <el-option
+            v-for="project in suiteStore.projectList"
+            :key="project.id"
+            :label="project.name"
+            :value="project.id"
+          />
+        </el-select>
+
+        <el-input v-model="suiteStore.searchSuiteName" clearable placeholder="请输入套件名称" class="search-info" />
+        <el-button type="primary" @click.stop="suiteStore.fetchSuites" :icon="Search"> 搜索</el-button>
+      </div>
+        <div>
+      <el-button type="primary" @click="openCreateForm" class="addSuite" :icon="Plus"> 新建</el-button>
+    </div>
+    </div>
+    
     <BaseTable
       :columns="tableColumns"
       :table-data="suiteStore.testSuites"
-      height="calc(100vh - 319px)"
+      height="calc(100vh - 295px)"
     >
       <template #testcases="scope">
-        <el-tag type="primary" effect="dark"> {{ scope.row.cases.length }} </el-tag>
+        <el-tag type="primary" style="background-color: ghostwhite;"> {{ scope.row.cases.length }} </el-tag>
       </template>
 
       <template #operation="scope">
@@ -19,24 +42,25 @@
         </el-button>
       </template>
     </BaseTable>
-    <TestSuiteForm
-      v-if="suiteStore.formVisible"
-      :visible="suiteStore.formVisible"
-      :suite="suiteStore.currentSuite"
-      :allCases="suiteStore.allCases"
-      @close="closeForm"
-      @save="suiteStore.saveSuite"
-    />
+    <BasePagination
+        v-model:current-page="suiteStore.currentPage"
+        v-model:page-size="suiteStore.pageSize"
+        :total="suiteStore.total"
+        :page-sizes="[5, 10, 20, 50]"
+        @page-change="suiteStore.setCurrentPage"
+        @size-change="suiteStore.setPageSize"
+      />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
-import TestSuiteForm from '@/components/suite/TestSuiteForm.vue'
+import BasePagination from '../BasePagination.vue'
 import { useSuiteStore, type Suite } from '@/stores/suiteStore'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {Search, Plus} from '@element-plus/icons-vue'
 const router = useRouter()
 const route = useRoute()
 
@@ -55,8 +79,6 @@ const tableColumns: TableColumn[] = [
 
 const suiteStore = useSuiteStore()
 
-
-
 const openForm = async (suite: Suite) => {
   suiteStore.currentSuite = suite
   await suiteStore.fetchCases(Number(suite.project));
@@ -65,11 +87,6 @@ const openForm = async (suite: Suite) => {
 
 const openCreateForm = (suite: Suite) => {
   router.push('/automation/suite/create')
-}
-
-const closeForm = () => {
-  suiteStore.formVisible = false
-  suiteStore.setCurrentSuite(null)
 }
 
 const deleteSuite = async (row: Suite) => {
@@ -97,3 +114,23 @@ onMounted(() => {
 })
 
 </script>
+
+
+<style scoped>
+.searchTool {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+  justify-content: space-between;
+}
+.search-info {
+  /* width: 20%; */
+  min-width: 120px;
+  max-width: 160px;
+}
+
+.addSuite {
+  margin: 10px 10px;
+}
+
+</style>

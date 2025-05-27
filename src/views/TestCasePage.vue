@@ -22,10 +22,10 @@
         </template>
 
         <template #operation="scope">
-          <el-button type="primary" size="small" @click.stop="store.editCase(scope.row)">
+          <el-button link type="primary" size="small" @click.stop="store.editCase(scope.row)">
             编辑
           </el-button>
-          <el-button type="danger" size="small" @click.stop="handleDelete(scope.row)">
+          <el-button link type="danger" size="small" @click.stop="handleDelete(scope.row)">
             删除
           </el-button>
         </template>

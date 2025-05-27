@@ -47,6 +47,7 @@
               class="action-icon"
               :class="{ 'disabled': store.editTabs.length === 0 }"
               @click="store.closeAllTabs"
+              style="color: red"
             >
               <Delete />
             </el-icon>

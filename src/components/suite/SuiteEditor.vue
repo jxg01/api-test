@@ -94,7 +94,7 @@
                 <el-button link @click.stop="addRelatedCases" :disabled="!isEditing">➕</el-button>
               </el-tooltip>
             </div>
-            <el-card class="status-card">
+            <el-card class="status-card" shadow="hover">
               <BaseTable
               :columns="tableColumns"
               :table-data="relatedCasesList"
@@ -128,6 +128,7 @@
           <el-select
             v-model="relatedCaseIdSelect"
             placeholder="选择用例"
+            filterable
             >
             <el-option
               v-for="cx in store.casesRelatedProject"
@@ -329,6 +330,7 @@ const handleSubmit = async () => {
 const handleCancel = () => {
   router.back()
   store.projectEnvs = []
+  store.casesRelatedProject = []
 }
 
 
@@ -338,7 +340,10 @@ onMounted(async () => {
   
   
   if (formData.value.project) {
+    await store.fetchCases(formData.value.project)
     await store.fetchEnvs(formData.value.project)
+  } else {
+
   }
 })
 
