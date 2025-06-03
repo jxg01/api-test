@@ -4,10 +4,10 @@
             <h2>登录</h2>
             <el-form :model="loginFormData" label-width="80px" ref="loginFormRef" :rules="rules">
                 <el-form-item label="用户名" prop="username">
-                    <el-input v-model="loginFormData.username" placeholder="请输入用户名"></el-input>
+                    <el-input v-model="loginFormData.username" placeholder="请输入用户名" prefix-icon="User"></el-input>
                 </el-form-item>
                 <el-form-item label="密码" prop="password">
-                    <el-input v-model="loginFormData.password" placeholder="请输入密码" type="password"></el-input>
+                    <el-input v-model="loginFormData.password" placeholder="请输入密码" type="password" prefix-icon="Lock"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="submitLogin">登录</el-button>
@@ -131,11 +131,16 @@ const submitRegister = async () => {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-image: url('@/assets/login1.png');
+    /* background-image: url('@/assets/login1.png'); */
+    background: linear-gradient(to right, #89f7fe, #4facfe);
 }
 
 .login-card {
     width: 400px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    background: #fff;
 }
 
 .register {

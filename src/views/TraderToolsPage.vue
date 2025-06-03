@@ -1,1 +1,1 @@
-<template>TraderTools</template>
+<template> trader tools page </template>

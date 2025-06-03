@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { testCaseApi, interfaceApi } from '@/api/'
+import { testCaseApi, interfaceApi, projectApi } from '@/api/'
 import { useInterfaceStore } from '@/stores/interface'
 
 export interface TestCase {
@@ -25,6 +25,38 @@ export interface ApiList {
   name: string
 }
 
+export interface Envs {
+  id: number
+  name: string
+  url: string
+}
+
+export interface responseDataType {
+  status_code: number
+  headers: Record<string, string>
+  body: any
+}
+
+export interface requestDataType {
+  url: string
+  method: string
+  headers: Record<string, string>
+  data: Record<string, string>
+}
+
+export interface testCaseHistory {
+  id: number
+  case: number
+  status: string
+  request_data: requestDataType
+  response_data: responseDataType
+  assertions_result: []
+  extracted_vars: object
+  duration: number
+  created_at: Date
+  executed_by: string
+}
+
 export const useCaseStore = defineStore('case', {
   state: () => ({
     cases: [] as TestCase[],
@@ -41,7 +73,9 @@ export const useCaseStore = defineStore('case', {
     caseDetailInterId: '',
     caseDetailProjectId: '',
     apiStoreInstance: useInterfaceStore(),
-
+    projectEnvs: [] as Envs[],
+    projectEnvsSelect: '',
+    caseHistoryList: [] as testCaseHistory[],
   }),
 
   getters: {
@@ -90,6 +124,7 @@ export const useCaseStore = defineStore('case', {
 
     // 编辑 添加 都使用这个方法
     editCase(caseData: TestCase) {
+      console.log('caseData', caseData)
       const tabName = caseData.id 
       ? `edit_${caseData.id}`
       : `edit_new_${Date.now()}`;
@@ -185,6 +220,7 @@ export const useCaseStore = defineStore('case', {
           this.activeTab = 'list'
         }
       }
+      this.fetchCaseList();
     },
 
     removeEditTabByCaseId(caseId: number) {
@@ -192,8 +228,11 @@ export const useCaseStore = defineStore('case', {
     },
 
     closeAllTabs() {
-      this.editTabs = []
-      this.activeTab = 'list'
+      if (this.editTabs.length !== 0) {
+        this.editTabs = []
+        this.activeTab = 'list'
+        this.fetchCaseList();
+      }
     },
 
     updateTabTitle(tabName: string, newName: string) {
@@ -214,6 +253,33 @@ export const useCaseStore = defineStore('case', {
         this.searchInterfaceId = ''
       } catch (error) {
         console.error('in project change => ', error)
+      }
+    },
+
+    async fetchEnvs(id?: number | string) {
+      try {
+        const res = await projectApi.getProjectEnvList({'project_id': id})
+        this.projectEnvs = res.data
+      } catch (error) {
+        console.error('运行套件失败', error)
+      }
+    },
+
+    async runTestcase(caseID: number, envUrl: string){
+      try {
+        const res = await testCaseApi.runTestCase(caseID, {'env_url': envUrl})
+        return res
+      } catch (error) {
+        console.error('运行套件失败', error)
+      }
+    },
+
+    async fetchTestCaseHistory(id: number) {
+      try {
+        const res = await testCaseApi.getTestCaseExecuteHistory(id)
+        this.caseHistoryList = res.data
+      } catch (error) {
+        console.error('运行套件失败', error)
       }
     },
 

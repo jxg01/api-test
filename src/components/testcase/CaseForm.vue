@@ -7,6 +7,25 @@
     class="case-detail-form"
     >
       <el-card shadow="hover">
+        <div class="table-header">
+          <span class="table-title">基础信息</span>
+          <div class="run-action" v-if="localCaseDetail.id">
+            <el-select
+            v-model="store.projectEnvsSelect"
+            placeholder="选择环境"
+            class="run-env"
+            >
+              <el-option
+                v-for="env in store.projectEnvs"
+                :key="env.id"
+                :label="env.name"
+                :value="env.id"
+              />
+            </el-select>
+            <el-button type="primary" @click="submitRunTestCase" :loading=runLoading :disabled="store.projectEnvsSelect?false:true">运行</el-button>
+          </div>
+          
+        </div>
         <template v-if="!localCaseDetail.id">
           <el-form-item label="关联项目" prop="name">
             <el-select
@@ -112,7 +131,7 @@
                 />
               </template>
       
-              <template v-if="assertion.type === 'jsonpath'">
+              <template v-if="assertion.type === 'jsonpath_equal'">
                 <el-input
                   v-model="assertion.path"
                   placeholder="JSONPath表达式"
@@ -194,22 +213,27 @@
           <el-button type="primary" @click="submit">保存</el-button>
         </el-form-item>
       </el-card>
+      <case-execute-history v-if="localCaseDetail.id" :table-info="store.caseHistoryList" @handleRefresh="refreshHistory"></case-execute-history>
     </el-form>
+    
   </div>
 </template>
 <script setup lang="ts">
 import { Delete } from '@element-plus/icons-vue'
-import { reactive, nextTick, ref  } from 'vue';
+import { reactive, nextTick, ref, onMounted  } from 'vue';
 import { EditTab, TestCase, useCaseStore } from '@/stores/testcase';
 import { ElMessage, type DialogContext, type FormInstance, type FormRules } from 'element-plus'
 import KeyValueEditor from '@/components/interface/KeyValueEditor.vue'
+import CaseExecuteHistory from './CaseExecuteHistory.vue';
 
 const store = useCaseStore()
 
   // 断言类型配置
 const assertionTypes = [
   { value: 'status_code', label: '状态码' },
-  { value: 'jsonpath', label: 'JSONPath' },
+  { value: 'jsonpath_equal', label: '提取值等于' },
+  { value: 'jsonpath_not_equal', label: '提取值不等于' },
+  { value: 'response_contain', label: '结果包含' },
 ]
   // 参数提取类型配置
 const extractTypes = [
@@ -267,11 +291,11 @@ const assertion = localCaseDetail.assertions[index]
   // 重置相关字段
   switch(assertion.type) {
     case 'status_code':
-    delete assertion.path
-    break
-    case 'jsonpath':
-    assertion.path = ''
-    break
+      delete assertion.path
+      break
+    case 'jsonpath_equal':
+      assertion.path = ''
+      break
   }
 }
 
@@ -309,6 +333,41 @@ const submit = async () => {
   }
 }
 
+// 执行按钮loading状态
+const runLoading = ref<boolean>(false)
+
+const submitRunTestCase = async () => {
+  try {
+    if (!store.projectEnvsSelect) {return}
+    runLoading.value = true
+    const selectEnvInfo = store.projectEnvs.filter(env => env.id === Number(store.projectEnvsSelect))
+    const res = await store.runTestcase(Number(localCaseDetail.id), selectEnvInfo[0]?.url)
+    if (res) {
+      ElMessage.success('提交成功')
+    }
+    
+    runLoading.value = false
+  } catch (error) {
+    ElMessage.error('提交失败')
+    console.error(error)
+    runLoading.value = false
+  }
+}
+
+const refreshHistory = () => {
+  store.fetchTestCaseHistory(Number(localCaseDetail.id))
+  console.log('in refreshHistory')
+}
+
+onMounted(() => {
+  console.error('onMounted => ', localCaseDetail.id)
+  store.fetchEnvs()
+  if (localCaseDetail.id) {
+    store.fetchTestCaseHistory(Number(localCaseDetail.id))
+  }
+  
+})
+
 </script>
 <style scoped>
 .form-view {
@@ -322,7 +381,7 @@ const submit = async () => {
 }
 
 .case-detail-form {
-  width: 70%;
+  /* width: 70%; */
   padding: 20px;
   margin: auto;
   align-items: center;
@@ -355,6 +414,29 @@ const submit = async () => {
     margin: 20px 0;
     width: 100%;
   }
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
 
+  .run-action {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .run-env {
+  width: 180px;
+  padding-right: 8px;
+}
+
+.raw-body {
+  white-space: pre-wrap;
+  word-break: break-all;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
 
   </style>

@@ -12,7 +12,6 @@ import SuitePageVue from '@/views/SuitePage.vue';
 import TaskPageVue from '@/views/TaskPage.vue';
 import TraderToolsPageVue from '@/views/TraderToolsPage.vue';
 import SuiteEditorVue from '@/components/suite/SuiteEditor.vue';
-import CareTableVue from '@/components/CareTable.vue';
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -136,7 +135,7 @@ const routes: Array<RouteRecordRaw> = [
                 name: 'task',
                 meta: {
                     title: '任务管理',
-                    isShow: true,
+                    isShow: false,
                     icon: 'Clock'
                 },
                 children: [
@@ -169,7 +168,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: SettingsPageVue,
                 meta: {
                     title: '系统设置',
-                    isShow: true,
+                    isShow: false,
                     icon: 'Clock'
                 },
 
