@@ -43,6 +43,7 @@
         :model="formData" 
         label-width="120px" 
         ref="formRef"
+        :rules="rules"
       >
         <el-row :gutter="30">
           <el-col :span="10">
@@ -51,7 +52,7 @@
               <span class="editor-title"><el-icon><HomeFilled /></el-icon> 基础信息</span>
             </div>
 
-            <el-form-item label="所属项目" prop="name">
+            <el-form-item label="所属项目" prop="project">
               <el-select
                 v-model="formData.project"
                 placeholder="选择项目"
@@ -75,7 +76,7 @@
               <!-- <el-input v-model="formData.name" :disabled="!isEditing" /> -->
             </el-form-item>
 
-            <el-form-item label="套件描述">
+            <el-form-item label="套件描述" prop="description">
               <span style="color: black;" v-if="!isEditing">{{ formData.description }}</span>
               <el-input v-else v-model="formData.description" />
               <!-- <el-input type="textarea" v-model="formData.description" :disabled="!isEditing" /> -->
@@ -152,10 +153,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import type { FormInstance } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { suiteApi } from '@/api'
 import { useSuiteStore, Suite, TestCase } from '@/stores/suiteStore'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
@@ -169,6 +170,20 @@ const formData = ref<Suite>({
   cases: [],
   project: '',
   project_name: ''
+})
+
+// 校验规则定义
+const rules = reactive<FormRules>({
+  name: [
+    { required: true, message: '套件名称不能为空', trigger: 'blur' },
+    // { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  project: [
+    { required: true, message: '项目选择不能为空', trigger: 'blur' },
+  ],
+  description: [
+    { required: true, message: '套件描述不能为空', trigger: 'blur' },
+  ],
 })
 
 // 页面只读配置 ================================================================
@@ -305,12 +320,12 @@ const initData = async () => {
   }
 }
 
-
 // 标题栏    ================================================================
 // 提交处理
 const handleSubmit = async () => {
   console.log('提交数据:', formData.value)
   try {
+    await formRef.value?.validate()
     const res = await store.saveSuite(formData.value)
     if (res) {
       if (!formData.value.id) {

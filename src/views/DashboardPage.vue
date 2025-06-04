@@ -4,7 +4,7 @@
   <div class="dashboard-container">
     <!-- 顶部统计卡片区 -->
     <el-row :gutter="20">
-      <el-col :span="6">
+      <el-col :span="4">
         <el-card shadow="hover">
           <div class="stat-card">
             <div class="stat-icon" style="color: #409EFF;">
@@ -17,7 +17,21 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :span="4">
+        <el-card shadow="hover">
+          <div class="stat-card">
+            <div class="stat-icon" style="color: #67C23A;">
+              <i class="el-icon-success"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-title">接口数量</div>
+              <div class="stat-value">{{ stats.projectCount }}</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="4">
         <el-card shadow="hover">
           <div class="stat-card">
             <div class="stat-icon" style="color: #67C23A;">
@@ -30,7 +44,22 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+
+      <el-col :span="4">
+        <el-card shadow="hover">
+          <div class="stat-card">
+            <div class="stat-icon" style="color: #67C23A;">
+              <i class="el-icon-success"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-title">可用数量</div>
+              <div class="stat-value">{{ stats.passRate }}%</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="4">
         <el-card shadow="hover">
           <div class="stat-card">
             <div class="stat-icon" style="color: #E6A23C;">
@@ -43,7 +72,7 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :span="4">
         <el-card shadow="hover">
           <div class="stat-card">
             <div class="stat-icon" style="color: #F56C6C;">

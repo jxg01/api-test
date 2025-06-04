@@ -5,6 +5,7 @@
     ref="formRef"
     label-width="100px"
     class="case-detail-form"
+    :rules="rules"
     >
       <el-card shadow="hover">
         <div class="table-header">
@@ -23,6 +24,7 @@
               />
             </el-select>
             <el-button type="primary" @click="submitRunTestCase" :loading=runLoading :disabled="store.projectEnvsSelect?false:true">运行</el-button>
+            <el-button type="primary" @click="submit" :disabled="!isFormDirty">保存</el-button>
           </div>
           
         </div>
@@ -208,10 +210,6 @@
             </el-button>
           </div>
         </el-form-item>
-
-        <el-form-item>
-          <el-button type="primary" @click="submit">保存</el-button>
-        </el-form-item>
       </el-card>
       <case-execute-history v-if="localCaseDetail.id" :table-info="store.caseHistoryList" @handleRefresh="refreshHistory"></case-execute-history>
     </el-form>
@@ -220,11 +218,12 @@
 </template>
 <script setup lang="ts">
 import { Delete } from '@element-plus/icons-vue'
-import { reactive, nextTick, ref, onMounted  } from 'vue';
+import { reactive, nextTick, ref, onMounted, computed  } from 'vue';
 import { EditTab, TestCase, useCaseStore } from '@/stores/testcase';
 import { ElMessage, type DialogContext, type FormInstance, type FormRules } from 'element-plus'
 import KeyValueEditor from '@/components/interface/KeyValueEditor.vue'
 import CaseExecuteHistory from './CaseExecuteHistory.vue';
+import _ from 'lodash'; // 引入 lodash 用于深度比较
 
 const store = useCaseStore()
 
@@ -258,6 +257,14 @@ const localCaseDetail = reactive<TestCase>({
 
   assertions: props.tabInfo.formData.assertions,
   variable_extract: props.tabInfo.formData.variable_extract,
+})
+
+// 添加初始数据副本用于比较
+const initialData = ref(JSON.parse(JSON.stringify(localCaseDetail)))
+
+// 创建计算属性判断表单是否有变动
+const isFormDirty = computed(() => {
+  return !_.isEqual(localCaseDetail, initialData.value)
 })
 
 // 初始化断言条目
@@ -316,6 +323,17 @@ const updateHandler = (type: 'headers' | 'params' | 'body', value: Record<string
 const activeTab = ref('headers')
 
 const formRef = ref<FormInstance>()
+// 校验规则定义
+const rules = reactive<FormRules>({
+  name: [
+    { required: true, message: '用例名称不能为空', trigger: 'blur' },
+    // { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  description: [
+    { required: true, message: '用例描述不能为空', trigger: 'blur' },
+  ],
+})
+
 
 const submit = async () => {
   try {
@@ -328,6 +346,9 @@ const submit = async () => {
     store.saveCase(newTabInfo)
     ElMessage.success('保存成功')
     store.fetchCaseList()
+
+    // 保存成功后更新初始数据
+    initialData.value = JSON.parse(JSON.stringify(localCaseDetail))
   } catch (error) {
     console.error('表单验证失败:', error)
   }
