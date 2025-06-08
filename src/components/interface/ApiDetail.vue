@@ -67,12 +67,32 @@
 
         <!-- body 标签页 -->
         <el-tab-pane label="body" name="body">
+          <el-radio-group v-model="localDetail.bodyType" class="body-type-selector">
+            <el-radio value="form-data">Form Data</el-radio>
+            <el-radio value="raw">Raw</el-radio>
+          </el-radio-group>
+
+          <!-- Form Data 模式 @update:items="updateFormData" -->
           <key-value-editor
-            :items="localDetail.body"
-            @update:items="updateHandler('body', $event)"
-            key-placeholder="参数名"
-            value-placeholder="参数值"
+            v-if="localDetail.bodyType === 'form-data'"
+            :items="localDetail.data"
+            @update:items="updateHandler('data', $event)"
           />
+          <!-- Raw 模式 -->
+          <div v-else-if="localDetail.bodyType === 'raw'">
+            <MonacoEditor
+              v-model:value="code"
+              language="python"
+              :height="300"
+              theme="vs-dark"
+              :options="editorOptions"
+            />
+            <!-- <el-input
+              type="textarea"
+              v-model="localDetail.body"
+              placeholder="输入JSON/XML等原始数据"
+            /> -->
+          </div>
         </el-tab-pane>
       </el-tabs>
 
@@ -134,6 +154,24 @@
   import { ElMessage } from 'element-plus'
   import { useInterfaceStore } from '@/stores/interface'
   import type { FormInstance, FormRules } from 'element-plus'
+  import MonacoEditor from 'monaco-editor-vue3'
+
+// const code = ref(`# 这里写 Python 代码
+// def hello(name):
+//     print(f"Hello, {name}!")
+
+// hello("World")
+// `)
+
+const code = ref(`{}`)
+
+const editorOptions = {
+  fontSize: 15,
+  minimap: { enabled: false },
+  lineNumbers: 'on',
+  scrollBeyondLastLine: false,
+  automaticLayout: true
+}
 
   // 添加表单引用
 const formRef = ref<FormInstance>()
@@ -163,7 +201,9 @@ const rules = reactive<FormRules>({
     path: string
     headers?: Record<string, string>
     params?: Record<string, string>
-    body?: Record<string, string>
+    bodyType?: 'form-data' | 'raw'
+    body: string
+    data?: Record<string, any>
     name: string
     module: number | string
     id: number | string
@@ -181,13 +221,15 @@ const rules = reactive<FormRules>({
     path: props.detail.path,
     headers: props.detail.headers ? JSON.parse(JSON.stringify(props.detail.headers)) : {},
     params: props.detail.params ? JSON.parse(JSON.stringify(props.detail.params)) : {},
-    body: props.detail.params ? JSON.parse(JSON.stringify(props.detail.params)) : {},
+    body: props.detail.body ? JSON.stringify(props.detail.params) : '{}',
+    data: props.detail.body ? JSON.parse(JSON.stringify(props.detail.body)) : {},
+    bodyType: 'form-data', // 默认使用form-data
     id: props.detail.id
   })
   
   // 更新处理器（添加防抖）
   let updateLock = false
-  const updateHandler = (type: 'headers' | 'params' | 'body', value: Record<string, string>) => {
+  const updateHandler = (type: 'headers' | 'params' | 'data', value: Record<string, string>) => {
     if (updateLock) return
     
     updateLock = true
@@ -208,6 +250,15 @@ const rules = reactive<FormRules>({
       params: newVal.params ? JSON.parse(JSON.stringify(newVal.params)) : {},
       name: newVal.name,
     })
+  }, { deep: true })
+
+  watch(() => code, (newVal) => {
+    // 监听本地数据变化，更新store
+    try {
+      localDetail.body = JSON.parse(newVal.value)
+    } catch (e) {
+      localDetail.body = newVal.value // 保持原始字符串
+    }
   }, { deep: true })
 
   // -----------------------------------------------
@@ -249,9 +300,23 @@ const isJSON = computed(() => {
 
 const jsonDeep = ref(3)
 
+function isObject(value: any) {
+  return value !== null && typeof value === 'object';
+}
+
 // 修改保存处理函数
 const handleSend = async () => {
   try {
+    if (localDetail.body) {
+      if (!isObject(localDetail.body)) {
+        ElMessage.error('Boby 格式错误，body需要为字典')
+        return
+      }
+    }
+    
+
+    console.log('发送请求前的本地数据:', isObject(localDetail.body))
+
     if (!localDetail.path) {
       ElMessage.error('接口路径不能为空')
       return
@@ -285,6 +350,7 @@ const handleSend = async () => {
     }
     
   } catch (error: any) {
+    ElMessage.error('请求失败111')
     ElMessage.error(`请求失败: ${error.message}`)
     responseData.value = {
       status: error.response?.status || 500,
@@ -308,6 +374,8 @@ const submitForm = async () => {
     console.error('表单验证失败', error)
   }
 }
+
+
 
   </script>
   
@@ -384,5 +452,9 @@ const submitForm = async () => {
   padding-top: 4px;
 }
 
+.body-type-selector {
+  margin-bottom: 15px;
+  display: flex;
+}
   </style>
   

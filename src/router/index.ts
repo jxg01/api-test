@@ -190,7 +190,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: TraderToolsPageVue,
                 meta: {
                     title: '交易工具',
-                    isShow: true,
+                    isShow: false,
                     icon: 'Clock'
                 },
             },
