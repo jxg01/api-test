@@ -33,6 +33,7 @@
 
 // 新增：关闭全部标签页
 const handleCloseAll = () => {
+  console.log('in close all')
   store.tabs.forEach(tab => {
     store.removeTab(tab.id)
   })
@@ -41,14 +42,23 @@ const handleCloseAll = () => {
 
 const handleTabsEdit = (targetName: any | undefined, action: 'remove' | 'add') => {
   try{
-    if (action === 'remove') {
-      if (store.selectedProjectId){
-        store.fetchModules(store.selectedProjectId)
-      }
-    }
-    else if (action === 'add') {
+    if ( action === 'add') {
+      console.log('in add')
       handleCloseAll()
     }
+    if (store.selectedProjectId){
+      store.fetchModules(store.selectedProjectId)
+    }
+    // if (action === 'remove') {
+    //   if (store.selectedProjectId){
+    //     store.fetchModules(store.selectedProjectId)
+    //   }
+    // }
+    // else if (action === 'add') {
+    //   handleCloseAll()
+    // }
+
+
   } catch (error) {
     console.error('Error in handleTabsEdit:', error)
   }

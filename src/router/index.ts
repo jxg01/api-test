@@ -12,6 +12,8 @@ import SuitePageVue from '@/views/SuitePage.vue';
 import TaskPageVue from '@/views/TaskPage.vue';
 import TraderToolsPageVue from '@/views/TraderToolsPage.vue';
 import SuiteEditorVue from '@/components/suite/SuiteEditor.vue';
+import SuggestionPageVue from '@/views/SuggestionPage.vue';
+import ExecutionHistoryPageVue from '@/views/ExecutionHistoryPage.vue';
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -128,6 +130,15 @@ const routes: Array<RouteRecordRaw> = [
                               },
                         ]
                     },
+                    {
+                        path: 'excution-history',
+                        name: 'excution-history',
+                        component: ExecutionHistoryPageVue,
+                        meta: {
+                            title: '套件执行记录',
+                            icon: 'Files'
+                        }
+                    },
                 ]
             },
             {
@@ -182,7 +193,16 @@ const routes: Array<RouteRecordRaw> = [
                     isShow: true,
                     icon: 'Clock'
                 },
-
+            },
+            {
+                path: '/suggestions',
+                name: 'suggestions',
+                component: SuggestionPageVue,
+                meta: {
+                    title: '优化反馈',
+                    isShow: true,
+                    icon: 'Clock'
+                },
             },
         ]
     },

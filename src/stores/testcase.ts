@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { testCaseApi, interfaceApi, projectApi } from '@/api/'
 import { useInterfaceStore } from '@/stores/interface'
+import { ta } from 'element-plus/es/locale'
 
 export interface TestCase {
   id: number | string
@@ -12,6 +13,8 @@ export interface TestCase {
   body:  Record<string, string>
   assertions: [Record<string, string>]
   variable_extract: [Record<string, string>]
+  project?: number | string // 项目ID
+  interface?: number | string // 接口ID
 }
 
 export interface EditTab {
@@ -109,7 +112,7 @@ export const useCaseStore = defineStore('case', {
 
     addNewCase() {
       const newCase: TestCase = {
-        id: '',
+        id: 0,
         name: '新建用例',
         enabled: true,
         description: '',
@@ -125,17 +128,21 @@ export const useCaseStore = defineStore('case', {
     // 编辑 添加 都使用这个方法
     editCase(caseData: TestCase) {
       console.log('caseData', caseData)
-      const tabName = caseData.id 
-      ? `edit_${caseData.id}`
-      : `edit_new_${Date.now()}`;
+      const tabName = caseData.id
+      // const tabName = caseData.id 
+      // ? `edit_${caseData.id}`
+      // : `edit_new_${Date.now()}`;
+      console.log('tabName', tabName)
+      console.log('this.editTabs', this.editTabs)
       const existing = this.editTabs.find(tab => tab.name === tabName);
+      console.log('existing', existing)
       if (existing) {
         this.activeTab = existing.name
         return existing
       }
 
       const newTab: EditTab = {
-        name: `edit_${Date.now()}`,
+        name: tabName,
         title: caseData.name.length > 8 ? `${caseData.name.substring(0, 8)}...` : caseData.name,
         formData: { ...caseData }
       }
@@ -156,11 +163,12 @@ export const useCaseStore = defineStore('case', {
 
     async saveCase(tab: EditTab) {
       try {
+        if (tab.formData.id) { delete tab.formData.interface}
         const savedCase = tab.formData.id 
           ? await testCaseApi.updateTestCase(Number(tab.formData.id), tab.formData)
           : await testCaseApi.createTestCase({
             ...tab.formData,
-            'interface': this.caseDetailInterId
+            'interface': tab.formData.interface
           })
           // 更新cases列表
           const index = this.cases.findIndex(c => c.id === savedCase.id);
@@ -175,14 +183,15 @@ export const useCaseStore = defineStore('case', {
             // 更新标签页信息
             this.editTabs[targetIndex] = {
               ...this.editTabs[targetIndex],
-              name: `edit_${savedCase.id}`,  // 使用ID作为唯一标识
+              name: savedCase.id,  // 使用ID作为唯一标识
               title: this.getTabTitle(savedCase.name),
               formData: { ...savedCase }
             };
             
             // 如果当前激活的是这个标签页，同步更新activeTab
             if (this.activeTab === tab.name) {
-              this.activeTab = `edit_${savedCase.id}`;
+              // this.activeTab = `edit_${savedCase.id}`;
+              this.activeTab = savedCase.id;
             }
           }
           this.fetchCaseList()
@@ -279,7 +288,7 @@ export const useCaseStore = defineStore('case', {
         const res = await testCaseApi.getTestCaseExecuteHistory(id)
         this.caseHistoryList = res.data
       } catch (error) {
-        console.error('运行套件失败', error)
+        console.error('获取套件失败', error)
       }
     },
 

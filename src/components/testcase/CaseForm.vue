@@ -10,28 +10,29 @@
       <el-card shadow="hover">
         <div class="table-header">
           <span class="table-title">基础信息</span>
-          <div class="run-action" v-if="localCaseDetail.id">
-            <el-select
-            v-model="store.projectEnvsSelect"
-            placeholder="选择环境"
-            class="run-env"
-            >
-              <el-option
-                v-for="env in store.projectEnvs"
-                :key="env.id"
-                :label="env.name"
-                :value="env.id"
-              />
-            </el-select>
-            <el-button type="primary" @click="submitRunTestCase" :loading=runLoading :disabled="store.projectEnvsSelect?false:true">运行</el-button>
-            <el-button type="primary" @click="submit" :disabled="!isFormDirty">保存</el-button>
-          </div>
-          
+          <div class="right-actions">
+            <div class="run-action" v-if="localCaseDetail.id">
+              <el-select
+                v-model="store.projectEnvsSelect"
+                placeholder="选择环境"
+                class="run-env"
+              >
+                <el-option
+                  v-for="env in store.projectEnvs"
+                  :key="env.id"
+                  :label="env.name"
+                  :value="env.id"
+                />
+              </el-select>
+              <el-button type="primary" @click="submitRunTestCase" :loading=runLoading :disabled="store.projectEnvsSelect?false:true">运行</el-button>
+            </div>
+            <el-button class="save-bt" type="primary" @click="submit" :disabled="!isFormDirty">保存</el-button>
+          </div>  
         </div>
         <template v-if="!localCaseDetail.id">
-          <el-form-item label="关联项目" prop="name">
+          <el-form-item label="关联项目" prop="project">
             <el-select
-              v-model="store.caseDetailProjectId"
+              v-model="localCaseDetail.project"
               placeholder="选择项目"
               @change="store.handleProjectChange"
               class="type-select"
@@ -45,9 +46,9 @@
             </el-select>
           </el-form-item>
 
-          <el-form-item label="关联接口" prop="name">
+          <el-form-item label="关联接口" prop="interface">
             <el-select
-              v-model="store.caseDetailInterId"
+              v-model="localCaseDetail.interface"
               placeholder="选择接口"
               class="type-select"
               filterable
@@ -257,6 +258,8 @@ const localCaseDetail = reactive<TestCase>({
 
   assertions: props.tabInfo.formData.assertions,
   variable_extract: props.tabInfo.formData.variable_extract,
+  project: '',
+  interface: '',
 })
 
 // 添加初始数据副本用于比较
@@ -332,6 +335,13 @@ const rules = reactive<FormRules>({
   description: [
     { required: true, message: '用例描述不能为空', trigger: 'blur' },
   ],
+  project: [
+    { required: true, message: '请选择关联项目', trigger: 'change' }
+  ],
+  interface: [
+    { required: true, message: '请选择关联接口', trigger: 'change' }
+  ],
+
 })
 
 
@@ -443,13 +453,13 @@ onMounted(() => {
   }
 
   .run-action {
-    display: flex;
-    justify-content: space-between;
-  }
+  display: flex;
+  gap: 8px; /* 运行按钮与环境选择器的间距 */
+}
 
   .run-env {
   width: 180px;
-  padding-right: 8px;
+  margin-right: auto;
 }
 
 .raw-body {
@@ -458,6 +468,11 @@ onMounted(() => {
   padding: 12px;
   background: #f8f9fa;
   border-radius: 4px;
+}
+.right-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* 元素间距 */
 }
 
   </style>

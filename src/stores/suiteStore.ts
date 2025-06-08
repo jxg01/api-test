@@ -109,12 +109,25 @@ export const useSuiteStore = defineStore('suite', {
       }
     },
 
-    async runSuite(id: number) {
+    async runSuite(id: number, env_url: string) {
       try {
-        await runSuiteById(id)
+        const res = await suiteApi.runSuite(id, {
+          env_url: env_url,
+        })
         await this.fetchSuites()
+        if (res) { return res }
+        
       } catch (error) {
         console.error('运行套件失败', error)
+      }
+    },
+
+    async fetchSuiteDetailExecutionHistory(id: number) {
+      try {
+        const res = await suiteApi.getSuiteExecutionHistory({ 'suite': id })
+        return res
+      } catch (error) {
+        console.error('获取套件执行记录失败', error)
       }
     },
 

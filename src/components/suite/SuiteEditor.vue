@@ -26,7 +26,7 @@
             :value="env.id"
           />
         </el-select>
-        <el-button type="primary" @click="">运行</el-button>
+        <el-button type="primary" @click="runCurrentSuite" :disabled="store.projectEnvsSelect?false:true">运行</el-button>
         <template v-if="!isEditing">
           <el-button type="primary" @click="enterEditMode">编辑</el-button>
         </template>
@@ -38,6 +38,7 @@
     </div>
 
     <!-- 表单主体 -->
+     <el-card>
     <div class="form-container">
       <el-form 
         :model="formData" 
@@ -122,6 +123,8 @@
         </el-row>
       </el-form>
     </div>
+    <SuiteDetailHistory v-if="formData.id" :suite-id="Number(formData.id)" />
+  </el-card>
 
     <el-dialog v-model="dialogFormVisible" title="关联用例" width="30%" @close="handleCloseRelatedCaseDialog">
       <el-form>
@@ -153,13 +156,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, reactive } from 'vue'
+import { ref, onMounted, computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { suiteApi } from '@/api'
 import { useSuiteStore, Suite, TestCase } from '@/stores/suiteStore'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
+import SuiteDetailHistory from './SuiteDetailHistory.vue'
 
 // 表单数据
 const formData = ref<Suite>({
@@ -346,6 +350,30 @@ const handleCancel = () => {
   router.back()
   store.projectEnvs = []
   store.casesRelatedProject = []
+}
+
+const runCurrentSuite = async () => {
+  if (!store.projectEnvsSelect) {
+    ElMessage.error('请先选择项目')
+    return
+  }
+  if (formData.value.cases.length === 0) {
+    ElMessage.error('请先关联用例')
+    return
+  }
+  
+  try {
+    const selectEnvInfo = store.projectEnvs.filter(env => env.id === Number(store.projectEnvsSelect))
+    const res = await store.runSuite(Number(formData.value.id), selectEnvInfo[0].url)
+    console.log('运行套件结果:', res)
+    if (res) {
+      ElMessage.success('任务已提交')
+    }
+    
+  } catch (error) {
+    console.error('运行套件失败:', error)
+    ElMessage.error('运行套件失败，请稍后重试')
+  }
 }
 
 

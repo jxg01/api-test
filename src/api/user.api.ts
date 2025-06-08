@@ -46,6 +46,7 @@ export const userApi = {
     http.post('/suggestion/', params),
 
   /** 获取用户列表 */
-  getUserSuggestionList: (params: PaginationParams) => 
+  getUserSuggestionList: (params: any) => 
     http.get('/suggestion/', params),
+
 }

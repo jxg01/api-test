@@ -30,7 +30,7 @@
       height="calc(100vh - 295px)"
     >
       <template #testcases="scope">
-        <el-tag type="primary" style="background-color: ghostwhite;"> {{ scope.row.cases.length }} </el-tag>
+        <el-tag type="primary" style="background-color:aliceblue; color:darkmagenta;"> {{ scope.row.cases.length }} </el-tag>
       </template>
 
       <template #operation="scope">

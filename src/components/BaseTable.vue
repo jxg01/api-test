@@ -1,14 +1,15 @@
 <!-- BaseTable.vue -->
 <template>
   <div class="table-container">
+    <!-- highlight-current-row -->
     <el-table
       v-loading="loading"
       :data="tableData"
       stripe
       :height="height"
-      highlight-current-row
       v-bind="$attrs"
       show-overflow-tooltip
+      empty-text="暂无数据"
     >
       <template v-for="column in columns" :key="column.prop">
         <el-table-column v-bind="column">

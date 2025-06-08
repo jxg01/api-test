@@ -20,5 +20,12 @@ export const suiteApi = {
   deleteSuite: (id: number) => 
     http.delete(`/suite/${id}/`),
 
+  /** 获取套件执行记录 */
+  getSuiteExecutionHistory: (params: any) => 
+    http.get('/SuiteExecutionResult/', params),
+
+  runSuite: (id: number, params: any) =>
+    http.post(`/suite/${id}/execute/`, params),
+
 
 }

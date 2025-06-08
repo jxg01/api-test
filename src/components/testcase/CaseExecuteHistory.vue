@@ -20,108 +20,111 @@
       </BaseTable>
     </el-card>
 
-    <el-dialog title="记录详情" v-model="detailVisit" width="70%">
-        <!-- 新增响应展示区域 -->
-    <div class="request-detail">
-      <el-divider content-position="left"><span class="content-title">请求信息</span></el-divider>
-      <el-skeleton :loading="loading" animated>
-        <template #default>
-          <div v-if="requestData">
-            <el-descriptions border :column="1">
-              <!-- 状态码 -->
-              <el-descriptions-item label="请求地址"  width="100">
-                <span> {{ requestData.url }} </span>
-              </el-descriptions-item>
-              <!-- 状态码 -->
-              <el-descriptions-item label="请求方式">
-                <el-tag>
-                  {{ requestData.method }}
-                </el-tag>
-              </el-descriptions-item>
+    <el-dialog title="记录详情" v-model="detailVisit" width="70%" @closed="handleClosed">
+      <!-- 新增响应展示区域 -->
+      <div class="request-detail">
+        <!-- <el-divider content-position="left"><span class="content-title">请求信息</span></el-divider> -->
+        <el-tabs v-model="activeName" class="demo-tabs" @tab-click="handleClick" type="border-card">
+          <el-tab-pane label="请求信息" name="first">
+            <el-skeleton :loading="loading" animated>
+              <template #default>
+                <div v-if="requestData">
+                  <el-descriptions border :column="1">
+                    <!-- 状态码 -->
+                    <el-descriptions-item label="请求地址"  width="100">
+                      <span> {{ requestData.url }} </span>
+                    </el-descriptions-item>
+                    <!-- 状态码 -->
+                    <el-descriptions-item label="请求方式">
+                      <el-tag>
+                        {{ requestData.method }}
+                      </el-tag>
+                    </el-descriptions-item>
 
-              <!-- 响应头 -->
-              <el-descriptions-item label="请求头">
-                <key-value-viewer :data="requestData.headers" />
-              </el-descriptions-item>
+                    <!-- 响应头 -->
+                    <el-descriptions-item label="请求头">
+                      <key-value-viewer :data="requestData.headers" />
+                    </el-descriptions-item>
 
-              <!-- 响应体 -->
-              <el-descriptions-item label="请求参数">
-                <key-value-viewer :data="requestData.data" />
-              </el-descriptions-item>
-            </el-descriptions>
-          </div>
+                    <!-- 响应体 -->
+                    <el-descriptions-item label="请求参数">
+                      <key-value-viewer :data="requestData.data" />
+                    </el-descriptions-item>
+                  </el-descriptions>
+                </div>
 
-          <div v-else class="empty-response">
-            <el-empty description="暂无数据" />
-          </div>
-        </template>
-        
-        <template #template>
-          <el-skeleton-item variant="text" style="width: 30%" />
-          <el-skeleton-item variant="text" />
-          <el-skeleton-item variant="text" style="width: 60%" />
-        </template>
-      </el-skeleton>
-
-      <el-divider content-position="left"><span class="content-title">响应信息</span></el-divider>
-      <el-skeleton :loading="loading" animated>
-        <template #default>
-          <div v-if="responseData">
-            <el-descriptions border :column="1" class="response-info">
-              <!-- 状态码 -->
-              <el-descriptions-item label="状态码" width="100">
-                <el-tag>
-                  {{ responseData.status_code }}
-                </el-tag>
-              </el-descriptions-item>
-
-              <!-- 响应头 -->
-              <el-descriptions-item label="响应头">
-                <key-value-viewer :data="responseData.headers" :width="300"/>
-              </el-descriptions-item>
-
-              <!-- 响应体 -->
-              <el-descriptions-item label="响应体">
-                  <pre class="raw-body">{{ responseBody }}</pre>
-                  <!-- </div> -->
-              </el-descriptions-item>
-            </el-descriptions>
-          </div>
-
-          <div v-else class="empty-response">
-            <el-empty description="暂无数据" />
-          </div>
-        </template>
-      </el-skeleton>
-
-      <!-- 断言区域 -->
-      <el-divider content-position="left"><span class="content-title">断言</span></el-divider>
-      <el-skeleton :loading="loading" animated>
-        <template #default>
-          <div v-if="assertionData">
-            <BaseTable
-              :columns="detailTableColumns"
-              :table-data="assertionData"
-              height="auto"
-            >
-              <template #StatusTag="scope">
-                <el-tag :type="scope.row.status === 'success' ?'primary': 'danger'" effect="dark"> {{ scope.row.status === "success" ? '成功': '失败' }} </el-tag>
+                <div v-else class="empty-response">
+                  <el-empty description="暂无数据" />
+                </div>
               </template>
-            </BaseTable>
-          </div>
-        </template>
-      </el-skeleton>
+              
+              <template #template>
+                <el-skeleton-item variant="text" style="width: 30%" />
+                <el-skeleton-item variant="text" />
+                <el-skeleton-item variant="text" style="width: 60%" />
+              </template>
+            </el-skeleton>
+          </el-tab-pane>
+          <el-tab-pane label="响应信息" name="second">
+            <el-skeleton :loading="loading" animated>
+              <template #default>
+                <div v-if="responseData">
+                  <el-descriptions border :column="1" class="response-info">
+                    <!-- 状态码 -->
+                    <el-descriptions-item label="状态码" width="100">
+                      <el-tag>
+                        {{ responseData.status_code }}
+                      </el-tag>
+                    </el-descriptions-item>
 
-      <el-divider content-position="left" style="margin: 30px 0;"><span class="content-title">提取变量</span></el-divider>
-      <el-skeleton :loading="loading" animated>
-        <template #default>
-          <div v-if="extratedData">
-            <key-value-viewer :data="extratedData" :width="300" :key-label="'变量名称'" :value-label="'提取值'" />
-          </div>
-        </template>
-      </el-skeleton>
+                    <!-- 响应头 -->
+                    <el-descriptions-item label="响应头">
+                      <key-value-viewer :data="responseData.headers" :width="300"/>
+                    </el-descriptions-item>
 
-    </div>
+                    <!-- 响应体 -->
+                    <el-descriptions-item label="响应体">
+                        <pre class="raw-body">{{ responseBody }}</pre>
+                        <!-- </div> -->
+                    </el-descriptions-item>
+                  </el-descriptions>
+                </div>
+
+                <div v-else class="empty-response">
+                  <el-empty description="暂无数据" />
+                </div>
+              </template>
+            </el-skeleton>
+          </el-tab-pane>
+          <el-tab-pane label="断言" name="third">
+            <el-skeleton :loading="loading" animated>
+              <template #default>
+                <div v-if="assertionData">
+                  <BaseTable
+                    :columns="detailTableColumns"
+                    :table-data="assertionData"
+                    height="auto"
+                  >
+                    <template #StatusTag="scope">
+                      <el-tag :type="scope.row.status === 'success' ?'primary': 'danger'" effect="dark"> {{ scope.row.status === "success" ? '成功': '失败' }} </el-tag>
+                    </template>
+                  </BaseTable>
+                </div>
+              </template>
+            </el-skeleton>
+          </el-tab-pane>
+          <el-tab-pane label="提取变量" name="fourth">
+            <el-skeleton :loading="loading" animated>
+              <template #default>
+                <div v-if="extratedData">
+                  <key-value-viewer :data="extratedData" :width="300" :key-label="'变量名称'" :value-label="'提取值'" />
+                </div>
+              </template>
+            </el-skeleton>
+          </el-tab-pane>
+        </el-tabs>
+        
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -132,13 +135,19 @@ import { ref, computed } from 'vue';
 import KeyValueViewer from '../interface/KeyValueViewer.vue'
 import VueJsonPretty from 'vue-json-pretty';
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
-import { ro } from 'element-plus/es/locale';
+import type { TabsPaneContext } from 'element-plus'
 
 const emit = defineEmits(['handleRefresh'])
 const props = defineProps<{
   // formData: TestCase
   tableInfo: []
 }>()
+
+const activeName = ref('first')
+
+const handleClick = (tab: TabsPaneContext, event: Event) => {
+  console.log('Tab clicked:');
+}
 
 // 表格配置
 const detailTableColumns: TableColumn[] = [
@@ -208,6 +217,11 @@ const responseBody = computed(() => {
     return responseData.value?.body || {}
   }
 })
+
+const handleClosed = () => {
+  activeName.value = 'first'
+  detailVisit.value = false
+}
 
 
 
