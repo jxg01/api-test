@@ -10,7 +10,9 @@ export interface TestCase {
   description: string
   headers:  Record<string, string>
   params:  Record<string, string>
-  body:  Record<string, string>
+  body_type: string // 'form' | 'json' | 'raw'
+  data: Record<string, string> // 用于存储表单数据
+  body:  string
   assertions: [Record<string, string>]
   variable_extract: [Record<string, string>]
   project?: number | string // 项目ID
@@ -45,6 +47,7 @@ export interface requestDataType {
   method: string
   headers: Record<string, string>
   data: Record<string, string>
+  json: Record<string, string>
 }
 
 export interface testCaseHistory {

@@ -44,6 +44,7 @@
   import BaseDialog from '@/components/BaseDialog.vue'
   import { ref, computed, markRaw } from 'vue'
   import { ElMessage } from 'element-plus/es'
+  import { projectApi } from '@/api'
 const store = useInterfaceStore()
   // 表单配置 =================================================================
   const dialogRef = ref()
@@ -128,7 +129,7 @@ const store = useInterfaceStore()
   const openAddDialog = () => dialogRef.value?.open('add', {})
 
   // 项目切换处理
-  const handleProjectChange = (projectId: number) => {
+  const handleProjectChange = async (projectId: number) => {
     // 切换项目时清空当前选中的标签页
     store.tabs.forEach(tab => {
       store.removeTab(tab.id)
@@ -136,6 +137,9 @@ const store = useInterfaceStore()
     store.activeTabId = null
     // 获取当前项目的模块数据 
     store.fetchModules(projectId)
+    // 获取当前项目的所有环境信息
+    const res = await projectApi.getProjectEnvList({'project_id': projectId})
+    store.envs = res.data || []
   }
 
   

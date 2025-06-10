@@ -11,6 +11,7 @@ declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     ApiDetail: typeof import('./src/components/interface/ApiDetail.vue')['default']
     BaseDialog: typeof import('./src/components/BaseDialog.vue')['default']
+    BaseEditor: typeof import('./src/components/BaseEditor.vue')['default']
     BaseHeader: typeof import('./src/components/BaseHeader.vue')['default']
     BasePagination: typeof import('./src/components/BasePagination.vue')['default']
     BaseTable: typeof import('./src/components/BaseTable.vue')['default']
@@ -49,6 +50,8 @@ declare module '@vue/runtime-core' {
     ElOption: typeof import('element-plus/es')['ElOption']
     ElPageHeader: typeof import('element-plus/es')['ElPageHeader']
     ElPagination: typeof import('element-plus/es')['ElPagination']
+    ElPopconfirm: typeof import('element-plus/es')['ElPopconfirm']
+    ElPopover: typeof import('element-plus/es')['ElPopover']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']

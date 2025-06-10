@@ -1,6 +1,6 @@
 <template>
     <div class="key-value-editor">
-      <el-table :data="localItems" style="width: 100%" :max-height="tableMaxHeight">
+      <el-table :data="localItems" style="width: 100%" :max-height="tableMaxHeight" empty-text="暂无数据">
         <el-table-column prop="key" width="200">
           <template #header>
             <el-button

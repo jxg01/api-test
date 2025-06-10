@@ -91,6 +91,7 @@
             </el-tab-pane>
       
             <el-tab-pane label="参数" name="params">
+              
               <key-value-editor
                 :items="localCaseDetail.params"
                 @update:items="updateHandler('params', $event)"
@@ -100,11 +101,24 @@
             </el-tab-pane>
 
             <el-tab-pane label="请求体" name="body">
+              <el-radio-group v-model="localCaseDetail.body_type" class="body-type-selector">
+                <el-radio value="form">Form Data</el-radio>
+                <el-radio value="raw">Raw</el-radio>
+              </el-radio-group>
               <key-value-editor
-                :items="localCaseDetail.body"
-                @update:items="updateHandler('body', $event)"
+                v-if="localCaseDetail.body_type === 'form'"
+                :items="localCaseDetail.data"
+                @update:items="updateHandler('data', $event)"
                 key-placeholder="Header名称"
                 value-placeholder="Header值"
+              />
+              <baseEditor 
+                v-if="localCaseDetail.body_type === 'raw'"
+                v-model="localCaseDetail.body" 
+                lang="json" 
+                height="200px" 
+                theme="monokai" 
+                :options="{ tabSize: 2 }" 
               />
             </el-tab-pane>
           </el-tabs>
@@ -225,6 +239,7 @@ import { ElMessage, type DialogContext, type FormInstance, type FormRules } from
 import KeyValueEditor from '@/components/interface/KeyValueEditor.vue'
 import CaseExecuteHistory from './CaseExecuteHistory.vue';
 import _ from 'lodash'; // 引入 lodash 用于深度比较
+import baseEditor from '@/components/BaseEditor.vue'
 
 const store = useCaseStore()
 
@@ -254,7 +269,11 @@ const localCaseDetail = reactive<TestCase>({
   
   headers: props.tabInfo.formData.headers ? JSON.parse(JSON.stringify(props.tabInfo.formData.headers)) : {},
   params: props.tabInfo.formData.params ? JSON.parse(JSON.stringify(props.tabInfo.formData.params)) : {},
-  body: props.tabInfo.formData.body ? JSON.parse(JSON.stringify(props.tabInfo.formData.body)) : {},
+
+  body_type: props.tabInfo.formData.body_type || 'form',
+  data: props.tabInfo.formData.data ? JSON.parse(JSON.stringify(props.tabInfo.formData.data)) : {},
+  body: props.tabInfo.formData.body ? props.tabInfo.formData.body : '{}',
+
 
   assertions: props.tabInfo.formData.assertions,
   variable_extract: props.tabInfo.formData.variable_extract,
@@ -313,7 +332,7 @@ const assertion = localCaseDetail.assertions[index]
 
  // 更新处理器（添加防抖）
 let updateLock = false
-const updateHandler = (type: 'headers' | 'params' | 'body', value: Record<string, string>) => {
+const updateHandler = (type: 'headers' | 'params' | 'data', value: Record<string, string>) => {
   if (updateLock) return
   
   updateLock = true
@@ -347,6 +366,7 @@ const rules = reactive<FormRules>({
 
 const submit = async () => {
   try {
+    console.log('提交表单:', localCaseDetail)
     await formRef.value?.validate()
     const newTabInfo = {
       'title': props.tabInfo.title,
@@ -473,6 +493,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px; /* 元素间距 */
+}
+
+.body-type-selector {
+  margin-bottom: 15px;
+  display: flex;
 }
 
   </style>

@@ -40,4 +40,7 @@ export const interfaceApi = {
   /** 获取全部模块id name */
   getModuleAll: (params: any) =>
       http.get('/modules/all/', params),
+
+  runInterface: (params: any) =>
+    http.post('/interfaces/run/', params),
 }

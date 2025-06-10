@@ -71,7 +71,7 @@ const routes: Array<RouteRecordRaw> = [
                 meta: {
                     title: '接口自动化',
                     isShow: true,
-                    icon: 'Grid'
+                    icon: 'Histogram'
                 },
                 children: [
                     {
@@ -136,7 +136,7 @@ const routes: Array<RouteRecordRaw> = [
                         component: ExecutionHistoryPageVue,
                         meta: {
                             title: '套件执行记录',
-                            icon: 'Files'
+                            icon: 'ScaleToOriginal'
                         }
                     },
                 ]
@@ -169,7 +169,7 @@ const routes: Array<RouteRecordRaw> = [
                 meta: {
                     title: '全局变量',
                     isShow: true,
-                    icon: 'Clock'
+                    icon: 'Coin'
                 },
 
             },
@@ -201,7 +201,17 @@ const routes: Array<RouteRecordRaw> = [
                 meta: {
                     title: '优化反馈',
                     isShow: true,
-                    icon: 'Clock'
+                    icon: 'Opportunity'
+                },
+            },
+            {
+                path: '/python_editor',
+                name: 'python_editor',
+                component: import('@/views/PythonEditorPage.vue'),
+                meta: {
+                    title: 'Python函数',   
+                    isShow: true,
+                    icon: 'Opportunity'
                 },
             },
         ]

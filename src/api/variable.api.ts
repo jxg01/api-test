@@ -15,4 +15,11 @@ export const variableApi = {
   /** 删除项目 */
   deleteVariable: (id: number) => 
     http.delete<BaseResponse>(`/variable/${id}/`),
+
+  updatePythonCode: (id: number, params: Object) =>
+    http.patch<BaseResponse>(`/python-code/${id}/`, params),
+
+  /** 获取Python函数列表 */
+  getPythonCodeList: () => 
+    http.get('/python-code/'),
 }

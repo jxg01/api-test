@@ -50,6 +50,11 @@
                     <el-descriptions-item label="请求参数">
                       <key-value-viewer :data="requestData.data" />
                     </el-descriptions-item>
+
+                    <!-- 响应体 -->
+                    <el-descriptions-item label="请求体">
+                      <key-value-viewer :data="requestData.json" />
+                    </el-descriptions-item>
                   </el-descriptions>
                 </div>
 
@@ -202,6 +207,8 @@ const extratedData = ref()
 // 查看详情
 const viewDetail = (row: testCaseHistory) => {
   console.log('查看执行详情:', row)
+  console.log('查看执行详情request_data:', row.request_data.json)
+  console.log('查看执行详情request_data:', typeof row.request_data.json)
   // 实际项目中这里可以跳转到详情页
   responseData.value = row.response_data
   requestData.value = row.request_data

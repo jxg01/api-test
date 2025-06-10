@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { projectApi, interfaceApi } from '@/api/'
-import { all } from 'axios'
 
 // 类型定义
 interface Project {
@@ -44,6 +43,7 @@ export const useInterfaceStore = defineStore('interface', {
     activeTabId: null as number | string | null, // 当前激活的标签页ID
     searchText: '',                     // 搜索文本
     allLevelModules: [], // 所有模块数据
+    envs: [] as { id: number, name: string, url: string }[], // 环境列表
   }),
 
   getters: {
