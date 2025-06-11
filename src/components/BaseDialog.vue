@@ -130,9 +130,9 @@ const handleSubmit = async () => {
         submitting.value = false
         if (success) {
           visible.value = false
+          formRef.value?.resetFields()
         }
       })
-    formRef.value?.resetFields()
   } catch (error) {
     submitting.value = false
   }

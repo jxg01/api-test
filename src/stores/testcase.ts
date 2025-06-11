@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { testCaseApi, interfaceApi, projectApi } from '@/api/'
 import { useInterfaceStore } from '@/stores/interface'
-import { ta } from 'element-plus/es/locale'
 
 export interface TestCase {
   id: number | string
@@ -82,6 +81,7 @@ export const useCaseStore = defineStore('case', {
     projectEnvs: [] as Envs[],
     projectEnvsSelect: '',
     caseHistoryList: [] as testCaseHistory[],
+    pythonFunctionList: [] // Python函数列表
   }),
 
   getters: {

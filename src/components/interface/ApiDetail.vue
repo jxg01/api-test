@@ -94,6 +94,7 @@
             height="200px" 
             theme="monokai" 
             :options="{ tabSize: 4 }" 
+            :additional-values="caseStore.pythonFunctionList"
             />
           </div>
         </el-tab-pane>
@@ -191,6 +192,7 @@
   import type { FormInstance, FormRules } from 'element-plus'
   import baseEditor from '@/components/BaseEditor.vue'
   import { interfaceApi } from '@/api'
+  import { useCaseStore } from '@/stores/testcase'
 
   // 添加表单引用
 const formRef = ref<FormInstance>()
@@ -212,7 +214,8 @@ const rules = reactive<FormRules>({
 })
 
   const store = useInterfaceStore()
-  
+  const caseStore = useCaseStore()
+
   const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD']
   
   interface ApiDetail {
@@ -353,6 +356,7 @@ const submitForm = async () => {
     console.error('表单验证失败', error)
   }
 }
+
 
 
 

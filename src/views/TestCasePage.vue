@@ -61,6 +61,7 @@ import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import { onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { variableApi } from '@/api'
 
 const store = useCaseStore()
 
@@ -78,6 +79,7 @@ const tableColumns: TableColumn[] = [
 // 初始化数据
 onMounted(() => {
   store.fetchCaseList()
+  fetchPythonNameList()
 })
 
 const handleDelete = async (row: any) => {
@@ -91,6 +93,15 @@ const handleDelete = async (row: any) => {
     ElMessage.success('删除成功')
   } catch (error) {
     console.error('error => ', error)
+  }
+}
+
+const fetchPythonNameList = async () => {
+  try {
+    const response = await variableApi.getPythonFunctionNameList()
+    store.pythonFunctionList = response.data || []
+  } catch (error) {
+    console.error('获取 Python 名称列表失败:', error)
   }
 }
 

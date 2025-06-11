@@ -19,13 +19,30 @@
   import ProjectSelector from '@/components/interface/ProjectSelector.vue'
   import InterfaceTree from '@/components/interface/InterfaceTree.vue'
   import InterfaceTabs from '@/components/interface/InterfaceTabs.vue'
+  import { useCaseStore } from '@/stores/testcase'
+  import { variableApi } from '@/api'
   
   const store = useInterfaceStore()
+  const testCaseStore = useCaseStore()
+  
   
   // 初始化加载项目列表
   onMounted(() => {
     store.fetchProjects()
+    fetchPythonNameList()
   })
+
+
+// 初始化数据 python 方法联想
+const fetchPythonNameList = async () => {
+  try {
+    const response = await variableApi.getPythonFunctionNameList()
+    testCaseStore.pythonFunctionList = response.data || []
+  } catch (error) {
+    console.error('获取 Python 名称列表失败:', error)
+  }
+}
+
   </script>
   
   <style scoped>

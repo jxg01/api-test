@@ -118,7 +118,8 @@
                 lang="json" 
                 height="200px" 
                 theme="monokai" 
-                :options="{ tabSize: 2 }" 
+                :options="{ tabSize: 2 }"
+                :additional-values="store.pythonFunctionList" 
               />
             </el-tab-pane>
           </el-tabs>

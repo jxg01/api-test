@@ -4,13 +4,13 @@
       <span>🚗 全局函数</span>
       <el-button type="primary" class="save-bt" @click="handleSavePython">保存</el-button>
     </div>
-    <!-- <div class="bt-list">
-      <el-button @click="" link v-for="item in pythonCodeList" :key="item.name">{{item.name}}</el-button>
-    </div> -->
+    <div class="example-tips">
+      <span>* Example: {"password": "${login_name}", "username": "${__get_username(eddy)}"}</span>
+    </div>
     <BaseEditor 
     lang="python" 
     v-model="pythonCode" 
-    height="calc(100vh - 230px)"
+    height="calc(100vh - 235px)"
     :options="{'tabSize': 4}"
     />
   </div>
@@ -91,9 +91,11 @@ onMounted(() => {
   margin-right: 30px;
 }
 
-.bt-list {
+.example-tips {
   display: flex;
   justify-content: flex-start;
-  margin-bottom: 10px;
+  /* margin-bottom: 10px; */
+  color: #000;
+  font-size: 11px;
 }
 </style>

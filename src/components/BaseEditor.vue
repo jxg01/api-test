@@ -28,6 +28,7 @@ const props = withDefaults(defineProps<{
   width?: string,
   theme?: string  // 主题名，如'monokai'
   options?: any   // 可选扩展选项
+  additionalValues?: string []
 }>(), {
   height: '400px',
   theme: 'monokai',
@@ -74,11 +75,11 @@ onMounted(() => {
     ace.require('ace/ext/language_tools').addCompleter({
       getCompletions(editor: any, session: any, pos: any, prefix: any, callback: any) {
         if (prefix && prefix.length > 0) {
-          const PYTHON_BUILTINS = [
+          const PYTHON_BUILTINS = props.additionalValues? props.additionalValues : [
             "print", "len", "range", "list", "dict", "set", "str", "int", "float",
             "sum", "input", "open", "type", "help", "dir", "abs", "all", "any", "bool",
             "isinstance", "enumerate", "reversed", "max", "min", "sorted", "zip", "map",
-            "filter", "format", "id", "ord", "chr", "hex", "bin", "oct"
+            "filter", "format", "id", "ord", "chr", "hex", "bin", "oct", "eddy_test"
           ]
           const completions = PYTHON_BUILTINS
             .filter(name => name.toLowerCase().includes(prefix.toLowerCase()))
@@ -88,6 +89,24 @@ onMounted(() => {
               meta: "python built-in",
               score: 1000,
             }))
+          callback(null, completions)
+        } else {
+          callback(null, [])
+        }
+      }
+    })
+  }
+  else if (props.lang === 'json') {
+    ace.require('ace/ext/language_tools').addCompleter({
+      getCompletions(editor: any, session: any, pos: any, prefix: any, callback: any) {
+        if (prefix && prefix.length > 0) {
+          const completions = props.additionalValues?.filter(name => name.toLowerCase().includes(prefix.toLowerCase()))
+            .map(name => ({
+              caption: name,
+              value: name,
+              meta: "Customize Func",
+              score: 1000,
+            })) || []
           callback(null, completions)
         } else {
           callback(null, [])

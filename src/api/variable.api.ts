@@ -22,4 +22,7 @@ export const variableApi = {
   /** 获取Python函数列表 */
   getPythonCodeList: () => 
     http.get('/python-code/'),
+
+  getPythonFunctionNameList: () =>
+    http.get('/python-code/function-list/'),
 }
