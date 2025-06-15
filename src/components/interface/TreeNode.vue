@@ -63,6 +63,9 @@ import { MoreFilled } from '@element-plus/icons-vue'
 import { useInterfaceStore } from '@/stores/interface'
 import { ElMessage, ElDropdown, ElMessageBox } from 'element-plus'
 import BaseDialog from '@/components/BaseDialog.vue'
+import { useProjectStore } from '@/stores/project'
+
+const projectStore = useProjectStore()
 
   // 表单配置 =================================================================
   const dialogRef = ref()
@@ -86,7 +89,7 @@ import BaseDialog from '@/components/BaseDialog.vue'
       console.log('提交数据', props.data)
       await store.addModule({
         name: data.name,
-        project: store.selectedProjectId,
+        project: projectStore.currentProjectId,
         parent_module: props.data.id
       })
       ElMessage.success('模块添加成功')

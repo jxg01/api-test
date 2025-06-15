@@ -62,8 +62,10 @@ import BasePagination from '@/components/BasePagination.vue'
 import { onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { variableApi } from '@/api'
+import { useProjectStore } from '@/stores/project'
 
 const store = useCaseStore()
+const projectStore = useProjectStore()
 
 // 表格配置
 const tableColumns: TableColumn[] = [
@@ -77,9 +79,21 @@ const tableColumns: TableColumn[] = [
 ]
 
 // 初始化数据
-onMounted(() => {
-  store.fetchCaseList()
+onMounted(async() => {
+  store.editTabs = []
+  store.activeTab = 'list'
+  // 确保 current 项目存在（支持刷新场景）
+  if (!projectStore.currentProjectId) {
+    await projectStore.initCurrentProject()
+  }
+
+  if (projectStore.currentProjectId) {
+    console.log('projectStore.currentProjectId => ', projectStore.currentProjectId)
+    const projectId = projectStore.currentProjectId
+    store.fetchCaseList(projectId)
+  }
   fetchPythonNameList()
+  
 })
 
 const handleDelete = async (row: any) => {

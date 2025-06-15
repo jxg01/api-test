@@ -1,7 +1,7 @@
 <template>
   <!-- <div class="searchTool" v-show="store.activeTab === 'list'"> -->
   <div class="searchTool">
-    <el-select
+    <!-- <el-select
       v-model="store.searchSelectProjectId"
       placeholder="选择项目"
       @change="store.handleProjectChange"
@@ -13,7 +13,7 @@
         :label="project.name"
         :value="project.id"
       />
-    </el-select>
+    </el-select> -->
     <el-select
       v-model="store.searchInterfaceId"
       placeholder="选择接口"
@@ -30,24 +30,23 @@
     </el-select>
 
     <el-input v-model="store.searchInput" clearable placeholder="请输入用例名称" class="search-info" />
-    <el-button type="primary" @click.stop="store.fetchCaseList">搜索</el-button>
+    <el-button type="primary" @click.stop="store.fetchCaseList()">搜索</el-button>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { onMounted } from 'vue'
 import { useCaseStore } from '@/stores/testcase'
+import { useProjectStore } from '@/stores/project'
+import { use } from 'echarts'
 
 const store = useCaseStore()
+const projectStore = useProjectStore()
 
 onMounted(() => {
-  store.apiStoreInstance.fetchProjects()
+  store.handleProjectChange(projectStore.currentProjectId)
 })
 
-// 切换 接口 下拉框 回调
-const handleApiChange = async(interface_id: number) => {
-
-}
 
 
 </script>

@@ -1,27 +1,13 @@
 <template>
-  <div class="p-4">
+  <div class="">
     <div class="searchTool">
       <div class="searchTool">
-        <el-select
-          v-model="suiteStore.searchPoject"
-          placeholder="选择项目"
-          class="search-info"
-          clearable
-        >
-          <el-option
-            v-for="project in suiteStore.projectList"
-            :key="project.id"
-            :label="project.name"
-            :value="project.id"
-          />
-        </el-select>
-
         <el-input v-model="suiteStore.searchSuiteName" clearable placeholder="请输入套件名称" class="search-info" />
         <el-button type="primary" @click.stop="suiteStore.fetchSuites" :icon="Search"> 搜索</el-button>
       </div>
-        <div>
-      <el-button type="primary" @click="openCreateForm" class="addSuite" :icon="Plus"> 新建</el-button>
-    </div>
+      <div>
+        <el-button type="primary" @click="openCreateForm" class="addSuite" :icon="Plus"> 新建</el-button>
+      </div>
     </div>
     
     <BaseTable
@@ -61,6 +47,7 @@ import { useSuiteStore, type Suite } from '@/stores/suiteStore'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {Search, Plus} from '@element-plus/icons-vue'
+import { useProjectStore } from '@/stores/project'
 const router = useRouter()
 const route = useRoute()
 
@@ -78,10 +65,11 @@ const tableColumns: TableColumn[] = [
 ]
 
 const suiteStore = useSuiteStore()
+const projectStore = useProjectStore()
 
 const openForm = async (suite: Suite) => {
   suiteStore.currentSuite = suite
-  await suiteStore.fetchCases(Number(suite.project));
+  await suiteStore.fetchCases(projectStore.currentProjectId);
   router.push(`/automation/suite/${suite.id}`)
 }
 
@@ -108,9 +96,17 @@ const deleteSuite = async (row: Suite) => {
 }
 
 // 初始化数据
-onMounted(() => {
-  suiteStore.fetchSuites()
-  suiteStore.fetchProjectList()
+onMounted(async () => {
+  if (!projectStore.currentProjectId) {
+    await projectStore.initCurrentProject()
+  }
+
+  if (projectStore.currentProjectId) {
+    console.log('projectStore.currentProjectId => ', projectStore.currentProjectId)
+    const projectId = projectStore.currentProjectId
+    suiteStore.localProjectId = projectId
+    suiteStore.fetchSuites()
+  }
 })
 
 </script>

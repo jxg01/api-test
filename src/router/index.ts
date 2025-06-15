@@ -14,6 +14,7 @@ import TraderToolsPageVue from '@/views/TraderToolsPage.vue';
 import SuiteEditorVue from '@/components/suite/SuiteEditor.vue';
 import SuggestionPageVue from '@/views/SuggestionPage.vue';
 import ExecutionHistoryPageVue from '@/views/ExecutionHistoryPage.vue';
+import PythonEditorPageVue from '@/views/PythonEditorPage.vue';
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -135,7 +136,7 @@ const routes: Array<RouteRecordRaw> = [
                         name: 'excution-history',
                         component: ExecutionHistoryPageVue,
                         meta: {
-                            title: '套件执行记录',
+                            title: '测试报告',
                             icon: 'ScaleToOriginal'
                         }
                     },
@@ -182,7 +183,6 @@ const routes: Array<RouteRecordRaw> = [
                     isShow: false,
                     icon: 'Clock'
                 },
-
             },
             {
                 path: '/mt_tool',
@@ -191,7 +191,7 @@ const routes: Array<RouteRecordRaw> = [
                 meta: {
                     title: '交易工具',
                     isShow: false,
-                    icon: 'Clock'
+                    icon: 'Opportunity'
                 },
             },
             {
@@ -207,7 +207,7 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: '/python_editor',
                 name: 'python_editor',
-                component: import('@/views/PythonEditorPage.vue'),
+                component:PythonEditorPageVue,
                 meta: {
                     title: 'Python函数',   
                     isShow: true,

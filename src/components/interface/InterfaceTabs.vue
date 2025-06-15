@@ -28,8 +28,10 @@
   import { useInterfaceStore } from '@/stores/interface'
   import ApiDetail from '@/components/interface/ApiDetail.vue'
   import { Delete } from '@element-plus/icons-vue'
+  import { useProjectStore } from '@/stores/project'
 
   const store = useInterfaceStore()
+  const projectStore = useProjectStore()
 
 // 新增：关闭全部标签页
 const handleCloseAll = () => {
@@ -46,9 +48,7 @@ const handleTabsEdit = (targetName: any | undefined, action: 'remove' | 'add') =
       console.log('in add')
       handleCloseAll()
     }
-    if (store.selectedProjectId){
-      store.fetchModules(store.selectedProjectId)
-    }
+    store.fetchModules(projectStore.currentProjectId)
     // if (action === 'remove') {
     //   if (store.selectedProjectId){
     //     store.fetchModules(store.selectedProjectId)

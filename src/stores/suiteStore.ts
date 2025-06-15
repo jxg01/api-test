@@ -8,8 +8,7 @@ export interface Suite {
   description: string
   execution_status: string
   cases: number[]
-  project: number | string
-  project_name?: string
+  project?: string | number
 }
 
 export interface TestCase {
@@ -28,17 +27,16 @@ export const useSuiteStore = defineStore('suite', {
     testSuites: [] as Suite[],
     allCases: [] as TestCase[],
     casesRelatedProject: [] as TestCase[],
-    detailDefaultProjectId: null as number | string | null,
     currentSuite: null as Suite | null,
     formVisible: false,
-    projectEnvs: [] as Envs[],
+    // projectEnvs: [] as Envs[],
     projectEnvsSelect: '',
     projectList: [] as { id: number, name: string }[],
     currentPage: 1,
     pageSize: 20,
     total: 0,
-    searchPoject: '',
     searchSuiteName: '', 
+    localProjectId: 0,
   }),
 
   actions: {
@@ -55,7 +53,7 @@ export const useSuiteStore = defineStore('suite', {
     async fetchSuites() {
       try {
         const res = await suiteApi.getSuiteList({
-          project: this.searchPoject,
+          project: this.localProjectId,
           name: this.searchSuiteName,
           page: this.currentPage,
           size: this.pageSize
@@ -68,7 +66,7 @@ export const useSuiteStore = defineStore('suite', {
       }
     },
 
-    async fetchCases(projectId: number | string) {
+    async fetchCases(projectId: number | string | null) {
       try {
         const res = await testCaseApi.getTestCaseSimpleList({ 'project_id': projectId })
         if (projectId) {
@@ -131,14 +129,14 @@ export const useSuiteStore = defineStore('suite', {
       }
     },
 
-    async fetchEnvs(id: number | string) {
-      try {
-        const res = await projectApi.getProjectEnvList({'project_id': id})
-        this.projectEnvs = res.data
-      } catch (error) {
-        console.error('运行套件失败', error)
-      }
-    },
+    // async fetchEnvs(id: number | string) {
+    //   try {
+    //     const res = await projectApi.getProjectEnvList({'project_id': id})
+    //     this.projectEnvs = res.data
+    //   } catch (error) {
+    //     console.error('运行套件失败', error)
+    //   }
+    // },
     setCurrentPage(page: number) {
       this.currentPage = page
       this.fetchSuites()

@@ -1,84 +1,63 @@
 <template>
-    <div class="cus-header">
-      <!-- 品牌区域 -->
-      <div class="brand">
-        <img 
-          v-if="logo" 
-          :src="logo" 
-          class="brand-logo"
-          alt="品牌logo"
-        >
-        <span class="brand-text">{{ brandText || 'API 测试工具' }}</span>
+  <div class="header-content">
+    <div class="current-project">
+      <div>
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z" fill="#00FF00"/>
+        </svg>
       </div>
+      <CurrentProjectSelector />
+    </div>
+
+    <div class="right-header">
       <el-button type="primary" text class="suggestion" @click.stop="openDialog">优化建议</el-button>
-      <el-dropdown trigger="click" placement="bottom-end">
-        <!-- 用户信息 -->
+      <el-dropdown>
         <span class="user-dropdown">
-          <el-icon :size="18"><UserFilled /></el-icon>
+          <el-icon :size="18" color="blue"><UserFilled /></el-icon>
           <span class="username">{{ userStore.usernameDisplay }}</span>
           <el-icon class="arrow-icon"><ArrowDown /></el-icon>
         </span>
-    
-        <!-- 下拉菜单 -->
+        <!-- <el-avatar class="custom-avatar">{{ userStore.usernameDisplay }}</el-avatar> -->
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item @click="handleSettings">
-              <template #icon>
-                <el-icon><Setting /></el-icon>
-              </template>
-              设置
-            </el-dropdown-item>
-            
-            <el-dropdown-item divided @click="userStore.logout">
-              <template #icon>
-                <el-icon><SwitchButton /></el-icon>
-              </template>
-              退出登录
-            </el-dropdown-item>
+            <el-dropdown-item>个人设置</el-dropdown-item>
+            <el-dropdown-item divided @click="userStore.logout">退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-
-      <el-dialog v-model="dialogVisit" title="建议" width="30%" @closed="closeDialog">
-        <el-form :model="form" ref="suggestionFormRef" :rules="rules">
-          <el-form-item label="内容" prop="content">
-            <el-input v-model="form.content" autocomplete="off" type="textarea" />
-          </el-form-item>
-        </el-form>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-button @click="closeDialog">取消</el-button>
-            <el-button type="primary"  @click.stop="submit" >
-              确认
-            </el-button>
-          </div>
-        </template>
-      </el-dialog>
     </div>
-  </template>
+  </div>
+
+  <el-dialog v-model="dialogVisit" title="建议" width="30%" @closed="closeDialog">
+    <el-form :model="form" ref="suggestionFormRef" :rules="rules">
+      <el-form-item label="内容" prop="content">
+        <el-input v-model="form.content" autocomplete="off" type="textarea" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeDialog">取消</el-button>
+        <el-button type="primary"  @click.stop="submit" >
+          确认
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
+</template>
   
   <script setup lang="ts">
   import { 
     UserFilled,
     ArrowDown,
-    Setting,
-    SwitchButton
   } from '@element-plus/icons-vue'
   import { useUserStore } from '@/stores/user'
+  import { useProjectStore } from '@/stores/project'
   import { ref,reactive } from 'vue'
   import { ElMessage, type FormInstance } from 'element-plus'
+  import CurrentProjectSelector from './CurrentProjectSelector.vue'
 
   const userStore = useUserStore()
-
-  const logo = ref('https://ww2.sinaimg.cn/mw690/61d7678dgy1hvt194v9kqj20p00uuape.jpg')
-
-  const brandText = ref('EasyAPI')
-  
-  // 处理设置
-  const handleSettings = () => {
-    console.log('打开设置页面')
-  }
-  
+  const store = useProjectStore()
 
 const suggestionFormRef = ref<FormInstance>()
 const form = reactive({
@@ -92,6 +71,7 @@ const rules = {
 }
 
 const openDialog = () => {
+  console.log('project', store.current)
   dialogVisit.value = true
 }
 const submit = async() => {
@@ -118,7 +98,29 @@ const closeDialog = () => {
   </script>
   
   <style scoped>
-  .user-dropdown {
+  .current-project {
+  display: flex;
+  align-items: center; /* 内部元素垂直居中 */
+  gap: 5px;
+  min-width: 200px;
+  height: 100%; /* 继承父容器高度 */
+}
+
+  .header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* 确保垂直居中 */
+  width: 100%;
+  height: 100%; /* 继承父容器高度 */
+}
+.right-header {
+  display: flex;
+  align-items: center; /* 内部元素垂直居中 */
+  gap: 10px; /* 元素间距 */
+  height: 100%; /* 继承父容器高度 */
+}
+
+.user-dropdown {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -143,44 +145,4 @@ const closeDialog = () => {
     }
   }
   
-  /* 保持菜单项图标对齐 */
-  .el-dropdown-menu__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .brand {
-    margin-right: auto;
-  }
-  .cus-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 100%;
-    padding: 0 24px;
-    border-bottom: 1px solid var(--el-border-color);
-  }
-
-  /* 品牌区域样式 */
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-right: auto;
-}
-
-.brand-logo {
-    height: 32px;
-    width: auto;
-    object-fit: contain;
-}
-
-.brand-text {
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--el-text-color-primary);
-}
-.suggestion {
-  font-size: large;
-}
   </style>

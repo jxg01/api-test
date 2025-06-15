@@ -20,7 +20,7 @@
         class="run-env"
         >
           <el-option
-            v-for="env in store.projectEnvs"
+            v-for="env in projectStore.current?.envs"
             :key="env.id"
             :label="env.name"
             :value="env.id"
@@ -53,24 +53,6 @@
               <span class="editor-title"><el-icon><HomeFilled /></el-icon> 基础信息</span>
             </div>
 
-            <el-form-item label="所属项目" prop="project">
-              <el-select
-                v-model="formData.project"
-                placeholder="选择项目"
-                class="run-env"
-                @change="getCasesByProject"
-                v-if="!formData.id"
-                >
-                
-                <el-option
-                  v-for="project in store.projectList"
-                  :key="project.id"
-                  :label="project.name"
-                  :value="project.id" />
-              </el-select>
-              <!-- <el-input v-model="formData.name" :disabled="!isEditing" /> -->
-              <span style="color: black;" v-else> {{ formData.project_name }}</span>
-            </el-form-item>
             <el-form-item label="套件名称" prop="name">
               <span style="color: black;" v-if="!isEditing">{{ formData.name }}</span>
               <el-input v-else v-model="formData.name" />
@@ -83,7 +65,7 @@
               <!-- <el-input type="textarea" v-model="formData.description" :disabled="!isEditing" /> -->
             </el-form-item>
 
-            <el-form-item label="套件状态" v-if="formData.execution_status">
+            <el-form-item label="最近记录" v-if="formData.execution_status">
               <el-tag  type="danger" effect="dark">{{ formData.execution_status }}</el-tag>
             </el-form-item>
           </el-col>
@@ -97,27 +79,38 @@
               </el-tooltip>
             </div>
             <el-card class="status-card" shadow="hover">
+              <div class="table-container">
               <BaseTable
               :columns="tableColumns"
               :table-data="relatedCasesList"
-              :max-height="300"
+              height="auto"
               >
               <template #operation="scope" class="related-case-table">
-                <el-button link @click="moveUp(scope.$index)" :disabled="!isEditing"><el-icon><CaretTop /></el-icon></el-button>
-                <el-button link @click="moveDown(scope.$index)" :disabled="!isEditing"><el-icon><CaretBottom /></el-icon></el-button>
-                <el-button
-                  link
-                  type="primary"
-                  size="small"
-                  @click.stop="removeRelatedCase(scope.row)"
-                  class="action-buttons"
-                  :disabled="!isEditing"
-                  >
-                移除
-                </el-button>
+                <div class="operation-buttons">
+                  
+                  <el-button link @click="moveUp(scope.$index)" :disabled="!isEditing"><el-icon><CaretTop /></el-icon></el-button>
+                  <el-button link @click="moveDown(scope.$index)" :disabled="!isEditing"><el-icon><CaretBottom /></el-icon></el-button>
+                  <!-- removeRelatedCase -->
+                  <el-button 
+                    link type="primary" 
+                    size="small" 
+                    @click.stop="getCaseDetail(scope.row.id)">
+                    详情
+                  </el-button>
+                  <el-button
+                    link
+                    type="primary"
+                    size="small"
+                    @click.stop="removeRelatedCase(scope.row)"
+                    class="action-buttons"
+                    :disabled="!isEditing"
+                    >
+                  移除
+                  </el-button>
+                </div>
               </template>
-            
             </BaseTable>
+          </div>
             </el-card>
           </el-col>
         </el-row>
@@ -152,6 +145,8 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <ViewRelatedTestCase ref="caseDrawer"/>
   </div>
 </template>
 
@@ -164,6 +159,17 @@ import { suiteApi } from '@/api'
 import { useSuiteStore, Suite, TestCase } from '@/stores/suiteStore'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import SuiteDetailHistory from './SuiteDetailHistory.vue'
+import { useProjectStore } from '@/stores/project'
+import ViewRelatedTestCase from './ViewRelatedTestCase.vue'
+
+const route = useRoute()
+const router = useRouter()
+const formRef = ref<FormInstance>()
+
+const store = useSuiteStore()
+const projectStore = useProjectStore()
+
+
 
 // 表单数据
 const formData = ref<Suite>({
@@ -172,8 +178,7 @@ const formData = ref<Suite>({
   description: '',
   execution_status: '',
   cases: [],
-  project: '',
-  project_name: ''
+  project: store.localProjectId
 })
 
 // 校验规则定义
@@ -181,9 +186,6 @@ const rules = reactive<FormRules>({
   name: [
     { required: true, message: '套件名称不能为空', trigger: 'blur' },
     // { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
-  ],
-  project: [
-    { required: true, message: '项目选择不能为空', trigger: 'blur' },
   ],
   description: [
     { required: true, message: '套件描述不能为空', trigger: 'blur' },
@@ -214,7 +216,7 @@ const cancelEdit = () => {
 const tableColumns: TableColumn[] = [
   // { prop: 'id', label: 'ID', width: 60 },
   { prop: 'name', label: '用例名称' },
-  { prop: 'operation', label: '操作', width: 130, slot: 'operation' }
+  { prop: 'operation', label: '操作', width: 230, slot: 'operation' }
 ]
 
 // 关联用例列表 ================================================================
@@ -296,19 +298,9 @@ const removeRelatedCase = (row: TestCase) => {
   formData.value.cases = formData.value.cases.filter(id => id !== caseId);
 }
 
-const getCasesByProject = async (projectId: string) => {
-  store.detailDefaultProjectId = projectId
-  await store.fetchCases(projectId);
-}
+
 
 // 关联用例列表 配置 ================================================================
-
-const route = useRoute()
-const router = useRouter()
-const formRef = ref<FormInstance>()
-
-const store = useSuiteStore()
-
 
 
 // 初始化数据
@@ -348,7 +340,6 @@ const handleSubmit = async () => {
 
 const handleCancel = () => {
   router.back()
-  store.projectEnvs = []
   store.casesRelatedProject = []
 }
 
@@ -363,7 +354,7 @@ const runCurrentSuite = async () => {
   }
   
   try {
-    const selectEnvInfo = store.projectEnvs.filter(env => env.id === Number(store.projectEnvsSelect))
+    const selectEnvInfo = projectStore.current?.envs.filter(env => env.id === Number(store.projectEnvsSelect))
     const res = await store.runSuite(Number(formData.value.id), selectEnvInfo[0].url)
     console.log('运行套件结果:', res)
     if (res) {
@@ -381,16 +372,24 @@ onMounted(async () => {
   isEditing.value = !route.params.id
   await initData();
   
-  
-  if (formData.value.project) {
-    await store.fetchCases(formData.value.project)
-    await store.fetchEnvs(formData.value.project)
-  } else {
 
+  // 确保 current 项目存在（支持刷新场景）
+  if (!projectStore.currentProjectId) {
+    await projectStore.initCurrentProject()
   }
+
+  if (projectStore.currentProjectId) {
+    await store.fetchCases(projectStore.currentProjectId);
+  }
+  
 })
 
-
+// 测试用例详情
+const caseDrawer = ref();
+const selectedCaseId = ref<number>(0)
+const getCaseDetail = (caseId: number) => {
+  caseDrawer.value.openDrawer(caseId);
+}
 
 
 
@@ -451,6 +450,15 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   margin-right: 40px;
+}
+.table-container {
+  height: 300px; /* 固定高度 */
+  overflow: auto; /* 添加滚动条 */
+}
+/* 添加操作按钮容器样式 */
+.operation-buttons {
+  display: flex;
+  gap: 5px; /* 按钮间距 */
 }
 
 

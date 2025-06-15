@@ -44,6 +44,7 @@ export const useInterfaceStore = defineStore('interface', {
     searchText: '',                     // 搜索文本
     allLevelModules: [], // 所有模块数据
     envs: [] as { id: number, name: string, url: string }[], // 环境列表
+    selectedModuleId: null as number | string | null, // 当前选中模块ID
   }),
 
   getters: {
@@ -67,15 +68,17 @@ export const useInterfaceStore = defineStore('interface', {
 
     async fetchAllLevelModules(project_id: number) {
       try {
-        const res = await interfaceApi.getModuleAll({'project_id': project_id})
+        const res = await interfaceApi.getModuleAll({'project_id': localStorage.getItem('currentProjectId') || null})
         this.allLevelModules = res.data
+        console.log('所有模块数据:', this.allLevelModules)
+        console.log('data res 所有模块数据:', res.data)
       } catch (error) {
         console.error('获取全部模块数据失败:', error)
       }
     },
 
     // 获取模块数据
-    async fetchModules(projectId: number) {
+    async fetchModules(projectId: number | string | null = null) {
       try {
         const res = await interfaceApi.getModuleList({ project_id: projectId })
         this.treeData = this.normalizeTree(res.data)
@@ -130,7 +133,7 @@ export const useInterfaceStore = defineStore('interface', {
           type: 'node',
           children: []
         }
-        this.fetchModules(this.selectedProjectId || 0)
+        this.fetchModules(data.project || null)
 
       } catch (error) {
         console.error('添加模块失败:', error)
@@ -144,7 +147,7 @@ export const useInterfaceStore = defineStore('interface', {
         ? interfaceApi.deleteModule(moduleId)
         : interfaceApi.deleteInterface(moduleId)
         await action
-        this.fetchModules(this.selectedProjectId || 0)
+        this.fetchModules(localStorage.getItem('currentProjectId') || 0)
       } catch (error) {
         console.error('删除模块失败:', error)
       }
@@ -176,9 +179,7 @@ export const useInterfaceStore = defineStore('interface', {
             this.tabs = this.tabs.map(tab => 
               tab.detail.id === nodeId ? { ...tab, label: newName, detail: {...tab.detail, name: newName} } : tab
             )
-            if (this.selectedProjectId) {
-              this.fetchModules(this.selectedProjectId)
-            }
+            this.fetchModules(localStorage.getItem('currentProjectId') || 0)
           }
         }
       } catch (error) {
@@ -203,7 +204,7 @@ export const useInterfaceStore = defineStore('interface', {
 
         if (res) {
           // 更新树形数据
-          this.fetchModules(this.selectedProjectId || 0)
+          this.fetchModules(localStorage.getItem('currentProjectId') || 0)
           this.tabs = this.tabs.map(tab => {
             if (tab.detail.id === localDetail.id) {
               tab.detail = {

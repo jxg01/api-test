@@ -30,8 +30,11 @@ export default defineConfig({
 
     Icons({
       autoInstall: true,
-    })
+    }),
   ],
+  optimizeDeps: {
+    include: ['element-plus/es/components/container/style/css'] // 显式包含问题组件:ml-citation{ref="2" data="citationList"}
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')

@@ -1,53 +1,53 @@
 <template>
-    <div class="main-wrapper">
-      <el-header class="header">
-        <BaseHeader  />
-      </el-header>
-
+    <!-- <div class="app-layout"> -->
+      <el-container class="app-layout">
         <el-aside width="200px" class="sidebar">
           <el-menu
             :default-active="activeMenu"
-            active-text-color="#ffd04b"
-            background-color="#545c64"
+            background-color="#2f1b86"
             text-color="#fff"
+            active-text-color="#ffd04b"
             router
             :unique-opened="true"
           >
-            <template v-for="route in filteredRoutes" :key="route.path">
-              <el-sub-menu v-if="route.children?.length" :index="route.name">
-                <template #title>
-                  <el-icon><component :is="route.meta.icon" /></el-icon>
-                  <span>{{ route.meta.title }}</span>
-                </template>
-                <el-menu-item 
-                  v-for="child in route.children" 
-                  :key="child.path" 
-                  :index="`${route.path}/${child.path}`"
-                >
-                  <el-icon><component :is="child.meta.icon" /></el-icon>
-                  <span>{{ child.meta.title }}</span>
-                </el-menu-item>
-              </el-sub-menu>
-              
-              <el-menu-item v-else :index="route.path">
+            <img 
+              v-if="logo" 
+              :src="logo" 
+              class="ban"
+              alt="品牌logo"
+            >
+          <template v-for="route in filteredRoutes" :key="route.path">
+            <el-sub-menu v-if="route.children?.length" :index="route.name">
+              <template #title>
                 <el-icon><component :is="route.meta.icon" /></el-icon>
                 <span>{{ route.meta.title }}</span>
+              </template>
+              <el-menu-item 
+                v-for="child in route.children" 
+                :key="child.path" 
+                :index="`${route.path}/${child.path}`"
+              >
+                <el-icon><component :is="child.meta.icon" /></el-icon>
+                <span>{{ child.meta.title }}</span>
               </el-menu-item>
-            </template>
-          </el-menu>
-        </el-aside>
-  
-        <div class="content-wrapper">
-          <div class="scroll-container">
-            <el-main class="scroll-main">
-              <RouterView />
-            </el-main>
-            <el-footer class="footer">
-              © 2025 Lifebyte
-            </el-footer>
-          </div>
-        </div>
-    </div>
+            </el-sub-menu>
+            
+            <el-menu-item v-else :index="route.path">
+              <el-icon><component :is="route.meta.icon" /></el-icon>
+              <span>{{ route.meta.title }}</span>
+            </el-menu-item>
+          </template>
+        </el-menu>
+      </el-aside>
+      <el-container>
+        <el-header class="header">
+          <base-header />
+        </el-header>
+        <el-main class="main-content">
+          <RouterView />
+        </el-main>
+      </el-container>
+    </el-container>
   </template>
   
   <script setup lang="ts">
@@ -57,21 +57,14 @@
 
   const router = useRouter()
   const route = useRoute()
-
+  const logo = ref<string | null>(import.meta.env.VITE_LOGO_URL)  
+  
 
   const activeMenu = computed(() => {
   return route.meta.activeMenu || 
     route.path.split('/').slice(0,3).join('/')
   })
 
-
-
-  // 优化后的激活菜单计算
-  // const activeMenu = computed(() => {
-  //   // 获取当前匹配的路由记录
-  //   const matched = route.matched
-  //   return matched[matched.length - 1]?.path || '/'
-  // })
   
   // 过滤显示的路由
   const filteredRoutes = computed(() => 
@@ -81,63 +74,48 @@
   </script>
   
   <style scoped>
-  .main-wrapper {
-    position: relative;
-    height: 100vh;
-    overflow: hidden;
-}
-.header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: #d6c8ed;
-    z-index: 1000;
-    padding: 0;
+.app-layout {
+  height: 100vh;
 }
 
+/* 左侧菜单 */
 .sidebar {
-    position: fixed;
-    top: 60px;
-    left: 0;
-    bottom: 0;
-    width: 200px;
-    background: #545c64 url('../assets/bg3.jpg');
-    background-size: cover;
-    background-blend-mode: multiply;
-    z-index: 999;
+  background-color: #2f1b86;
+  color: white;
 }
 
-.content-wrapper {
-  margin: 60px 0 0 200px;
-  height: calc(100vh - 60px); /* 修改为固定高度 */
-  display: flex; /* 新增 */
-  flex-direction: column; /* 新增 */
+/* 顶部栏 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  padding: 0 20px;
 }
 
-.scroll-container {
-    flex: 1;
-    min-height: 0; /* 修复flex容器滚动问题 */
-    display: flex;
-    flex-direction: column;
+/* 标题 */
+.platform-title {
+  font-size: 18px;
+  font-weight: bold;
 }
 
-.scroll-main {
-    overflow-y: auto;
-    max-height: calc(100vh - 120px); /* 60px header + 60px footer */
-    padding: 20px;
-}
-
-.footer {
-  flex-shrink: 0; 
-  height: 60px;
-  background: #e9eef3;
+/* 用户区域 */
+.right-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-top: 1px solid #dcdfe6;
-  color: #545c64;
 }
+
+/* 主内容区 */
+.main-content {
+  /* padding: 20px; */
+  /* background: #f5f7fa; */
+}
+
+.ban {
+  height: 80px;
+  width: 100%;
+}
+
   </style>
   

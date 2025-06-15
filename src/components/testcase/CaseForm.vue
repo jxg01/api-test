@@ -18,7 +18,7 @@
                 class="run-env"
               >
                 <el-option
-                  v-for="env in store.projectEnvs"
+                  v-for="env in projectStore.current?.envs"
                   :key="env.id"
                   :label="env.name"
                   :value="env.id"
@@ -30,22 +30,6 @@
           </div>  
         </div>
         <template v-if="!localCaseDetail.id">
-          <el-form-item label="关联项目" prop="project">
-            <el-select
-              v-model="localCaseDetail.project"
-              placeholder="选择项目"
-              @change="store.handleProjectChange"
-              class="type-select"
-            >
-              <el-option
-                v-for="project in store.apiStoreInstance.projects"
-                :key="project.id"
-                :label="project.name"
-                :value="project.id"
-              />
-            </el-select>
-          </el-form-item>
-
           <el-form-item label="关联接口" prop="interface">
             <el-select
               v-model="localCaseDetail.interface"
@@ -101,10 +85,13 @@
             </el-tab-pane>
 
             <el-tab-pane label="请求体" name="body">
-              <el-radio-group v-model="localCaseDetail.body_type" class="body-type-selector">
-                <el-radio value="form">Form Data</el-radio>
-                <el-radio value="raw">Raw</el-radio>
-              </el-radio-group>
+              <div class="body-type-selector">
+                <el-radio-group v-model="localCaseDetail.body_type" class="body-type-selector">
+                  <el-radio value="form">Form Data</el-radio>
+                  <el-radio value="raw">Raw</el-radio>
+                </el-radio-group>
+                <el-button type="info" @click.stop="formatJson" v-if="localCaseDetail.body_type === 'raw'"><el-icon><BrushFilled /></el-icon>格式化</el-button>
+              </div>
               <key-value-editor
                 v-if="localCaseDetail.body_type === 'form'"
                 :items="localCaseDetail.data"
@@ -112,15 +99,18 @@
                 key-placeholder="Header名称"
                 value-placeholder="Header值"
               />
-              <baseEditor 
+              <div>
+                <baseEditor 
                 v-if="localCaseDetail.body_type === 'raw'"
                 v-model="localCaseDetail.body" 
                 lang="json" 
-                height="200px" 
+                height="400px" 
                 theme="monokai" 
                 :options="{ tabSize: 2 }"
                 :additional-values="store.pythonFunctionList" 
               />
+              </div>
+              
             </el-tab-pane>
           </el-tabs>
         </el-form-item>
@@ -241,8 +231,10 @@ import KeyValueEditor from '@/components/interface/KeyValueEditor.vue'
 import CaseExecuteHistory from './CaseExecuteHistory.vue';
 import _ from 'lodash'; // 引入 lodash 用于深度比较
 import baseEditor from '@/components/BaseEditor.vue'
+import { useProjectStore } from '@/stores/project';
 
 const store = useCaseStore()
+const projectStore = useProjectStore()
 
   // 断言类型配置
 const assertionTypes = [
@@ -278,7 +270,7 @@ const localCaseDetail = reactive<TestCase>({
 
   assertions: props.tabInfo.formData.assertions,
   variable_extract: props.tabInfo.formData.variable_extract,
-  project: '',
+  // project: '',
   interface: '',
 })
 
@@ -355,9 +347,9 @@ const rules = reactive<FormRules>({
   description: [
     { required: true, message: '用例描述不能为空', trigger: 'blur' },
   ],
-  project: [
-    { required: true, message: '请选择关联项目', trigger: 'change' }
-  ],
+  // project: [
+  //   { required: true, message: '请选择关联项目', trigger: 'change' }
+  // ],
   interface: [
     { required: true, message: '请选择关联接口', trigger: 'change' }
   ],
@@ -392,7 +384,7 @@ const submitRunTestCase = async () => {
   try {
     if (!store.projectEnvsSelect) {return}
     runLoading.value = true
-    const selectEnvInfo = store.projectEnvs.filter(env => env.id === Number(store.projectEnvsSelect))
+    const selectEnvInfo = projectStore.current?.envs.filter(env => env.id === Number(store.projectEnvsSelect))
     const res = await store.runTestcase(Number(localCaseDetail.id), selectEnvInfo[0]?.url)
     if (res) {
       ElMessage.success('提交成功')
@@ -411,9 +403,19 @@ const refreshHistory = () => {
   console.log('in refreshHistory')
 }
 
+// 格式化 JSON 数据
+const formatJson = () => {
+  try {
+    const parsed = JSON.parse(localCaseDetail.body)
+    localCaseDetail.body = JSON.stringify(parsed, null, 2)
+    ElMessage.success('格式化成功')
+  } catch (err) {
+    ElMessage.error('无效的 JSON 格式，无法格式化')
+  }
+}
+
 onMounted(() => {
   console.error('onMounted => ', localCaseDetail.id)
-  store.fetchEnvs()
   if (localCaseDetail.id) {
     store.fetchTestCaseHistory(Number(localCaseDetail.id))
   }
@@ -497,8 +499,9 @@ onMounted(() => {
 }
 
 .body-type-selector {
-  margin-bottom: 15px;
+  margin-bottom: 5px;
   display: flex;
+  justify-content: space-between;
 }
 
   </style>

@@ -10,6 +10,12 @@
         :loading="loading"
         height="auto"
       >
+        <template #name="{ row }">
+          <!-- <span v-if="row.suite_id">{{ row.suite_name }}</span>
+          <span v-else>{{ row.case_name }}</span> -->
+          <span>【{{ row.type==='case'?'测试用例':'测试套件' }}】  </span>
+          <span>{{ row.type==='case'?row.case_name:row.name }}</span>
+        </template>
         <template #status="{ row }">
           <el-tag >{{ row.status }}</el-tag>
         </template>
@@ -26,13 +32,13 @@ import { dashboardApi } from '@/api'
 // 表格配置 =================================================================
 const tableColumns: TableColumn[] = [
   // { prop: 'id', label: 'ID', width: 60 },
-  { prop: 'type', label: '类型', width: 100 },
+  // { prop: 'type', label: '类型', width: 100 },
   // { prop: 'suite_name', label: '套件名称' },
   // { prop: 'case_name', label: '用例名称' },
-  { prop: 'name', label: '名称' },
-  { prop: 'status', label: '状态', width: 100, slot: 'status' },
-  { prop: 'started_at', label: '开始时间', width: 180 },
-  { prop: 'duration', label: '耗时(s)', width: 100 },
+  { prop: 'name', label: '测试内容', slot: 'name' },
+  { prop: 'status', label: '状态', slot: 'status' },
+  { prop: 'started_at', label: '开始时间' },
+  { prop: 'duration', label: '耗时(s)' },
   { prop: 'executed_by_username', label: '执行人', width: 100 },
   
   // { prop: 'operation', label: '操作', width: 120, slot: 'operation' }

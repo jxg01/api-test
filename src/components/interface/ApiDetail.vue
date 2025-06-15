@@ -4,20 +4,23 @@
       ref="formRef" 
       :model="localDetail" 
       :rules="rules" 
+      label-position="top"
       >
         <div class="request-line">
-          <el-form-item prop="name">
+          <el-form-item prop="name" class="custom-form-item" label="接口名称">
             <el-input
               v-model="localDetail.name"
               class="interface-name"
               placeholder="请输入接口名称"
             />
+            
           </el-form-item>
-          <el-button type="primary" @click="submitForm">保存</el-button>
+          
         </div>
 
         <div class="request-line">
-          <el-form-item prop="path" class="path-form-item">
+          <el-form-item prop="path" class="path-form-item" label="接口路径">
+            <div class="path-test">
             <el-input
               v-model="localDetail.path"
               class="path-input"
@@ -38,15 +41,19 @@
                 </el-select>
               </template>
             </el-input>
-          </el-form-item>
-          <el-dropdown trigger="click" @command="handleCommand">
-            <el-button type="primary" class="send-btn">调试一下</el-button>
+
+            <el-dropdown trigger="click" @command="handleCommand">
+            <el-button type="success" class="send-btn">调试一下</el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-for="item in store.envs" :key="item.id" :command="item.url">{{ item.name }}: {{ item.url }}</el-dropdown-item>
+                <el-dropdown-item v-for="item in projectStore.current?.envs" :key="item.id" :command="item.url">{{ item.name }}: {{ item.url }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+          <el-button type="primary" @click="submitForm">保存</el-button>
+        </div>
+          </el-form-item>
+          
 
         </div>
       </el-form>
@@ -75,10 +82,13 @@
 
         <!-- body 标签页 -->
         <el-tab-pane label="body" name="body">
-          <el-radio-group v-model="localDetail.body_type" class="body-type-selector">
-            <el-radio value="form">Form Data</el-radio>
-            <el-radio value="raw">Raw</el-radio>
-          </el-radio-group>
+          <div class="body-type-selector">
+            <el-radio-group v-model="localDetail.body_type" class="body-type-selector">
+              <el-radio value="form">Form Data</el-radio>
+              <el-radio value="raw">Raw</el-radio>
+            </el-radio-group>
+            <el-button type="info" @click.stop="formatJson" v-if="localDetail.body_type === 'raw'"><el-icon><BrushFilled /></el-icon>格式化</el-button>
+          </div>
 
           <!-- Form Data 模式 @update:items="updateFormData" -->
           <key-value-editor
@@ -89,11 +99,11 @@
           <!-- Raw 模式 -->
           <div v-else-if="localDetail.body_type === 'raw'">
             <baseEditor 
-            v-model="localDetail.body" 
+            v-model="localDetail.json" 
             lang="json" 
-            height="200px" 
+            height="400px" 
             theme="monokai" 
-            :options="{ tabSize: 4 }" 
+            :options="{ tabSize: 2 }" 
             :additional-values="caseStore.pythonFunctionList"
             />
           </div>
@@ -102,6 +112,10 @@
 
       <!-- 新增响应展示区域 -->
     <div class="response-section">
+      <el-tabs v-model="activeName" class="demo-tabs" type="border-card">
+        <el-tab-pane label="请求信息" name="first">
+
+
       <el-divider content-position="left">请求预览</el-divider>
       <el-skeleton :loading="loading" animated>
               <template #default>
@@ -118,19 +132,24 @@
                       </el-tag>
                     </el-descriptions-item>
 
-                    <!-- 响应头 -->
+                    <!-- 请求头 -->
                     <el-descriptions-item label="请求头">
                       <key-value-viewer :data="requestData.headers" :width="300" />
                     </el-descriptions-item>
 
-                    <!-- 响应体 -->
+                    <!-- 查询参数 -->
+                    <el-descriptions-item label="查询参数">
+                      <key-value-viewer :data="requestData.params" :width="300" />
+                    </el-descriptions-item>
+
+                    <!-- 请求data -->
                     <el-descriptions-item label="请求参数">
                       <key-value-viewer :data="requestData.data" :width="300" />
                     </el-descriptions-item>
 
-                    <!-- 响应体 -->
+                    <!-- 请求json -->
                     <el-descriptions-item label="请求体">
-                      <key-value-viewer :data="requestData.json" :width="300"/>
+                      <key-value-viewer :data="requestData.json?JSON.parse(requestData.json):requestData.json" :width="300"/>
                     </el-descriptions-item>
                   </el-descriptions>
                 </div>
@@ -146,7 +165,8 @@
                 <el-skeleton-item variant="text" style="width: 60%" />
               </template>
             </el-skeleton>
-
+          </el-tab-pane>
+          <el-tab-pane label="响应信息" name="second">
       <el-divider content-position="left">响应预览</el-divider>
       <el-skeleton :loading="loading" animated>
               <template #default>
@@ -177,7 +197,8 @@
                 </div>
               </template>
             </el-skeleton>
-
+          </el-tab-pane>
+          </el-tabs>
     </div>
     </div>
   </template>
@@ -193,9 +214,11 @@
   import baseEditor from '@/components/BaseEditor.vue'
   import { interfaceApi } from '@/api'
   import { useCaseStore } from '@/stores/testcase'
+  import { useProjectStore } from '@/stores/project';
 
   // 添加表单引用
 const formRef = ref<FormInstance>()
+  const activeName = ref('first')
 
 // 校验规则定义
 const rules = reactive<FormRules>({
@@ -215,6 +238,7 @@ const rules = reactive<FormRules>({
 
   const store = useInterfaceStore()
   const caseStore = useCaseStore()
+  const projectStore = useProjectStore()
 
   const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD']
   
@@ -224,7 +248,7 @@ const rules = reactive<FormRules>({
     headers?: Record<string, string>
     params?: Record<string, string>
     body_type?: 'form' | 'raw'
-    body: string
+    json: string
     data?: Record<string, any>
     name: string
     module: number | string
@@ -243,8 +267,8 @@ const rules = reactive<FormRules>({
     path: props.detail.path,
     headers: props.detail.headers ? JSON.parse(JSON.stringify(props.detail.headers)) : {},
     params: props.detail.params ? JSON.parse(JSON.stringify(props.detail.params)) : {},
-    body: props.detail.body ? JSON.stringify(props.detail.params) : '{"a": 1}',
-    data: props.detail.body ? JSON.parse(JSON.stringify(props.detail.body)) : {},
+    json: props.detail.json ? JSON.stringify(props.detail.json) : '{"a": 1}',
+    data: props.detail.data ? JSON.parse(JSON.stringify(props.detail.data)) : {},
     body_type: 'form', // 默认使用form-data
     id: props.detail.id
   })
@@ -306,14 +330,6 @@ const responseBody = computed(() => {
 })
 
 
-const jsonDeep = ref(3)
-
-function isObject(value: any) {
-  return value !== null && typeof value === 'object';
-}
-
-
-
 
 const handleCommand = async (command: string) => {
   if (!localDetail.path) {
@@ -327,7 +343,7 @@ const handleCommand = async (command: string) => {
     'params': localDetail.params,
     'body_type': localDetail.body_type,
     'data': localDetail.data,
-    'body': localDetail.body
+    'json': localDetail.json
   }
   console.log('发送请求的payload:', payload)
   try {
@@ -357,7 +373,16 @@ const submitForm = async () => {
   }
 }
 
-
+// 格式化 JSON 数据
+const formatJson = () => {
+  try {
+    const parsed = JSON.parse(localDetail.json)
+    localDetail.json = JSON.stringify(parsed, null, 2)
+    ElMessage.success('格式化成功')
+  } catch (err) {
+    ElMessage.error('无效的 JSON 格式，无法格式化')
+  }
+}
 
 
   </script>
@@ -427,17 +452,16 @@ const submitForm = async () => {
   .interface-name {
     width: 250px;
   }
-  .path-form-item {
-    flex: 1;
-  }
+
   /* 新增校验相关样式 */
 :deep(.el-form-item__error) {
   padding-top: 4px;
 }
 
 .body-type-selector {
-  margin-bottom: 15px;
+  margin-bottom: 5px;
   display: flex;
+  justify-content: space-between;
 }
 
 pre {
@@ -446,6 +470,28 @@ pre {
   margin: 0;
   white-space: pre-wrap;
   color: #333;
+}
+
+.custom-form-item {
+  display: flex;
+  flex-direction: column;
+  
+}
+.custom-form-item .el-form-item__label {
+  margin-bottom: 4px;
+}
+.custom-form-item .el-form-item__content {
+  margin-top: 4px;
+}
+
+.path-form-item {
+    flex: 1;
+  }
+.path-test {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
 }
   </style>
   

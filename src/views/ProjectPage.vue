@@ -12,7 +12,6 @@
           <el-button type="primary" @click="fetchProjectData" :icon="Search">搜索</el-button>
         </el-row>
       </div>
-  
       <!-- 表格 -->
       <BaseTable
         :columns="tableColumns"
@@ -49,6 +48,16 @@
           </el-table>
         </el-card>
         </template>
+        <template #projectName="scope">
+          <div class="project-name-displayname">
+            <svg width="14" height="14" viewBox="0 0 24 24" v-if="projectStore.currentProjectId === scope.row.id">
+              <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z" fill="#00FF00"/>
+            </svg>
+            <span>{{ scope.row.name }}</span>
+          </div>
+          
+        </template>
+
         <template #operation="scope">
           <el-button link type="primary" size="small" @click="openAddDialogEnvs(scope.row)">
             新增环境
@@ -88,6 +97,9 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { projectApi } from '@/api/'
   import { CirclePlus, Search } from '@element-plus/icons-vue'
+  import { useProjectStore } from '@/stores/project'
+
+  const projectStore = useProjectStore()
   
   type Project = {
     id: number
@@ -106,7 +118,9 @@
   const tableColumns: TableColumn[] = [
     { prop: 'expand', label: '环境', width: 60, type: 'expand', slot: 'expand' },
     { prop: 'id', label: 'ID', width: 60 },
-    { prop: 'name', label: '项目名称' },
+    // { prop: 'name', label: '项目名称' },
+    { prop: 'name', label: '项目名称', slot: 'projectName' },
+    // { prop: 'base_url', label: '项目地址' },
     { prop: 'description', label: '描述' },
     { prop: 'created_by', label: '创建人' },
     { prop: 'created_at', label: '创建时间' },
@@ -324,6 +338,11 @@
   .env-list {
     margin: 10px 60px;
     width: 80%;
+  }
+
+  .project-name-displayname {
+    display: flex;
+    align-items: center;
   }
 
   </style>

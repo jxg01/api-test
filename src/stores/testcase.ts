@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { testCaseApi, interfaceApi, projectApi } from '@/api/'
 import { useInterfaceStore } from '@/stores/interface'
+import { useProjectStore } from '@/stores/project'
 
 export interface TestCase {
   id: number | string
@@ -14,7 +15,7 @@ export interface TestCase {
   body:  string
   assertions: [Record<string, string>]
   variable_extract: [Record<string, string>]
-  project?: number | string // 项目ID
+  // project?: number | string // 项目ID
   interface?: number | string // 接口ID
 }
 
@@ -45,6 +46,7 @@ export interface requestDataType {
   url: string
   method: string
   headers: Record<string, string>
+  params: Record<string, string>
   data: Record<string, string>
   json: Record<string, string>
 }
@@ -78,7 +80,7 @@ export const useCaseStore = defineStore('case', {
     caseDetailInterId: '',
     caseDetailProjectId: '',
     apiStoreInstance: useInterfaceStore(),
-    projectEnvs: [] as Envs[],
+    // projectEnvs: [] as Envs[],
     projectEnvsSelect: '',
     caseHistoryList: [] as testCaseHistory[],
     pythonFunctionList: [] // Python函数列表
@@ -92,16 +94,17 @@ export const useCaseStore = defineStore('case', {
   },
 
   actions: {
-    async fetchCaseList() {
+    async fetchCaseList(projectId?: number | string | null, interfaceId?: number | string) {
       try {
         this.loading = true
         const res = await testCaseApi.getTestCaseList({
           page: this.currentPage,
           size: this.pageSize,
           name: this.searchInput,
-          project_id: this.searchSelectProjectId,
+          project_id: projectId || useProjectStore().currentProjectId,
           interface_id: this.searchInterfaceId,
         })
+        
         this.cases = res.data
         this.total = res.meta.pagination.total
         this.currentPage = res.meta.pagination.page
@@ -121,9 +124,11 @@ export const useCaseStore = defineStore('case', {
         description: '',
         headers: {},
         params: {},
-        body: {},
+        body: '{}',
         assertions: [{}],
         variable_extract: [{}],
+        body_type: 'form',
+        data: {},
       }
       return this.editCase(newCase)
     },
@@ -255,7 +260,7 @@ export const useCaseStore = defineStore('case', {
     },
 
     // 项目切换处理
-    async handleProjectChange(projectId: number){
+    async handleProjectChange(projectId: number | string |null) {
       // 获取当前项目的模块数据 
       try {
         const res = await interfaceApi.getInterfaceList({'project_id': projectId})
@@ -268,14 +273,14 @@ export const useCaseStore = defineStore('case', {
       }
     },
 
-    async fetchEnvs(id?: number | string) {
-      try {
-        const res = await projectApi.getProjectEnvList({'project_id': id})
-        this.projectEnvs = res.data
-      } catch (error) {
-        console.error('运行套件失败', error)
-      }
-    },
+    // async fetchEnvs(id?: number | string) {
+    //   try {
+    //     const res = await projectApi.getProjectEnvList({'project_id': id})
+    //     this.projectEnvs = res.data
+    //   } catch (error) {
+    //     console.error('运行套件失败', error)
+    //   }
+    // },
 
     async runTestcase(caseID: number, envUrl: string){
       try {
@@ -292,6 +297,16 @@ export const useCaseStore = defineStore('case', {
         this.caseHistoryList = res.data
       } catch (error) {
         console.error('获取套件失败', error)
+      }
+    },
+
+    async getTestCaseDetail(id: number) {
+      try {
+        const res = await testCaseApi.getTestCaseDetail(id)
+        if (res) return res
+      } catch (error) {
+        console.error('获取用例详情失败', error)
+        return
       }
     },
 

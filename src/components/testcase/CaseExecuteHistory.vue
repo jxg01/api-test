@@ -46,6 +46,11 @@
                       <key-value-viewer :data="requestData.headers" />
                     </el-descriptions-item>
 
+                    <!-- 查询参数 -->
+                    <el-descriptions-item label="查询参数">
+                      <key-value-viewer :data="requestData.params" />
+                    </el-descriptions-item>
+
                     <!-- 响应体 -->
                     <el-descriptions-item label="请求参数">
                       <key-value-viewer :data="requestData.data" />

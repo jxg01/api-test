@@ -28,6 +28,7 @@
   
   // 初始化加载项目列表
   onMounted(() => {
+    console.log('InterfacePage mounted')
     store.fetchProjects()
     fetchPythonNameList()
   })

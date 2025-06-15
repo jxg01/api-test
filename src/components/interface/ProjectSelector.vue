@@ -1,20 +1,6 @@
 <template>
     <div class="project-selector">
       <div class="search-add">
-        <!-- 项目选择下拉框 -->
-        <el-select
-          v-model="store.selectedProjectId"
-          placeholder="选择项目"
-          @change="handleProjectChange"
-          size="large"
-        >
-          <el-option
-            v-for="project in store.projects"
-            :key="project.id"
-            :label="project.name"
-            :value="project.id"
-          />
-        </el-select>
         <el-button type="primary" @click="openAddDialog" size="large" :icon="CirclePlusFilled" >添加模块</el-button>
       </div>
   
@@ -40,43 +26,24 @@
   
   <script setup lang="ts">
   import { useInterfaceStore } from '@/stores/interface'
+  import { useProjectStore } from '@/stores/project'
   import { CirclePlusFilled } from '@element-plus/icons-vue'
   import BaseDialog from '@/components/BaseDialog.vue'
-  import { ref, computed, markRaw } from 'vue'
+  import { ref, computed, markRaw, onMounted } from 'vue'
   import { ElMessage } from 'element-plus/es'
   import { projectApi } from '@/api'
 const store = useInterfaceStore()
+const projectStore = useProjectStore()
   // 表单配置 =================================================================
   const dialogRef = ref()
   const formFields = ref(
     [
-      {
-        prop: 'project',
-        label: '项目',
-        component: markRaw(ElSelect),
-        onSelectChange: (val: number) => {
-            // store.selectedModuleId = val
-            store.fetchAllLevelModules(val)
-          },
-        attrs: { 
-          placeholder: '请选择项目' ,
-          options: computed(() => {
-            return store.projects.map(project => ({
-              label: project.name,
-              value: project.id
-            }))
-          }),
-          rules: [{ required: true }],
-
-        }
-      },
       { 
         prop: 'parent_module', 
         label: '上级模块',
         component: markRaw(ElSelect),
         onSelectChange: (val: number) => {
-            // store.selectedModuleId = val
-            // store.fetchAllLevelModules(val)
+            store.selectedModuleId = val
           },
         attrs: { 
           placeholder: '请选择模块',
@@ -113,11 +80,13 @@ const store = useInterfaceStore()
   const handleSubmit = async (data: any, mode: 'add', done: (success?: boolean) => void) => {
     try {
       console.log('提交数据 submit ', data)
-      await store.addModule({
+      const payload = {
         name: data.name,
-        project: data.project,
-        parent_module: data.parent_module
-      })
+        project: projectStore.currentProjectId,
+        parent_module: data.parent_module || null
+      }
+      await store.addModule(payload)
+      store.fetchModules(payload.project)
       ElMessage.success('模块添加成功')
       done(true)
     } catch (error) {
@@ -141,6 +110,19 @@ const store = useInterfaceStore()
     const res = await projectApi.getProjectEnvList({'project_id': projectId})
     store.envs = res.data || []
   }
+
+  onMounted(async() => {
+    console.log('BaseProjectSelect => ', projectStore.current)
+    if (!projectStore.current) {
+      await projectStore.initCurrentProject()
+    }
+
+    if (projectStore.current) {
+      const projectId = projectStore.current.id
+      handleProjectChange(projectId)
+      store.fetchAllLevelModules(projectId)
+    }
+  })
 
   
   </script>
