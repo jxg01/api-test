@@ -149,7 +149,7 @@
 
                     <!-- 请求json -->
                     <el-descriptions-item label="请求体">
-                      <key-value-viewer :data="requestData.json?JSON.parse(requestData.json):requestData.json" :width="300"/>
+                      <key-value-viewer :data="bodyDisplay" :width="300"/>
                     </el-descriptions-item>
                   </el-descriptions>
                 </div>
@@ -215,6 +215,7 @@
   import { interfaceApi } from '@/api'
   import { useCaseStore } from '@/stores/testcase'
   import { useProjectStore } from '@/stores/project';
+import { tr } from 'element-plus/es/locale';
 
   // 添加表单引用
 const formRef = ref<FormInstance>()
@@ -343,7 +344,7 @@ const handleCommand = async (command: string) => {
     'params': localDetail.params,
     'body_type': localDetail.body_type,
     'data': localDetail.data,
-    'json': localDetail.json
+    'body': localDetail.json
   }
   console.log('发送请求的payload:', payload)
   try {
@@ -351,6 +352,7 @@ const handleCommand = async (command: string) => {
     // 发送请求
     const res = await interfaceApi.runInterface(payload)
     responseData.value = res.data.response_data
+    console.log('响应数据:', res.data.request_data.json)
     requestData.value = res.data.request_data
     ElMessage.success('请求成功')
     loading.value = false
@@ -360,6 +362,14 @@ const handleCommand = async (command: string) => {
     ElMessage.error('error')
   }
 }
+
+const bodyDisplay = computed(() => {
+  try {
+    return JSON.parse(requestData.value.json)
+  } catch (error) {
+    return requestData.value.json
+  }
+})
 
 const submitForm = async () => {
   if (!formRef.value) return
