@@ -20,12 +20,19 @@ export const suiteApi = {
   deleteSuite: (id: number) => 
     http.delete(`/suite/${id}/`),
 
-  /** 获取套件执行记录 */
+  /** 获取套件中单个套件仅10条执行记录 */
   getSuiteExecutionHistory: (params: any) => 
     http.get('/SuiteExecutionResult/', params),
 
   runSuite: (id: number, params: any) =>
     http.post(`/suite/${id}/execute/`, params),
 
+  /** 获取用例执行记录详情 */
+  getCaseExecutionDetail: (id: number) => 
+    http.get(`/CaseExecutionResult/${id}/`),
+
+  /** 获取套件执行记录 */
+  getSuiteExecutionDetail: (id: number) => 
+    http.get(`/SuiteExecutionResult/${id}/`),
 
 }

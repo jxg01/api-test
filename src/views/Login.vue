@@ -1,16 +1,21 @@
 <template>
     <div class="login-container">
         <el-card class="login-card" shadow="hover">
-            <h2>登录</h2>
-            <el-form :model="loginFormData" label-width="80px" ref="loginFormRef" :rules="rules">
+            <!-- <h2>登录</h2> -->
+            <template #header>
+                <div class="card-header">
+                    <span>EasyApi</span>
+                </div>
+            </template>
+            <el-form :model="loginFormData" label-width="80px" ref="loginFormRef" :rules="rules" label-position="top">
                 <el-form-item label="用户名" prop="username">
                     <el-input v-model="loginFormData.username" placeholder="请输入用户名" prefix-icon="User"></el-input>
                 </el-form-item>
                 <el-form-item label="密码" prop="password">
-                    <el-input v-model="loginFormData.password" placeholder="请输入密码" type="password" prefix-icon="Lock"></el-input>
+                    <el-input v-model="loginFormData.password" placeholder="请输入密码" type="password" prefix-icon="Lock" show-password></el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="submitLogin">登录</el-button>
+                    <el-button type="primary" @click="submitLogin" style="width: 100%;">登录</el-button>
                 </el-form-item>
             </el-form>
             <div class="register">
@@ -136,11 +141,11 @@ const submitRegister = async () => {
 }
 
 .login-card {
-    width: 400px;
-    border-radius: 10px;
+    width: 450px;
+    border-radius: 5px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    background: #fff;
+    /* overflow: hidden; */
+    /* background: #fff; */
 }
 
 .register {
@@ -148,6 +153,15 @@ const submitRegister = async () => {
     display: flex;
     justify-content: flex-end;
     align-items: center;
+}
+
+.el-card__header {
+  background-image: url("https://img1.baidu.com/it/u=263629427,524459823&fm=253&fmt=auto&app=138&f=GIF?w=500&h=500")
+}
+.card-header {
+  color: lightgreen;
+  text-align: center;
+  font-size: 40px;
 }
 
 </style>

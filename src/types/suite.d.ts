@@ -1,11 +1,14 @@
 export interface SuiteHistory {
-  id: number;
-  suite: string;
-  status: string;
-  pass_rate: number;
-  started_at: string;
-  ended_at: string;
-  duration: number;
-  executed_by: string;
-} 
+  id: string
+  type: string
+  name: string
+  status: string
+  started_at: string
+  duration: string
+  executed_by_username: string | null
+  suite_id: string | null
+  suite_name: string | null
+  case_id: string | null
+  case_name: string | null
+}
 

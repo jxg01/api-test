@@ -24,6 +24,8 @@
         </template>
       </BaseTable>
     </el-card>
+
+    <ViewSuiteHistory ref="suiteDrawer" />
   </div>
 </template>
 
@@ -32,6 +34,7 @@ import { onMounted, ref } from 'vue';
 import type { SuiteHistory } from '@/types/suite';
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import { useSuiteStore } from '@/stores/suiteStore';
+import ViewSuiteHistory from '@/components/ExecutionHistory/ViewSuiteHistory.vue';
 
 const store = useSuiteStore();
 
@@ -98,8 +101,12 @@ const getStatusType = (status: string) => {
   }
 }
 
+
+const suiteDrawer = ref();
+
 const viewDetail = (row: SuiteHistory) => {
   console.log('查看执行详情:', row);
+  suiteDrawer.value.openDrawer(row);
 }
 
 onMounted(() => {

@@ -386,7 +386,6 @@ onMounted(async () => {
 
 // 测试用例详情
 const caseDrawer = ref();
-const selectedCaseId = ref<number>(0)
 const getCaseDetail = (caseId: number) => {
   caseDrawer.value.openDrawer(caseId);
 }

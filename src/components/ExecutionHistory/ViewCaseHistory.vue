@@ -1,30 +1,23 @@
 <template>
-  <div>
-    <!-- 底部最近执行记录 -->
-    <el-card shadow="hover" class="execution-table">
-      <div class="table-header">
-        <span class="table-title">最近执行记录【10条】</span>
-        <el-button type="primary" size="small" @click="emit('handleRefresh')">刷新</el-button>
+  <!-- 在其他页面调用这个组件 -->
+  <div class="customer-header">
+  <el-drawer
+    v-model="drawerVisible"
+    direction="rtl"
+    size="700"
+    @open="activeName='first'"
+  >
+    <template #header>
+      <div class="customer-title" style="display: flex; text-align: center;">
+        <svg style="margin-right: 10px; width: 24px; height: 24px;">
+          <circle cx="12" cy="12" r="10 " :fill="status==='passed'?'lightgreen':'red'" />
+        </svg>
+        <h4>测试结果 - {{ title }}</h4>
       </div>
-      <BaseTable
-        :columns="historyListTableColumns"
-        :table-data="props.tableInfo"
-        height="auto"
-      >
-        <template #StatusTagInlist="scope">
-          <el-tag :type="getStatusType(scope.row.status)" effect="dark"> {{ getStatusDisplayName(scope.row.status) }} </el-tag>
-        </template>
-        <template #operation="scope">
-          <el-button link type="primary" @click="viewDetail(scope.row)">详情</el-button>
-        </template>
-      </BaseTable>
-    </el-card>
-
-    <el-dialog title="记录详情" v-model="detailVisit" width="70%" @closed="handleClosed">
-      <!-- 新增响应展示区域 -->
-      <div class="request-detail">
-        <!-- <el-divider content-position="left"><span class="content-title">请求信息</span></el-divider> -->
-        <el-tabs v-model="activeName" class="demo-tabs" @tab-click="handleClick" type="border-card">
+      
+    </template>
+    <div class="request-detail">
+        <el-tabs v-model="activeName" class="demo-tabs">
           <el-tab-pane label="请求信息" name="first">
             <el-skeleton :loading="loading" animated>
               <template #default>
@@ -59,7 +52,7 @@
                     <!-- 响应体 -->
                     <el-descriptions-item label="请求体">
                       <!-- <key-value-viewer :data="requestData.json" /> -->
-                      <pre>{{ requestData.json }}</pre>
+                      <pre class="raw-body">{{ requestData.json?requestData.json:'暂无数据' }}</pre>
                     </el-descriptions-item>
                   </el-descriptions>
                 </div>
@@ -116,6 +109,9 @@
                     :table-data="assertionData"
                     height="auto"
                   >
+                    <template #assertType="scope">
+                      <span>{{ getAssertionTypeLabel(scope.row.type) }}</span>
+                    </template>
                     <template #StatusTag="scope">
                       <el-tag :type="scope.row.status === 'success' ?'primary': 'danger'" effect="dark"> {{ scope.row.status === "success" ? '成功': '失败' }} </el-tag>
                     </template>
@@ -136,92 +132,80 @@
         </el-tabs>
         
       </div>
-    </el-dialog>
-  </div>
+  </el-drawer>
+</div>
 </template>
 
-<script lang="ts" setup>
-import { testCaseHistory, responseDataType, requestDataType} from '@/stores/testcase';
+<script setup lang="ts">
 import { ref, computed } from 'vue';
-import KeyValueViewer from '../interface/KeyValueViewer.vue'
-import VueJsonPretty from 'vue-json-pretty';
+import { responseDataType, requestDataType } from '@/stores/testcase';
+import { suiteApi } from '@/api';
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
-import type { TabsPaneContext } from 'element-plus'
 
-const emit = defineEmits(['handleRefresh'])
-const props = defineProps<{
-  // formData: TestCase
-  tableInfo: []
-}>()
 
+// 断言类型配置
+const assertionTypes = [
+  { value: 'status_code', label: '状态码' },
+  { value: 'jsonpath_equal', label: '提取值等于' },
+  { value: 'jsonpath_not_equal', label: '提取值不等于' },
+  { value: 'response_contain', label: '结果包含' },
+];
+
+// 参数提取类型配置
+const extractTypes = [
+  { value: 'regex', label: '正则表达式' },
+  { value: 'jsonpath', label: 'JSONPath' }
+];
+
+const emit = defineEmits(['update:visible']);
+
+
+
+// 获取断言类型标签
+const getAssertionTypeLabel = (type: string) => {
+  const typeObj = assertionTypes.find(t => t.value === type);
+  return typeObj ? typeObj.label : type;
+};
+
+const drawerVisible = ref(false);
+const loading = ref(false);
 const activeName = ref('first')
-
-const handleClick = (tab: TabsPaneContext, event: Event) => {
-  console.log('Tab clicked:');
-}
+const responseData = ref<responseDataType>()
+const requestData = ref<requestDataType>()
+const assertionData = ref()
+const extratedData = ref()
+const title = ref('Null')
+const status = ref('passed') // 假设状态是通过的
 
 // 表格配置
 const detailTableColumns: TableColumn[] = [
-  { prop: 'type', label: '断言类型' },
+  { prop: 'type', label: '断言类型', slot: 'assertType' },
   { prop: 'enabled', label: '状态', width: 100, slot: 'StatusTag' },
   { prop: 'expected', label: '预期结果' },
   { prop: 'actual', label: '实际结果' },
 ]
 
-// 表格配置
-const historyListTableColumns: TableColumn[] = [
-  { prop: 'id', label: '#', width: 80 },
-  { prop: 'executed_by', label: '执行人'},
-  { prop: 'created_at', label: '执行时间' },
-  { prop: 'duration', label: '耗时(s)' },
-  { prop: 'status', label: '状态', slot: 'StatusTagInlist' },
-  { prop: 'operation', label: '操作', width: 135, slot: 'operation' }
-]
-
-
-// 获取状态标签类型, 不同标签显示不同颜色
-const getStatusType = (status: string) => {
-  switch (status) {
-    case 'passed':
-      return 'success'
-    case 'failed':
-      return 'danger'
-    case 'running':
-      return 'warning'
+// 打开抽屉并加载数据
+const openDrawer = async (row: any) => {
+  drawerVisible.value = true;
+  loading.value = true;
+  title.value = row.case_name
+  status.value = row.status
+  try {
+    const data = await suiteApi.getCaseExecutionDetail(row.id);
+    if (data) {
+      responseData.value = data.response_data
+      requestData.value = data.request_data
+      assertionData.value = data.assertions_result
+      extratedData.value = data.extracted_vars
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    loading.value = false;
   }
-}
+};
 
-const getStatusDisplayName = (status: string) => {
-  switch (status) {
-    case 'passed':
-      return '成功'
-    case 'failed':
-      return '失败'
-    case 'running':
-      return '执行中'
-  }
-}
-
-const loading = ref<boolean>(false)
-const detailVisit = ref<boolean>(false)
-
-const responseData = ref<responseDataType>()
-const requestData = ref<requestDataType>()
-const assertionData = ref()
-const extratedData = ref()
-
-// 查看详情
-const viewDetail = (row: testCaseHistory) => {
-  console.log('查看执行详情:', row)
-  console.log('查看执行详情request_data:', row.request_data.json)
-  console.log('查看执行详情request_data:', typeof row.request_data.json)
-  // 实际项目中这里可以跳转到详情页
-  responseData.value = row.response_data
-  requestData.value = row.request_data
-  assertionData.value = row.assertions_result
-  extratedData.value = row.extracted_vars
-  detailVisit.value = true
-}
 
 const responseBody = computed(() => {
   try {
@@ -231,60 +215,82 @@ const responseBody = computed(() => {
   }
 })
 
-const handleClosed = () => {
-  activeName.value = 'first'
-  detailVisit.value = false
-}
 
 
 
 
+
+
+// 暴露打开方法供父组件调用
+defineExpose({
+  openDrawer
+});
 </script>
 
+<style scoped>
+.case-detail-drawer {
+  /* padding: 20px; */
+  height: 100%;
+  overflow-y: auto;
+}
 
-<style>
-.execution-table {
-  margin-top: 20px;
-}
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.table-title {
+.section-title {
   font-size: 16px;
   font-weight: bold;
+  margin: 25px 0 15px;
+  color: #606266;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
 }
 
-.request-detail {
-  word-break: break-all;  /* 强制截断单词 */
-  overflow-wrap: anywhere;  /* 更智能的断词 */
+.request-tabs {
+  margin-top: 20px;
 }
 
-.json-container {
-  background: #f8f8f8;
-  padding: 16px;
-  border-radius: 4px;
-  overflow-x: auto;
-}
-pre {
-  font-family: 'Courier New', monospace;
-  line-height: 1.5;
-  margin: 0;
-  white-space: pre-wrap;
-  color: #333;
-}
-
-.content-title {
-  font-size: large;
-  font-weight: bold;
-}
-
-.request-detail {
+.empty-placeholder {
   padding: 20px;
+  text-align: center;
+  color: #909399;
+  font-size: 14px;
+  border: 1px dashed #dcdfe6;
+  border-radius: 4px;
+  margin-top: 10px;
 }
 
+.raw-body {
+  display: flex;
+  text-align: left;
+  background: #f3f4f4;
+  padding: 12px;
+  border-radius: 4px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+:deep(.el-descriptions) {
+  margin-top: 10px;
+}
+
+:deep(.el-descriptions__title) {
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+:deep(.el-drawer__header) {
+  background-color: #2f1b86;
+  border-bottom: 1px solid #181717;
+  margin-bottom: 0 0 12px;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 0 20px;
+  color: #fff;
+}
+
+.customer-title {
+  align-items: center;
+}
 
 </style>
-

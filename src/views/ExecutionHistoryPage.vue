@@ -12,6 +12,10 @@
       :loading="loading"
       height="calc(100vh - 295px)"
     >
+      <template #name="{ row }">
+        <span>【{{ row.type==='case'?'测试用例':'测试套件' }}】  </span>
+        <span>{{ row.type==='case'?row.case_name:row.name }}</span>
+      </template>
       <template #StatusTag="scope">
         <el-tag :type="getStatusType(scope.row.status)" effect="dark"> {{ getStatusDisplay(scope.row.status) }} </el-tag>
       </template>
@@ -21,7 +25,7 @@
       </template>
 
       <template #operation="scope">
-        <el-button link type="primary" size="small" @click.stop="">
+        <el-button link type="primary" size="small" @click.stop="viewHistoryDetail(scope.row)">
           详情
         </el-button>
       </template>
@@ -35,6 +39,9 @@
       @page-change="setCurrentPage"
       @size-change="setPageSize"
     />
+
+    <ViewCaseHistory ref="caseDrawer" />
+    <ViewSuiteHistory ref="suiteDrawer" />
   </div>
 </template>
 
@@ -46,17 +53,20 @@ import BasePagination from '@/components/BasePagination.vue';
 import { suiteApi } from '@/api';
 import { Search } from '@element-plus/icons-vue';
 import type { SuiteHistory } from '@/types/suite';
+import { dashboardApi } from '@/api'
+import ViewCaseHistory from '@/components/ExecutionHistory/ViewCaseHistory.vue';
+import ViewSuiteHistory from '@/components/ExecutionHistory/ViewSuiteHistory.vue';
 
 // 表格配置 =================================================================
 const tableColumns: TableColumn[] = [
-  { prop: 'id', label: '#', width: 60 },
-  { prop: 'suite', label: '套件名称' },
+  // { prop: 'id', label: '#', width: 60 },
+  { prop: 'suite', label: '套件名称', slot: 'name' },
   { prop: 'status', label: '状态', width: 120, slot: 'StatusTag' },
-  { prop: 'pass_rate', label: '通过率', width: 120, slot: 'PassRate' },
-  { prop: 'started_at', label: '开始时间' },
-  { prop: 'ended_at', label: '结束时间' },
+  // { prop: 'pass_rate', label: '通过率', width: 120, slot: 'PassRate' },
+  { prop: 'started_at', label: '执行时间' },
+  // { prop: 'ended_at', label: '结束时间' },
+  { prop: 'executed_by_username', label: '执行人' },
   { prop: 'duration', label: '耗时(S)', width: 120 },
-  { prop: 'executed_by', label: '执行人', width: 120 },
   { prop: 'operation', label: '操作', width: 120, slot: 'operation' }
 ]
 
@@ -85,7 +95,7 @@ const setPageSize = (size: number) => {
 const fetchList = async() => {
   loading.value = true
   try {
-    const response = await suiteApi.getSuiteExecutionHistory({
+    const response = await dashboardApi.getExecutionCaseAndSuiteHistory({
       ...filterParams.value,
       page: currentPage.value,
       size: pageSize.value
@@ -129,6 +139,18 @@ const getStatusType = (status: string) => {
       return 'warning'
     default:
       return 'info'
+  }
+}
+
+const caseDrawer = ref();
+const suiteDrawer = ref();
+
+const viewHistoryDetail = (row: SuiteHistory) => {
+
+  if (row.type === 'case') {
+    caseDrawer.value.openDrawer(row);
+  } else {
+    suiteDrawer.value.openDrawer(row);
   }
 }
 

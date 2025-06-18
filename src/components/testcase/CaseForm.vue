@@ -384,7 +384,7 @@ const submitRunTestCase = async () => {
   try {
     if (!store.projectEnvsSelect) {return}
     runLoading.value = true
-    const selectEnvInfo = projectStore.current?.envs.filter(env => env.id === Number(store.projectEnvsSelect))
+    const selectEnvInfo = projectStore.current?.envs.filter((env: {id: number}) => env.id === Number(store.projectEnvsSelect))
     const res = await store.runTestcase(Number(localCaseDetail.id), selectEnvInfo[0]?.url)
     if (res) {
       ElMessage.success('提交成功')

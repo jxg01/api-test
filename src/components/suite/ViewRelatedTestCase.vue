@@ -228,25 +228,13 @@ defineExpose({
 }
 
 :deep(.el-drawer__header) {
-  background-color: #e6ecf4;
-  border-bottom: 1px solid #cc0909;
+  background-color: #2f1b86;
+  border-bottom: 1px solid #181717;
   margin-bottom: 0 0 12px;
   font-size: 18px;
   font-weight: bold;
+  padding: 0 20px;
+  color: #fff;
 }
 
-/* .customer-title {
-  font-size: 18px;
-  font-weight: bold;
-  flex-grow: 1;
-  border-bottom: 1px solid #6cdc27;
-} */
-
-/* pre {
-  font-family: 'Courier New', monospace;
-  line-height: 1.5;
-  margin: 0;
-  white-space: pre-wrap;
-  color: #333;
-} */
 </style>

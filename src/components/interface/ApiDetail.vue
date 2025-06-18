@@ -149,7 +149,8 @@
 
                     <!-- 请求json -->
                     <el-descriptions-item label="请求体">
-                      <key-value-viewer :data="bodyDisplay" :width="300"/>
+                      <!-- <key-value-viewer :data="bodyDisplay" :width="300"/> -->
+                      <pre class="raw-body">{{ bodyDisplay }}</pre>
                     </el-descriptions-item>
                   </el-descriptions>
                 </div>
@@ -183,7 +184,7 @@
                     <el-descriptions-item label="响应头">
                       <key-value-viewer :data="responseData.headers" :width="300"/>
                     </el-descriptions-item>
-
+                    
                     <!-- 响应体 -->
                     <el-descriptions-item label="响应体">
                         <pre class="raw-body">{{ responseBody }}</pre>
@@ -440,13 +441,15 @@ const formatJson = () => {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* .raw-body {
+.raw-body {
   white-space: pre-wrap;
   word-break: break-all;
   padding: 12px;
   background: #f8f9fa;
   border-radius: 4px;
-} */
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+}
 
 .empty-response {
   padding: 40px 0;

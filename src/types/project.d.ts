@@ -4,5 +4,5 @@ export interface Project {
   description?: string;
   created_at?: string;
   updated_at?: string;
-  envs?: ProjectEnv[];
+  envs?: ProjectEnv[{id: number, name: string, url: string}];
 }

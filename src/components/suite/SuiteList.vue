@@ -55,10 +55,10 @@ const route = useRoute()
 const tableColumns: TableColumn[] = [
   { prop: 'id', label: 'ID', width: 60 },
   { prop: 'name', label: '套件名称' },
-  { prop: 'project_name', label: '所属项目' },
+  // { prop: 'project_name', label: '所属项目' },
   // { prop: 'description', label: '描述信息' },
   { prop: 'cases', label: '用例数量', width: 135, slot: 'testcases' },
-  { prop: 'execution_status', label: '执行状态' },
+  { prop: 'execution_status', label: '最近执行' },
   { prop: 'created_by', label: '创建人' },
   { prop: 'created_at', label: '创建时间' },
   { prop: 'operation', label: '操作', width: 135, slot: 'operation' }

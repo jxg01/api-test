@@ -17,7 +17,7 @@
           <span>{{ row.type==='case'?row.case_name:row.name }}</span>
         </template>
         <template #status="{ row }">
-          <el-tag >{{ row.status }}</el-tag>
+          <el-tag :type="getStatusType(row.status)" effect="dark">{{ getStatusDisplayName(row.status) }}</el-tag>
         </template>
       </BaseTable>
   </div>
@@ -74,6 +74,30 @@ const fetchRecentExecutions = async () => {
     loading.value = false
   }
 }
+
+// 获取状态标签类型, 不同标签显示不同颜色
+const getStatusType = (status: string) => {
+  switch (status) {
+    case 'passed':
+      return 'success'
+    case 'failed':
+      return 'danger'
+    case 'running':
+      return 'warning'
+  }
+}
+
+const getStatusDisplayName = (status: string) => {
+  switch (status) {
+    case 'passed':
+      return '成功'
+    case 'failed':
+      return '失败'
+    case 'running':
+      return '执行中'
+  }
+}
+
 
 onMounted(() => {
   fetchRecentExecutions()
