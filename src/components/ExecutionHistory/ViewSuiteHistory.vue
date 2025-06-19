@@ -47,12 +47,11 @@
         <el-radio-button value="failed">失败</el-radio-button>
       </el-radio-group>
     </div>
-    <el-collapse :expand-icon-position="'left'">
+    <el-collapse accordion>
       <el-collapse-item
         v-for="(item, index) in filteredCases || []"
         :key="item.id"
         :name="String(index)"
-        
       >
         <template #title>
           <span :style="{ color: item.status === 'passed' ? 'green' : 'red' }">
@@ -131,8 +130,7 @@
 
                     <!-- 响应体 -->
                     <el-descriptions-item label="响应体">
-                        <pre class="raw-body">{{ item.response_data.body }}</pre>
-                        <!-- </div> -->
+                        <pre class="raw-body">{{ JSON.parse(item.response_data.body) }}</pre>
                     </el-descriptions-item>
                   </el-descriptions>
                 </div>
@@ -209,6 +207,9 @@ interface suiteExecutionDetail {
     };
     created_at: Date;
     executed_by: string;
+    interface_method: string;
+    interface_path: string;
+    case_name: string;
   }[];
   pass_rate: number;
   total_cases: number;
@@ -218,8 +219,6 @@ interface suiteExecutionDetail {
 const drawerVisible = ref(false);
 const loading = ref(false);
 const suitInfo = ref<suiteExecutionDetail>();
-
-
 
 const failed = computed(() => {
   if (!suitInfo.value) return 0;
@@ -263,10 +262,6 @@ const getAssertionTypeLabel = (type: string) => {
 };
 
 const activeName = ref('first')
-const responseData = ref<responseDataType>()
-const requestData = ref<requestDataType>()
-const assertionData = ref()
-const extratedData = ref()
 const title = ref('Null')
 const status = ref('passed') // 假设状态是通过的
 
@@ -280,14 +275,8 @@ const detailTableColumns: TableColumn[] = [
 ]
 
 
+const rData = ref()
 
-const responseBody = computed((data: any) => {
-  try {
-    return JSON.parse(data.value?.body) || {}
-  } catch (error) {
-    return responseData.value?.body || {}
-  }
-})
 
 
 // 打开抽屉并加载数据
@@ -309,9 +298,6 @@ const openDrawer = async (row: any) => {
     loading.value = false;
   }
 };
-
-
-
 
 
 

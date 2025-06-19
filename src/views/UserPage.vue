@@ -222,7 +222,7 @@ const handleSubmit = async (data: any, mode: 'add' | 'edit', done: (success?: bo
 
 <style scoped>
 .user-management-container {
-  height: calc(100vh - 165px); /* 总高度减去header和footer */
+  /* height: calc(100vh - 110px);  */
   display: flex;
   flex-direction: column;
   padding: 2px;

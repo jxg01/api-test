@@ -6,7 +6,7 @@
       :loading="false"
       :empty-text="'暂无数据'"
       :show-pagination="false"
-      height="calc(100vh - 225px)"
+      height="calc(100vh - 170px)"
     />
 
     <BasePagination
@@ -83,6 +83,10 @@ onMounted(() => {
 
 :deep(.el-popper) {
   max-width: 400px !important; /* 自定义最大宽度 */
+}
+
+.suggestion-page {
+  background: #dddddd;
 }
 
 </style>

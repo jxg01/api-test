@@ -1,8 +1,8 @@
 <template>
-  <div class="">
+  <div class="suit-page">
     <div class="searchTool">
-      <div class="searchTool">
-        <el-input v-model="suiteStore.searchSuiteName" clearable placeholder="请输入套件名称" class="search-info" />
+      <div class="left-search">
+        <el-input v-model="suiteStore.searchSuiteName" clearable placeholder="请输入套件名称" />
         <el-button type="primary" @click.stop="suiteStore.fetchSuites" :icon="Search"> 搜索</el-button>
       </div>
       <div>
@@ -13,7 +13,7 @@
     <BaseTable
       :columns="tableColumns"
       :table-data="suiteStore.testSuites"
-      height="calc(100vh - 295px)"
+      :height="'calc(100vh - 215px)'"
     >
       <template #testcases="scope">
         <el-tag type="primary" style="background-color:aliceblue; color:darkmagenta;"> {{ scope.row.cases.length }} </el-tag>
@@ -115,18 +115,20 @@ onMounted(async () => {
 <style scoped>
 .searchTool {
   display: flex;
-  gap: 10px;
-  margin: 10px 0;
+  /* gap: 10px; */
+  /* margin: 10px 0; */
+  padding: 10px;
   justify-content: space-between;
-}
-.search-info {
-  /* width: 20%; */
-  min-width: 120px;
-  max-width: 160px;
+
 }
 
-.addSuite {
-  margin: 10px 10px;
+.left-search {
+  display: flex;
+  gap: 10px;
+}
+
+.suit-page {
+  background: #dddddd;
 }
 
 </style>

@@ -4,7 +4,7 @@
   <el-drawer
     v-model="drawerVisible"
     direction="rtl"
-    size="700"
+    size="900"
     @open="activeName='first'"
   >
     <template #header>

@@ -10,7 +10,7 @@
     <BaseEditor 
     lang="python" 
     v-model="pythonCode" 
-    height="calc(100vh - 235px)"
+    height="calc(100vh - 180px)"
     :options="{'tabSize': 4}"
     />
   </div>

@@ -20,6 +20,7 @@ interface ExecutionTrend {
 }
 
 const chartData = ref<ExecutionTrend[]>([])
+const suiteData = ref<ExecutionTrend[]>([])
 let trendChartInstance: ECharts | null = null
 
 
@@ -27,6 +28,7 @@ const fetchChartData = async () => {
   try {
     const response = await dashboardApi.getRecent7DayHistorySummary()
     chartData.value = response.data.case_executions || []
+    suiteData.value = response.data.suite_executions || []
     if (chartData.value.length) initCharts()  // 有数据才渲染
   } catch (error) {
     console.error('获取图表数据失败:', error)
@@ -51,7 +53,8 @@ const initCharts = async () => {
         name: '成功',
         type: 'bar',
         stack: 'total',
-        data: chartData.value?.map(item => item.passed),
+        data: sumArrays(chartData.value?.map(item => item.passed), suiteData.value?.map(item => item.passed)),
+        // suiteData.value?.map(item => item.passed)
         itemStyle: { color: '#67C23A' },
         label: {
           show: false,         // 开启显示
@@ -63,7 +66,8 @@ const initCharts = async () => {
         name: '失败',
         type: 'bar',
         stack: 'total',
-        data: chartData.value?.map(item => item.failed),
+        // data: chartData.value?.map(item => item.failed),
+        data: sumArrays(chartData.value?.map(item => item.failed), suiteData.value?.map(item => item.failed)),
         itemStyle: { color: '#F56C6C' },
         label: {
           show: false,         // 开启显示
@@ -74,6 +78,15 @@ const initCharts = async () => {
     ]
   })
   }
+}
+
+function sumArrays(arr1: number[], arr2: number[]) {
+    // 确保数组长度相同
+    if (arr1.length !== arr2.length) {
+        throw new Error('数组长度必须相同');
+    }
+    
+    return arr1.map((num, index) => num + arr2[index]);
 }
 
 onMounted(() => {

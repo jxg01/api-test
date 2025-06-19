@@ -321,7 +321,6 @@
   
   <style scoped>
   .project-management-container {
-    height: calc(100vh - 165px); /* 总高度减去header和footer */
     display: flex;
     flex-direction: column;
     padding: 2px;

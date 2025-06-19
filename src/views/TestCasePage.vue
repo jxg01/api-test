@@ -15,7 +15,7 @@
         :columns="tableColumns"
         :table-data="store.cases"
         :loading="store.loading"
-        height="calc(100vh - 319px)"
+        height="calc(100vh - 270px)"
       >
         <template #StatusTag="scope">
           <el-tag :type="scope.row.enabled?'primary': 'danger'" effect="dark"> {{ scope.row.enabled ? '启用': '禁用' }} </el-tag>
@@ -123,8 +123,6 @@ const fetchPythonNameList = async () => {
 
 <style scoped>
 .case-management {
-  /* height: calc(100vh - 160px); */
-  /* overflow: hidden; */
   background: #dddddd;
 }
 .table-container {

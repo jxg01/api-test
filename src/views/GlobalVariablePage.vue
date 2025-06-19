@@ -1,32 +1,30 @@
 <template>
   <div class="global-variable-management-container">
-    <!-- 筛选行 -->
-    <el-row class="filter-row" :gutter="10">
-      <el-col :span="4">
-        <el-button type="primary" @click="openAddDialog" :icon="Plus">添加变量</el-button>
-      </el-col>
-      <el-col :span="8" style="gap: 10px;">
+    <div class="filter-tool">
+      <div class="search-tool">
         <el-input
-          v-model="filterParams.name"
-          placeholder="请输入变量名称"
-          clearable
-          @keyup.enter="fetchVariableData"
-           style="max-width: 200px;"
-        >
+            v-model="filterParams.name"
+            placeholder="请输入变量名称"
+            clearable
+            @keyup.enter="fetchVariableData"
+            style="max-width: 200px;"
+          >
           <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
+              <el-icon><Search /></el-icon>
+            </template>
         </el-input>
         <el-button type="primary" @click.stop="fetchVariableData" :icon="Search">搜索</el-button>
-      </el-col>
-    </el-row>
-
+      </div>
+      <div>
+        <el-button type="primary" @click="openAddDialog" :icon="Plus">添加变量</el-button>
+      </div>
+    </div>
     <!-- 表格 -->
     <BaseTable
       :columns="tableColumns"
       :table-data="tableData"
       :loading="loading"
-      height="calc(100vh - 314px)"
+      height="calc(100vh - 215px)"
     >
       <template #operation="scope">
         <el-button link type="primary" size="small" @click="openEditDialog(scope.row)">
@@ -209,17 +207,26 @@ const handleSubmit = async (data: GlobalVariable, mode: 'add' | 'edit', done: (s
 
 <style scoped>
 .global-variable-management-container {
-  padding: 20px;
-  background: #fff;
+  background: #dddddd;
   border-radius: 4px;
 }
 
-.filter-row {
-  margin-bottom: 20px;
-
-  .el-col {
-    display: flex;
-    align-items: center;
-  }
+.filter-tool {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* margin-bottom: 14px; */
+  padding: 10px;
+  /* gap: 10px; */
 }
+
+.search-tool {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 300px;
+  min-width: 160px;
+}
+
+
 </style>

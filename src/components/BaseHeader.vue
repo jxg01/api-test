@@ -10,7 +10,7 @@
     </div>
 
     <div class="right-header">
-      <el-button type="primary" text class="suggestion" @click.stop="openDialog">优化建议</el-button>
+      <el-button type="primary" text class="suggestion" @click.stop="openDialog"><el-icon><PhoneFilled /></el-icon>优化建议</el-button>
       <el-dropdown>
         <span class="user-dropdown">
           <el-icon :size="18" color="blue"><UserFilled /></el-icon>
