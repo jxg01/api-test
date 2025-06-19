@@ -47,7 +47,7 @@
         <el-radio-button value="failed">失败</el-radio-button>
       </el-radio-group>
     </div>
-    <el-collapse accordion>
+    <el-collapse :expand-icon-position="'left'" accordion>
       <el-collapse-item
         v-for="(item, index) in filteredCases || []"
         :key="item.id"
@@ -130,7 +130,7 @@
 
                     <!-- 响应体 -->
                     <el-descriptions-item label="响应体">
-                        <pre class="raw-body">{{ JSON.parse(item.response_data.body) }}</pre>
+                        <pre class="raw-body">{{ item.response_data.body }}</pre>
                     </el-descriptions-item>
                   </el-descriptions>
                 </div>
