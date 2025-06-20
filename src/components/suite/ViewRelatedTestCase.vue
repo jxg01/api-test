@@ -120,13 +120,14 @@ import { ref, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useCaseStore } from '@/stores/testcase';
 
-// 断言类型配置
-const assertionTypes = [
+  // 断言类型配置
+  const assertionTypes = [
   { value: 'status_code', label: '状态码' },
   { value: 'jsonpath_equal', label: '提取值等于' },
   { value: 'jsonpath_not_equal', label: '提取值不等于' },
-  { value: 'response_contain', label: '结果包含' },
-];
+  { value: 'value_in_response', label: '结果包含' },
+  { value: 'value_not_in_response', label: '结果不包含' },
+]
 
 // 参数提取类型配置
 const extractTypes = [

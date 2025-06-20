@@ -116,6 +116,9 @@
                     :table-data="assertionData"
                     height="auto"
                   >
+                    <template #AssertionType="scope">
+                      <span>{{ assertionTypes.find(item => item.value === scope.row.type)?.label || '未知类型' }}</span>
+                    </template>
                     <template #StatusTag="scope">
                       <el-tag :type="scope.row.status === 'success' ?'primary': 'danger'" effect="dark"> {{ scope.row.status === "success" ? '成功': '失败' }} </el-tag>
                     </template>
@@ -162,10 +165,10 @@ const handleClick = (tab: TabsPaneContext, event: Event) => {
 
 // 表格配置
 const detailTableColumns: TableColumn[] = [
-  { prop: 'type', label: '断言类型' },
+  { prop: 'type', label: '断言类型', width: 150, slot: 'AssertionType' },
   { prop: 'enabled', label: '状态', width: 100, slot: 'StatusTag' },
-  { prop: 'expected', label: '预期结果' },
-  { prop: 'actual', label: '实际结果' },
+  { prop: 'expected', label: '预期值' },
+  { prop: 'actual', label: '实际值' },
 ]
 
 // 表格配置
@@ -202,6 +205,15 @@ const getStatusDisplayName = (status: string) => {
   }
 }
 
+  // 断言类型配置
+const assertionTypes = [
+  { value: 'status_code', label: '状态码' },
+  { value: 'jsonpath_equal', label: '提取值等于' },
+  { value: 'jsonpath_not_equal', label: '提取值不等于' },
+  { value: 'value_in_response', label: '结果包含' },
+  { value: 'value_not_in_response', label: '结果不包含' },
+]
+
 const loading = ref<boolean>(false)
 const detailVisit = ref<boolean>(false)
 
@@ -212,9 +224,6 @@ const extratedData = ref()
 
 // 查看详情
 const viewDetail = (row: testCaseHistory) => {
-  console.log('查看执行详情:', row)
-  console.log('查看执行详情request_data:', row.request_data.json)
-  console.log('查看执行详情request_data:', typeof row.request_data.json)
   // 实际项目中这里可以跳转到详情页
   responseData.value = row.response_data
   requestData.value = row.request_data

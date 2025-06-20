@@ -143,6 +143,54 @@ const routes: Array<RouteRecordRaw> = [
                 ]
             },
             {
+                path: '/ui-automation',
+                name: 'ui-automation',
+                redirect: '/ui-automation/element-store',
+                meta: {
+                    title: 'UI自动化',
+                    isShow: true,
+                    icon: 'MagicStick'
+                },
+                children: [
+                    {
+                        path: 'element-store',
+                        name: 'element-store',
+                        component: MtTool,
+                        meta: {
+                            title: '元素库',
+                            icon: 'MagicStick'
+                        }
+                    },
+                    {
+                        path: 'ui-testcase',
+                        name: 'ui-testcase',
+                        component: MtTool,
+                        meta: {
+                            title: 'UI测试用例',
+                            icon: 'Files'
+                        }
+                    },
+                    {
+                        path: 'ui-suite',
+                        name: 'ui-suite',
+                        component: MtTool,
+                        meta: {
+                            title: 'UI测试套件',
+                            icon: 'SetUp'
+                        }
+                    },
+                    {
+                        path: 'ui-excution-history',
+                        name: 'ui-excution-history',
+                        component: MtTool,
+                        meta: {
+                            title: 'UI测试报告',
+                            icon: 'ScaleToOriginal'
+                        }
+                    }
+                ]
+            },
+            {
                 path: '/task',
                 name: 'task',
                 meta: {

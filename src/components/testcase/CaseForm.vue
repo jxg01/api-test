@@ -150,6 +150,29 @@
                   placeholder="期望值"
                 />
               </template>
+              <template v-if="assertion.type === 'jsonpath_not_equal'">
+                <el-input
+                  v-model="assertion.path"
+                  placeholder="JSONPath表达式"
+                  style="margin-right: 8px"
+                />
+                <el-input
+                  v-model="assertion.expected"
+                  placeholder="期望值"
+                />
+              </template>
+              <template v-if="assertion.type === 'value_in_response'">
+                <el-input
+                  v-model="assertion.expected"
+                  placeholder="期望包含的值"
+                />
+              </template>
+              <template v-if="assertion.type === 'value_not_in_response'">
+                <el-input
+                  v-model="assertion.expected"
+                  placeholder="期望不包含的值"
+                />
+              </template>
       
               <el-button
                 type="danger"
@@ -241,11 +264,12 @@ const assertionTypes = [
   { value: 'status_code', label: '状态码' },
   { value: 'jsonpath_equal', label: '提取值等于' },
   { value: 'jsonpath_not_equal', label: '提取值不等于' },
-  { value: 'response_contain', label: '结果包含' },
+  { value: 'value_in_response', label: '结果包含' },
+  { value: 'value_not_in_response', label: '结果不包含' },
 ]
   // 参数提取类型配置
 const extractTypes = [
-  { value: 'regex', label: '正则表达式' },
+  // { value: 'regex', label: '正则表达式' },
   { value: 'jsonpath', label: 'JSONPath' }
 ]
 
@@ -309,16 +333,25 @@ const removeExtract = (index: number) => {
 }
 // 处理断言类型变化
 const handleAssertionTypeChange = (index: number) => {
-const assertion = localCaseDetail.assertions[index]
-  // 重置相关字段
-  switch(assertion.type) {
-    case 'status_code':
-      delete assertion.path
-      break
-    case 'jsonpath_equal':
-      assertion.path = ''
-      break
-  }
+  const assertion = localCaseDetail.assertions[index]
+    // 重置相关字段
+    switch(assertion.type) {
+      case 'status_code':
+        delete assertion.path
+        break
+      case 'jsonpath_equal':
+        assertion.path = ''
+        break
+      case 'jsonpath_not_equal':
+        assertion.path = ''
+        break
+      case 'value_in_response':
+        delete assertion.path
+        break
+      case 'value_not_in_response':
+        delete assertion.path
+        break
+    }
 }
 
 

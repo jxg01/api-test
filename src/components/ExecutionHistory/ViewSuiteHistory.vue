@@ -237,13 +237,14 @@ function roundTo(num: number, decimalPlaces: number) {
 }
 
 
-// 断言类型配置
-const assertionTypes = [
+  // 断言类型配置
+  const assertionTypes = [
   { value: 'status_code', label: '状态码' },
   { value: 'jsonpath_equal', label: '提取值等于' },
   { value: 'jsonpath_not_equal', label: '提取值不等于' },
-  { value: 'response_contain', label: '结果包含' },
-];
+  { value: 'value_in_response', label: '结果包含' },
+  { value: 'value_not_in_response', label: '结果不包含' },
+]
 
 // 参数提取类型配置
 const extractTypes = [
@@ -274,11 +275,6 @@ const detailTableColumns: TableColumn[] = [
   { prop: 'actual', label: '实际结果' },
 ]
 
-
-const rData = ref()
-
-
-
 // 打开抽屉并加载数据
 const openDrawer = async (row: any) => {
   drawerVisible.value = true;
@@ -289,7 +285,6 @@ const openDrawer = async (row: any) => {
   try {
     const data = await suiteApi.getSuiteExecutionDetail(row.id);
     if (data) {
-      console.log('Suite Execution Detail:', data);
       suitInfo.value = data;
     }
   } catch (error) {
