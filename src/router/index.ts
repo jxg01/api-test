@@ -148,7 +148,7 @@ const routes: Array<RouteRecordRaw> = [
                 redirect: '/ui-automation/element-store',
                 meta: {
                     title: 'UI自动化',
-                    isShow: true,
+                    isShow: false,
                     icon: 'MagicStick'
                 },
                 children: [

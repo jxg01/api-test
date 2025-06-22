@@ -28,4 +28,13 @@ export const projectApi = {
   /** 删除 */
   delteProjectEnv: (id: number) => 
     http.delete(`/envs/${id}/`),
+  /** 获取测试环境关联的数据库 */ 
+  getEnvRelatedDB: (params: any) =>
+    http.get('/env_related_db/', params),
+  /** 创建测试环境关联的数据库 */
+  createEnvRelatedDB: (params: any) =>
+    http.post('/db-config/', params),
+  /** 编辑测试环境关联的数据库 */
+  editEnvRelatedDB: (id: number, params: any) =>
+    http.patch(`/db-config/${id}/`, params),
 }

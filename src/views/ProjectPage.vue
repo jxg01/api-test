@@ -31,12 +31,23 @@
           <!-- <el-table :data="envsList" class="env-list" border> -->
             <el-table-column label="环境名称" prop="name" />
             <el-table-column label="环境地址" prop="url" />
+            <el-table-column label="数据库" prop="db_config" >
+              <template #default="scope">
+                <div v-if="scope.row.db_config">
+                  <el-button link type="primary" @click="openEditDialogDB(scope.row.db_info)">查看</el-button>
+                </div>
+                <div v-else>
+                  <el-button link type="primary" @click="openAddDialogDB(scope.row)">新建</el-button>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column label="备注信息" prop="description" />
             <el-table-column label="更新人" prop="updated_at" />
             <el-table-column label="更新时间" prop="updated_by" />
             <!-- <el-table-column label="创建人" prop="created_at" />
             <el-table-column label="创建时间" prop="created_by" /> -->
-            <el-table-column fixed="right" label="操作" min-width="60">
+            
+            <el-table-column fixed="right" label="操作" min-width="80">
               <template #default="scopes">
                 <el-button link type="primary" size="small" @click.stop="openEditDialogEnvs(scopes.row)">
                   编辑
@@ -86,6 +97,15 @@
         :rules="envFormRules"
         title="环境"
         @submit="handleSubmitEnvs"
+      />
+
+      <!-- 数据库表单 -->
+       <BaseDialog
+        ref="dialogRefDB"
+        :fields="DBFormFields"
+        :rules="DBFormRules"
+        title="数据库"
+        @submit="handleSubmitDB"
       />
     </div>
   </template>
@@ -164,7 +184,45 @@
       attrs: { placeholder: '请输入环境描述' }
     }
   ]
-
+  // 表单配置 - DB 数据库 =================================================================
+  const DBFormFields = [
+    { 
+      prop: 'host', 
+      label: '数据库地址',
+      component: ElInput,
+      attrs: { placeholder: '请输入数据库地址' } 
+    },
+    { 
+      prop: 'port', 
+      label: '端口',
+      component: ElInput,
+      attrs: { placeholder: '请输入端口' } 
+    },
+    { 
+      prop: 'username', 
+      label: '用户名',
+      component: ElInput,
+      attrs: { placeholder: '请输入用户名' } 
+    },
+    { 
+      prop: 'password', 
+      label: '密码',
+      component: ElInput,
+      attrs: { placeholder: '请输入密码' }
+    },
+    { 
+      prop: 'name', 
+      label: '数据库名称',
+      component: ElInput,
+      attrs: { placeholder: '请输入数据库名称' } 
+    },
+    { 
+      prop: 'description', 
+      label: '描述',
+      component: ElInput,
+      attrs: { placeholder: '请输入描述' }
+    }
+  ]
 
   
   const formRules = {
@@ -187,12 +245,35 @@
       { type: 'url', message: '请输入有效的URL地址', trigger: 'blur' }
     ]
   }
+
+  const DBFormRules = {
+    name: [
+      { required: true, message: '请输入环境名称', trigger: 'blur' },
+    ],
+    host: [
+      { required: true, message: '请输入数据库地址', trigger: 'blur' },
+    ],
+    port: [
+      { required: true, message: '请输入端口', trigger: 'blur' },
+    ],
+    username: [
+      { required: true, message: '请输入用户名', trigger: 'blur' },
+    ],
+    password: [
+      { required: true, message: '请输入密码', trigger: 'blur' },
+    ],
+    description: [
+      { required: true, message: '请输入描述', trigger: 'blur' },
+    ]
+  }
+
   
   // 数据逻辑 =================================================================
   const tableData = ref<Project[]>([])
   const loading = ref(false)
   const dialogRef = ref<InstanceType<typeof BaseDialog>>()
   const dialogRefEnvs = ref<InstanceType<typeof BaseDialog>>()
+  const dialogRefDB = ref<InstanceType<typeof BaseDialog>>()
   const pagination = reactive({
     page: 1,
     size: 20,
@@ -241,8 +322,9 @@
   // 弹窗操作
   const openAddDialogEnvs = (row: any) => dialogRefEnvs.value?.open('add', {'project': row.id})
   const openEditDialogEnvs = (envs: []) => dialogRefEnvs.value?.open('edit', envs)
-  
-
+  // 数据库弹窗操作
+  const openAddDialogDB = (db: any) => dialogRefDB.value?.open('add', {'env': db.id})
+  const openEditDialogDB = (db: any) => dialogRefDB.value?.open('edit', db)
 
   // 删除操作
   const handleDelete = async (project: Project) => {
@@ -316,6 +398,27 @@
       console.log('error => ', error)
     }
   }
+
+
+
+  const handleSubmitDB = async (data: any, mode: 'add' | 'edit', done: (success?: boolean) => void) => {
+    console.log('handleSubmitDB', data, mode)
+    try {
+      const action = mode === 'add' 
+        ? projectApi.createEnvRelatedDB(data)
+        : projectApi.editEnvRelatedDB(data.id, data)
+  
+      await action
+      ElMessage.success(`数据库${mode === 'add' ? '添加' : '编辑'}成功`)
+      fetchProjectData()
+      done(true)
+    } catch (error) {
+      // ElMessage.error(error.message || '操作失败')
+      console.log('error => ', error)
+      done(false)
+    }
+  }
+
 
   </script>
   
