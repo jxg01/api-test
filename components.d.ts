@@ -17,6 +17,7 @@ declare module '@vue/runtime-core' {
     BasePieChart: typeof import('./src/components/base/BasePieChart.vue')['default']
     BaseTable: typeof import('./src/components/BaseTable.vue')['default']
     CareTable: typeof import('./src/components/CareTable.vue')['default']
+    CaseEditor: typeof import('./src/components/UiTest/CaseEditor.vue')['default']
     CaseExecuteHistory: typeof import('./src/components/testcase/CaseExecuteHistory.vue')['default']
     CaseExecuteHistoryDetail: typeof import('./src/components/testcase/CaseExecuteHistoryDetail.vue')['default']
     CaseForm: typeof import('./src/components/testcase/CaseForm.vue')['default']

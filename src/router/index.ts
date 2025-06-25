@@ -155,7 +155,7 @@ const routes: Array<RouteRecordRaw> = [
                     {
                         path: 'element-store',
                         name: 'element-store',
-                        component:   () => import('@/views/UiElementPage.vue'),
+                        component: () => import('@/views/UiElementPage.vue'),
                         meta: {
                             title: '元素库',
                             icon: 'MagicStick'
@@ -164,7 +164,7 @@ const routes: Array<RouteRecordRaw> = [
                     {
                         path: 'ui-testcase',
                         name: 'ui-testcase',
-                        component: MtTool,
+                        component: () => import('@/views/UiTestCasePage.vue'),
                         meta: {
                             title: 'UI测试用例',
                             icon: 'Files'

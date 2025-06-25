@@ -4,9 +4,9 @@
     <el-card shadow="never" class="toolbar-card">
       <div class="search-tools">
         <div class="left-search">
-          <el-input v-model="filterParams.name" placeholder="搜索元素名称/页面" clearable />
+          <el-input v-model="store.filterParams.name" placeholder="搜索元素名称/页面" clearable />
           
-          <el-select v-model="filterParams.locator_type" placeholder="定位方式" clearable>
+          <el-select v-model="store.filterParams.locator_type" placeholder="定位方式" clearable>
             <el-option
               v-for="type in locatorTypes"
               :key="type.value"
@@ -14,7 +14,7 @@
               :value="type.value"
             />
           </el-select>
-          <el-button type='primary' @click="handleSearch">搜索</el-button>
+          <el-button type='primary' @click="store.fetchUiElementList()">搜索</el-button>
         </div>
         
         <div>
@@ -30,27 +30,26 @@
         :columns="tableColumns"
         :table-data="store.uiElementList"
         :loading="loading"
+        height="calc(100vh - 300px)"
       >
-        <!-- <template #locatorTypeTag="scope">
-          <span>{{ getLocatorLabel(scope.row.locator_type) }}</span> -->
-          <!-- <el-tag :type="getLocatorTagType(scope.row.locator_type)" effect="dark"> {{ getLocatorLabel(scope.row.locator_type) }} </el-tag> -->
+        <template #locatorTypeTag="scope">
+          <!-- <span>{{ getLocatorLabel(scope.row.locator_type) }}</span> -->
+          <el-tag :type="getLocatorTagType(scope.row.locator_type)" effect="dark"> {{ getLocatorLabel(scope.row.locator_type) }} </el-tag>
           <!-- <el-tag :type="getLocatorTagType(scope.row.locator_type)">
             {{ scope }}
             {{ scope.row }}
             {{ scope.row.locator_type }}
           </el-tag> -->
-        <!-- </template> -->
+        </template>
         <template #operation="scope">
           <el-button 
             link
             type="primary"
-            size="small" 
             :icon="Edit" 
             @click="openEditDialog(scope.row)"
           />
           <el-button 
             link
-            size="small" 
             :icon="Delete" 
             type="danger" 
             @click="confirmDelete(scope.row.id)"
@@ -59,11 +58,11 @@
       </BaseTable>
 
       <BasePagination
-        :current-page="pagination.page"
-        :page-size="pagination.size"
-        :total="pagination.total"
-        @page-change="handlePageChange"
-        @size-change="handleSizeChange"
+        v-model:current-page="store.currentPage"
+        v-model:page-size="store.pageSize"
+        :total="store.total"
+        @page-change="store.handlePageChange"
+        @size-change="store.handleSizeChange"
       />
     </el-card>
 
@@ -155,7 +154,7 @@ onMounted(async() => {
     console.log('页面数据加载完成:', store.uiPageList)
     
     // 2. 再加载元素数据
-    await store.fetchUiElementList(projectId, filterParams)
+    await store.fetchUiElementList(projectId)
     console.log('元素数据加载完成')
   }
 })
@@ -164,19 +163,19 @@ onMounted(async() => {
 
 // 定位类型选项
 const locatorTypes = [
-  { value: 'css', label: 'CSS选择器' },
-  { value: 'xpath', label: 'XPath' },
-  { value: 'text', label: '文本内容' },
+  { value: 'css', label: 'CSS' },
+  { value: 'xpath', label: 'XPATH' },
+  { value: 'text', label: 'TEXT' },
   { value: 'id', label: 'ID' },
-  { value: 'class', label: 'Class' },
-  { value: 'test-id', label: 'Test ID' }
+  { value: 'class', label: 'CLASS' },
+  { value: 'name', label: 'NAME' }
 ]
 
 // 表格配置 =================================================================
 const tableColumns: TableColumn[] = [
   { prop: 'id', label: '#', width: 60 },
   { prop: 'name', label: '元素名称' },
-  { prop: 'locator_type', label: '定位方式' },
+  { prop: 'locator_type', label: '定位方式', slot: 'locatorTypeTag' },
   { prop: 'locator_value', label: '定位值' },
   { prop: 'page', label: '所属页面' },
   { prop: 'description', label: '描述' },
@@ -197,54 +196,7 @@ const formRules: FormRules = {
 // 数据逻辑 =================================================================
 const loading = ref(false)
 
-const pagination = reactive({
-  page: 1,
-  size: 20,
-  total: 0
-})
 
-const filterParams = reactive({
-  name: '',
-  locator_type: '',
-  page: pagination.page,
-  size: pagination.size
-})
-
-// 分页处理
-const handlePageChange = (page: number) => {
-  pagination.page = page
-  // fetchVariableData()
-}
-
-const handleSizeChange = (size: number) => {
-  pagination.size = size
-  // fetchVariableData()
-}
-
-// 表单提交
-const handleSubmit = async (data: PageElement, mode: 'add' | 'edit', done: (success?: boolean) => void) => {
-  try {
-    console.log('提交的数据:', data)
-    // const action = mode === 'add' 
-    //   ? variableApi.createVariable(data)
-    //   : variableApi.updateVariable(data.id, data)
-
-    // await action
-    ElMessage.success(`变量${mode === 'add' ? '添加' : '编辑'}成功`)
-    // fetchVariableData()
-    done(true)
-  } catch (error) {
-    // ElMessage.error(error.message || '操作失败')
-    console.log('error => ', error)
-    done(false)
-  }
-}
-
-const handleSearch = () => {
-  // 执行搜索逻辑
-  console.log('搜索条件:', filterParams)
-  store.fetchUiElementList(projectStore.currentProjectId, filterParams)
-}
 
 const getLocatorLabel = (type: string) => {
   const found = locatorTypes.find(t => t.value === type)
@@ -283,34 +235,49 @@ const openAddDialog = () => {
   dialogVisible.value = true
 }
 
+const openEditDialog = (element: PageElement) => {
+  currentElement.value = { ...element }
+  isEditing.value = true
+  dialogVisible.value = true
+}
+
 const submitElementForm = async () => {
   await elementForm.value?.validate()
   try {
     if (isEditing.value) {
       // 更新元素
-      const index = store.uiElementList.findIndex(el => el.id === currentElement.value.id)
-      if (index !== -1) {
-        store.uiElementList[index] = {
-          ...currentElement.value,
-          updated_at: new Date().toISOString().split('T')[0]
-        }
+      const res = await store.updateUiElement({...currentElement.value, project: projectStore.currentProjectId})
+      if (res) {
+        ElMessage.success('元素更新成功')
+        dialogVisible.value = false
       }
-      ElMessage.success('元素更新成功')
+      
     } else {
       // 新增元素
-      await store.addUiElement({...currentElement.value, project: projectStore.currentProjectId})
-      ElMessage.success('元素创建成功')
+      const res = await store.addUiElement({...currentElement.value, project: projectStore.currentProjectId})
+      if (res) {
+        ElMessage.success('元素创建成功')
+        dialogVisible.value = false
+      }
     }
-    await store.fetchUiElementList(projectStore.currentProjectId, filterParams)
+    await store.fetchUiElementList()
     
   } catch (error) {
     console.error('表单验证失败:', error)
-  } finally {
-    dialogVisible.value = false
-  }
+  } 
 }
 
-
+const confirmDelete = async (id: number) => {
+  await ElMessageBox.confirm('确定删除此元素吗？此操作不可撤销', '警告', {
+    confirmButtonText: '确认删除',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+  await store.deleteUiElement(id)
+  store.fetchUiElementList()
+  ElMessage.success('元素已删除')
+  
+}
 
 
 
@@ -337,76 +304,15 @@ const getLocatorTagType = (type: string) => {
   return types[type] || 'primary' 
 }
 
-// const openCreateDialog = () => {
-//   currentElement.value = {
-//     id: 0,
-//     name: '',
-//     selector: '',
-//     locator_type: 'css',
-//     description: '',
-//     page: '',
-//     createdAt: '',
-//     updatedAt: ''
-//   }
-//   isEditing.value = false
-//   dialogVisible.value = true
-// }
 
-// const openEditDialog = (element: PageElement) => {
-//   currentElement.value = { ...element }
-//   isEditing.value = true
-//   dialogVisible.value = true
-// }
-
-// const submitElementForm = () => {
-//   if (isEditing.value) {
-//     // 更新元素
-//     const index = pageElements.value.findIndex(el => el.id === currentElement.value.id)
-//     if (index !== -1) {
-//       pageElements.value[index] = {
-//         ...currentElement.value,
-//         updatedAt: new Date().toISOString().split('T')[0]
-//       }
-//     }
-//     ElMessage.success('元素更新成功')
-//   } else {
-//     // 新增元素
-//     const newId = Math.max(...pageElements.value.map(el => el.id), 0) + 1
-//     pageElements.value.push({
-//       ...currentElement.value,
-//       id: newId,
-//       createdAt: new Date().toISOString().split('T')[0],
-//       updatedAt: new Date().toISOString().split('T')[0]
-//     })
-//     ElMessage.success('元素创建成功')
-//   }
-//   dialogVisible.value = false
-// }
-
-// const confirmDelete = (id: number) => {
-//   ElMessageBox.confirm('确定删除此元素吗？此操作不可撤销', '警告', {
-//     confirmButtonText: '确认删除',
-//     cancelButtonText: '取消',
-//     type: 'warning'
-//   }).then(() => {
-//     pageElements.value = pageElements.value.filter(el => el.id !== id)
-//     ElMessage.success('元素已删除')
-//   }).catch(() => {})
-// }
-
-
-
-
-
-// 初始化数据
 
 </script>
 
 <style scoped>
 .element-repository-container {
-  padding: 20px;
+  /* padding: 20px; */
   background-color: #f5f7fa;
-  min-height: calc(100vh - 60px);
+  /* min-height: calc(100vh - 60px); */
 }
 
 .toolbar-card {
