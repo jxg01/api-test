@@ -137,7 +137,7 @@ const submitRegister = async () => {
     align-items: center;
     height: 100vh;
     /* background-image: url('@/assets/login1.png'); */
-    background: linear-gradient(to right, #89f7fe, #4facfe);
+    background: linear-gradient(to right, #a2dfe4, #d780a4);
 }
 
 .login-card {
