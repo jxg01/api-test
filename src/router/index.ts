@@ -148,14 +148,14 @@ const routes: Array<RouteRecordRaw> = [
                 redirect: '/ui-automation/element-store',
                 meta: {
                     title: 'UI自动化',
-                    isShow: false,
+                    isShow: true,
                     icon: 'MagicStick'
                 },
                 children: [
                     {
                         path: 'element-store',
                         name: 'element-store',
-                        component: MtTool,
+                        component:   () => import('@/views/UiElementPage.vue'),
                         meta: {
                             title: '元素库',
                             icon: 'MagicStick'
