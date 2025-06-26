@@ -24,6 +24,23 @@ export const uiTestApi = {
 
   /** 获取测试用例模块列表 */
   getModuleList: (params: any) => 
-    http.get('/ui-modules/', params)
+    http.get('/ui-modules/', params),
 
+  createUiModule: (params: any) => 
+    http.post('/ui-modules/', params),
+
+  deleteUiModule: (id: number) => 
+    http.delete(`/ui-modules/${id}/`),
+
+  /** 新增用例 */
+  addUiTestCase: (data: any) => 
+    http.post('/ui-testcases/', data),
+
+  /** 编辑用例 */
+  updateUiTestCase: (id: number | string, data: any) => 
+    http.put(`/ui-testcases/${id}/`, data),
+    
+  /** 删除用例 */
+  deleteUiTestCase: (id: number | string) => 
+    http.delete(`/ui-testcases/${id}/`),
 }

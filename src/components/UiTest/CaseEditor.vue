@@ -1,7 +1,7 @@
 <template>
   <div style="padding:24px 0 0 0">
-    <el-form label-width="80px" ref="caseForm">
-      <el-form-item label="用例名" prop="name" :rules="{ required: true, message: '必填' }">
+    <el-form :model="localCaseData" label-width="80px" ref="caseForm" :rules="formRules">
+      <el-form-item label="用例名" prop="name">
         <el-input v-model="localCaseData.name" @input="emitChange" />
       </el-form-item>
       <el-form-item label="描述">
@@ -197,9 +197,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineProps, defineEmits, nextTick, computed } from 'vue'
+import { ref, watch, defineProps, defineEmits, nextTick, computed, reactive } from 'vue'
 import Draggable from 'vuedraggable'
 import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
+import { fa } from 'element-plus/es/locale'
 
 type ExtractVar = { varName: string, jsonPath: string }
 type PreApiStep = {
@@ -239,7 +241,13 @@ const props = defineProps<{
   caseData: CaseData
 }>()
 const emit = defineEmits(['update:caseData', 'save', 'run'])
-const caseForm = ref()
+const caseForm = ref<FormInstance>()
+const formRules = reactive<FormRules>({
+  name: [
+    { required: true, message: '用例名称不能为空', trigger: 'blur' },
+    { min: 2, max: 30, message: '长度在2-30个字符', trigger: ['blur', 'change'] }
+  ]
+})
 const stepActions = [
   { label: '设置Header', value: 'set_header' },
   { label: '跳转页面', value: 'goto' },
@@ -271,7 +279,6 @@ watch(
   { deep: true }
 )
 function emitChange() {
-  console.log('emitChange', localCaseData.value)
   emit('update:caseData', JSON.parse(JSON.stringify(localCaseData.value)))
 }
 function addStep() {
@@ -345,8 +352,11 @@ function confirmJsonEdit() {
 }
 
 // ======= 校验函数 =======
-function validateForm(): boolean {
+const validateForm = async() => {
   // 基本项
+  const v = await caseForm.value?.validate()
+  if (!v) return false
+
   if (!localCaseData.value.name) {
     ElMessage.error('请输入用例名')
     return false
@@ -401,13 +411,24 @@ return [
 
 
 
-function onSave() {
-  if (!validateForm()) return
-  emit('save')
+async function onSave() {
+  try {
+    const isValid = await validateForm(); // 等待校验结果
+    if (!isValid) return; // 如果校验失败，直接返回
+    emit('save'); // 触发父组件的 save 方法
+  } catch (error) {
+    console.error('保存失败:', error);
+  }
 }
-function onRun() {
-  if (!validateForm()) return
-  emit('run')
+
+async function onRun() {
+  try {
+    const isValid = await validateForm(); // 等待校验结果
+    if (!isValid) return; // 如果校验失败，直接返回
+    emit('run'); // 触发父组件的 save 方法
+  } catch (error) {
+    console.error('保存失败:', error);
+  }
 }
 </script>
 

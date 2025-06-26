@@ -48,6 +48,14 @@ export interface Step {
   expect?: string
 }
 
+// 树节点类型
+export interface CaseTreeNode {
+  id: string | number
+  label: string
+  type: 'group' | 'case'
+  children?: CaseTreeNode[]
+  caseData?: CaseData  // 仅type=case时有
+}
 
 
 export const useUiTestStore = defineStore('uiTest', {
@@ -62,7 +70,7 @@ export const useUiTestStore = defineStore('uiTest', {
       locator_type: '',
       name: '',
     },
-    moduleList: [] as TestCaseModule[]
+    moduleList: [] as CaseTreeNode[]
 
   }),
   actions: {
@@ -139,11 +147,71 @@ export const useUiTestStore = defineStore('uiTest', {
 
       })
       if (res) {
-        this.moduleList = res.data
-
+        this.moduleList = this.transformModuleDataToTree(res.data)
+        console.log('this.moduleList === ', this.moduleList)
       }
     },
 
+    // 转换接口数据为tree结构
+    transformModuleDataToTree(data: any[]): CaseTreeNode[] {
+      return data.map(module => ({
+        // id: `group-${module.id}`,
+        id: module.id,
+        label: module.name,
+        type: 'group',
+        children: module.cases.map((caseItem: any) => ({
+          // id: `case-${caseItem.id}`,
+          id: caseItem.id,
+          label: caseItem.name,
+          type: 'case',
+          caseData: {
+            // id: `case-${caseItem.id}`,
+            id: caseItem.id,
+            name: caseItem.name,
+            description: caseItem.description,
+            pre_apis: caseItem.pre_apis || [],
+            steps: caseItem.steps || [],
+            post_steps: caseItem.post_steps || [],
+            enable: caseItem.enable
+          }
+        }))
+      }))
+    },
+
+    async createUiModule(moduleName: {name: string}) {
+      const res = await uiTestApi.createUiModule({
+        project: useProjectStore().currentProjectId,
+        ...moduleName
+      })
+      if (res) {
+        return res
+      }
+    },
+
+    async deleteUiModule(moduleId: number) {
+      console.log('idididid',  moduleId)
+      await uiTestApi.deleteUiModule(moduleId)
+      await this.fetchModuleList()
+    },
+
+    async createUiTestCase(caseData: any) {
+      const res = uiTestApi.addUiTestCase(caseData)
+      if (res) {
+        return res
+      }
+    },
+
+    async editUiTestCase(caseData: any) {
+      const res = uiTestApi.updateUiTestCase(caseData.id, caseData)
+      if (res) {
+        return res
+      }
+    },
+
+    async deleteUiTestCase(caseId: number | string) {
+      uiTestApi.deleteUiTestCase(caseId)
+      await this.fetchModuleList()
+    },
 
   },
 })
