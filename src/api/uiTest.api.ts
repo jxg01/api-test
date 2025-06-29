@@ -6,6 +6,9 @@ export const uiTestApi = {
   getElementPageList: (params: any) => 
     http.get('/ui-elements/get-pages/', params),
 
+  getSimpleElementPageList: (params: any) => 
+    http.get('/ui-elements/simple-elements/', params),
+
   /** 获取元素列表 */
   getElementList: (params: any) => 
     http.get('/ui-elements/', params),
@@ -43,4 +46,13 @@ export const uiTestApi = {
   /** 删除用例 */
   deleteUiTestCase: (id: number | string) => 
     http.delete(`/ui-testcases/${id}/`),
+
+  // 执行用例
+  runUiTestCase: (id: number) => 
+    http.post(`/ui-testcases/${id}/run/`),
+
+  /** 获取测试用例模块列表 */
+  getFilesList: () => 
+    http.get('/ui-test-files/'),
+  
 }

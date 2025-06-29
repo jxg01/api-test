@@ -23,15 +23,19 @@
             style="margin-bottom:12px;display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px dashed #eee"
           >
             <div style="display:flex;align-items:center;gap:8px;">
-              <el-input v-model="step.url" placeholder="接口URL" style="width:210px;" @input="emitChange" :status="!step.url ? 'error':undefined"/>
-              <el-select v-model="step.method" placeholder="方法" style="width:90px" @change="emitChange">
+              <el-select v-model="step.name" placeholder="前置接口类型" style="width:120px;" @change="emitChange">
+                <el-option label="登录" value="token" />
+                <el-option label="其他" value="other" />
+              </el-select>
+              <el-input v-model="step.request.url" placeholder="接口URL" style="width:210px;" @input="emitChange" :status="!step.request.url ? 'error':undefined"/>
+              <el-select v-model="step.request.method" placeholder="方法" style="width:90px" @change="emitChange">
                 <el-option label="POST" value="POST" />
                 <el-option label="GET" value="GET" />
               </el-select>
               <!-- body编辑按钮与文本域 -->
               <el-input
-                v-if="step.method === 'POST'"
-                v-model="step.body"
+                v-if="step.request.method === 'POST'"
+                v-model="step.request.body"
                 placeholder="请求体(原始JSON)"
                 style="width:180px;"
                 @input="emitChange"
@@ -39,7 +43,7 @@
                 autosize
               />
               <el-button
-                v-if="step.method === 'POST'"
+                v-if="step.request.method === 'POST'"
                 size="small"
                 @click="openJsonEditor(i)"
                 style="padding:0 6px"
@@ -49,11 +53,12 @@
             <!-- 多变量提取区 -->
             <div style="margin-left:12px;">
               <el-row v-for="(extract, k) in step.extracts" :key="k" style="margin-bottom:4px;align-items:center;">
+                <el-icon color="pink" :size="24"><SetUp /></el-icon>
                 <el-col :span="6">
                   <el-input v-model="extract.varName" placeholder="变量名" @input="emitChange" :status="!extract.varName ? 'error':undefined"/>
                 </el-col>
                 <el-col :span="14" style="margin-left:10px;">
-                  <el-input v-model="extract.jsonPath" placeholder="JsonPath如$.access_token" @input="emitChange" :status="!extract.jsonPath || !extract.jsonPath.startsWith('$') ? 'error':undefined"/>
+                  <el-input v-model="extract.jsonpath" placeholder="JsonPath如$.access_token" @input="emitChange" :status="!extract.jsonpath || !extract.jsonpath.startsWith('$') ? 'error':undefined"/>
                 </el-col>
                 <el-col :span="1" style="margin-left:6px;">
                   <el-button type="danger" size="small" @click="removeExtract(i, k)" ><el-icon><Delete /></el-icon></el-button>
@@ -67,47 +72,91 @@
       </el-form-item>
 
       <!-- 主流程步骤区（拖拽） -->
-      <el-form-item label="主流程步骤">
+      <el-form-item label="用例步骤">
         <draggable
           v-model="localCaseData.steps"
           handle=".drag-handle"
           animation="200"
           item-key="__uuid"
           @end="emitChange"
+          style="width: 100%;"
         >
           <template #item="{element: row, index: $index}">
             <div class="main-step">
-              <span class="drag-handle" style="cursor:move;font-size:18px;user-select:none;">⠿</span>
-              <el-select v-model="row.action" style="width:150px" @change="emitChange">
+              <div style="color: blueviolet;">{{ $index+1 }}</div>
+              <span class="drag-handle" style="cursor:move;font-size:30px;user-select:none;color:darkorchid;">⠿</span>
+              <el-select v-model="row.action" style="min-width: 80px;max-width: 120px;" @change="emitChange">
                 <el-option v-for="a in stepActions" :key="a.value" :label="a.label" :value="a.value" />
               </el-select>
               <el-input
                 v-if="row.action === 'goto'"
                 v-model="row.url"
                 placeholder="URL"
-                style="width:80%"
+                style="width:100%"
                 @input="emitChange"
               />
-              <el-input
-                v-if="row.action === 'set_header'"
-                v-model="row.header"
-                placeholder='Header JSON'
-                style="width:80%"
-                @input="emitChange"
-              />
-              <template v-if="row.action === 'assert_text'">
-                <el-input
-                  v-model="row.selector"
-                  placeholder="选择器"
-                  style="width:40%"
-                  @input="emitChange"
-                />
-                <el-input
-                  v-model="row.expect"
-                  placeholder="期望文本"
-                  style="width:40%"
-                  @input="emitChange"
-                />
+              <template v-if="row.action === 'assert'">
+                <el-select style="min-width: 80px;max-width: 120px;" v-model="row.assert_type" placeholder="选择类型" @change="emitChange">
+                  <el-option
+                    v-for="op in assertType"
+                    :key="op.label"
+                    :label="op.label"
+                    :value="op.value"
+                  />
+                </el-select>
+
+                <template v-if="row.assert_type === 'text'">
+                  <el-select v-model="row.selector" placeholder="选择或输入元素选择器(xpath=//*[@id='name'])" filterable allow-create  @change="emitChange">
+                    <el-option
+                      v-for="op in pageOptions"
+                      :key="op.label"
+                      :label="op.label"
+                      :value="op.value"
+                    />
+                  </el-select>
+                  <el-input
+                    v-model="row.expect"
+                    placeholder="期望文本"
+                    style="width:100%"
+                    @input="emitChange"
+                  />
+                </template>
+                <template v-if="row.assert_type === 'url'">
+                  <el-input
+                    v-model="row.expect"
+                    placeholder="期望文本"
+                    style="width:100%"
+                    @input="emitChange"
+                  />
+                </template>
+                <template v-if="row.assert_type === 'title'">
+                  <el-input
+                    v-model="row.expect"
+                    placeholder="期望文本"
+                    style="width:100%"
+                    @input="emitChange"
+                  />
+                </template>
+                <template v-if="row.assert_type === 'visible'">
+                  <el-select v-model="row.selector" placeholder="选择或输入元素选择器(xpath=//*[@id='name'])" filterable allow-create  @change="emitChange">
+                    <el-option
+                      v-for="op in pageOptions"
+                      :key="op.label"
+                      :label="op.label"
+                      :value="op.value"
+                    />
+                  </el-select>
+                </template>
+                <template v-if="row.assert_type === 'exists'">
+                  <el-select v-model="row.selector" placeholder="选择或输入元素选择器(xpath=//*[@id='name'])" filterable allow-create  @change="emitChange">
+                    <el-option
+                      v-for="op in pageOptions"
+                      :key="op.label"
+                      :label="op.label"
+                      :value="op.value"
+                    />
+                  </el-select>
+                </template>
               </template>
 
               <template v-if="row.action === 'click'">
@@ -118,9 +167,69 @@
                     :label="op.label"
                     :value="op.value"
                   />
-                  
                 </el-select>
               </template>
+              <!-- 输入 -->
+        <template v-if="row.action === 'input'">
+          <el-select v-model="row.selector" placeholder="选择或输入元素选择器" filterable allow-create  @change="emitChange">
+            <el-option
+              v-for="op in pageOptions"
+              :key="op.label"
+              :label="op.label"
+              :value="op.value"
+            />
+          </el-select>
+          <el-input
+            v-model="row.value"
+            placeholder="输入值"
+            style="width:100%"
+            @input="emitChange"
+          />
+        </template>
+
+        <!-- 等待时间 -->
+        <el-input
+          v-if="row.action === 'sleep'"
+          v-model="row.seconds"
+          placeholder="等待时间(秒)"
+          style="width:100%"
+          @input="emitChange"
+        />
+
+        <!-- 执行JS -->
+        <el-input
+          v-if="row.action === 'execute_script'"
+          v-model="row.script"
+          placeholder="JS代码"
+          style="width:100%"
+          @input="emitChange"
+        />
+
+        <!-- 上传文件 -->
+        <template v-if="row.action === 'upload'">
+          <el-select v-model="row.selector" placeholder="选择或输入元素选择器" filterable allow-create  @change="emitChange">
+            <el-option
+              v-for="op in pageOptions"
+              :key="op.label"
+              :label="op.label"
+              :value="op.value"
+            />
+          </el-select>
+          <el-select v-model="row.filePath" placeholder="选择文件路径" filterable @change="emitChange">
+            <el-option
+              v-for="file in fileOptions"
+              :key="file.value"
+              :label="file.label"
+              :value="file.value"
+            />
+          </el-select>
+          <!-- <el-input
+            v-model="row.filePath"
+            placeholder="文件路径"
+            style="width:100%"
+            @input="emitChange"
+          /> -->
+        </template>
               <el-button type="danger" size="small" @click="removeStep($index)" ><el-icon><Delete /></el-icon></el-button>
             </div>
           </template>
@@ -188,7 +297,6 @@
         placeholder='请输入合法JSON'
       />
       <template #footer>
-        <el-button type="warning" style="float: left;">格式化</el-button>
         <el-button @click="jsonEditor.visible=false">取消</el-button>
         <el-button type="primary" @click="confirmJsonEdit">确认</el-button>
       </template>
@@ -197,17 +305,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineProps, defineEmits, nextTick, computed, reactive } from 'vue'
+import { ref, watch, defineProps, defineEmits, nextTick, computed, reactive, onMounted } from 'vue'
 import Draggable from 'vuedraggable'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { fa } from 'element-plus/es/locale'
+import { useUiTestStore, simpleElementType } from '@/stores/uiTestStore'
 
-type ExtractVar = { varName: string, jsonPath: string }
+const store = useUiTestStore()
+
+type ExtractVar = { varName: string, jsonpath: string }
+
 type PreApiStep = {
-  url: string
-  method: string
-  body?: string
+  name: string
+  request: {url: string, method: string, body?: string}
   extracts: ExtractVar[]
 }
 type PostStep = {
@@ -220,13 +330,18 @@ type PostStep = {
   shellCmd?: string
 }
 type Step = {
-  action: string,
-  url?: string,
-  selector?: string,
-  header?: string,
-  expect?: string
-  __uuid?: string
-}
+  action: string;
+  url?: string;
+  selector?: string;
+  header?: string;
+  expect?: string;
+  assert_type?: string
+  value?: string;
+  seconds?: number;
+  script?: string;
+  filePath?: string;
+  __uuid?: string;
+};
 type CaseData = {
   id: string,
   name: string,
@@ -249,11 +364,22 @@ const formRules = reactive<FormRules>({
   ]
 })
 const stepActions = [
-  { label: '设置Header', value: 'set_header' },
+  // { label: '设置Header', value: 'set_header' },
   { label: '跳转页面', value: 'goto' },
   { label: '点击', value: 'click' },
-  { label: '断言文本', value: 'assert_text' },
-  // { label: '上传文件', value: 'upload'}
+  { label: '等待时间', value: 'sleep' },
+  { label: '输入', value: 'input' },
+  { label: '执行js', value: 'execute_script' },
+  { label: '上传文件', value: 'upload' },
+  { label: '断言', value: 'assert' },
+]
+
+const assertType = [
+{ label: '元素文本', value: 'text' },
+{ label: '元素可见', value: 'visible' },
+{ label: '元素存在', value: 'exists' },
+{ label: 'URL包含', value: 'url' },
+{ label: '页面标题', value: 'title' },
 ]
 
 function randomId() {
@@ -279,7 +405,7 @@ watch(
   { deep: true }
 )
 function emitChange() {
-  emit('update:caseData', JSON.parse(JSON.stringify(localCaseData.value)))
+  emit('update:caseData', JSON.parse(JSON.stringify(localCaseData.value)));
 }
 function addStep() {
   const newStep: Step = { action: '', __uuid: randomId() }
@@ -292,9 +418,11 @@ function removeStep(idx: number) {
 }
 function addPreApiStep() {
   localCaseData.value.pre_apis.push({
-    url: '',
-    method: 'POST',
-    body: '',
+    name: 'token',
+    request: {url: '', method: 'POST', body: ''},
+    // url: '',
+    // method: 'POST',
+    // body: '',
     extracts: []
   })
   emitChange()
@@ -317,7 +445,7 @@ emitChange()
 }
 
 function addExtract(preIdx: number) {
-  localCaseData.value.pre_apis[preIdx].extracts.push({ varName: '', jsonPath: '' })
+  localCaseData.value.pre_apis[preIdx].extracts.push({ varName: '', jsonpath: '' })
   emitChange()
 }
 function removeExtract(preIdx: number, idx: number) {
@@ -333,7 +461,7 @@ const jsonEditor = ref({
 })
 function openJsonEditor(idx: number) {
   jsonEditor.value.preIdx = idx
-  jsonEditor.value.value = localCaseData.value.pre_apis[idx].body || ''
+  jsonEditor.value.value = localCaseData.value.pre_apis[idx].request.body || ''
   jsonEditor.value.visible = true
 }
 function confirmJsonEdit() {
@@ -346,68 +474,190 @@ function confirmJsonEdit() {
     ElMessage.error('请输入合法JSON')
     return
   }
-  localCaseData.value.pre_apis[jsonEditor.value.preIdx].body = jsonEditor.value.value
+  localCaseData.value.pre_apis[jsonEditor.value.preIdx].request.body = jsonEditor.value.value
   jsonEditor.value.visible = false
   emitChange()
 }
 
 // ======= 校验函数 =======
-const validateForm = async() => {
-  // 基本项
-  const v = await caseForm.value?.validate()
-  if (!v) return false
+const validateForm = async () => {
+  // 基本项校验
+  const v = await caseForm.value?.validate();
+  if (!v) return false;
 
   if (!localCaseData.value.name) {
-    ElMessage.error('请输入用例名')
-    return false
+    ElMessage.error('请输入用例名');
+    return false;
   }
+
   // 前置接口校验
   for (const [i, api] of localCaseData.value.pre_apis.entries()) {
-    if (!api.url) {
-      ElMessage.error(`第${i + 1}个前置接口URL不能为空`)
-      return false
+    if (!api.request.url) {
+      ElMessage.error(`第${i + 1}个前置接口URL不能为空`);
+      return false;
     }
-    if (!api.method) {
-      ElMessage.error(`第${i + 1}个前置接口请求方法不能为空`)
-      return false
+    if (!api.request.method) {
+      ElMessage.error(`第${i + 1}个前置接口请求方法不能为空`);
+      return false;
     }
     for (const [k, ext] of (api.extracts || []).entries()) {
       if (!ext.varName) {
-        ElMessage.error(`第${i + 1}个前置接口的第${k + 1}个变量名不能为空`)
-        return false
+        ElMessage.error(`第${i + 1}个前置接口的第${k + 1}个变量名不能为空`);
+        return false;
       }
-      if (!ext.jsonPath || !ext.jsonPath.startsWith('$')) {
-        ElMessage.error(`第${i + 1}个前置接口的第${k + 1}个JsonPath不合法`)
-        return false
+      if (!ext.jsonpath || !ext.jsonpath.startsWith('$')) {
+        ElMessage.error(`第${i + 1}个前置接口的第${k + 1}个JsonPath不合法`);
+        return false;
       }
     }
     // JSON格式校验
-    if (api.method === 'POST' && api.body) {
-      try { JSON.parse(api.body) } catch (e) {
-        ElMessage.error(`第${i + 1}个前置接口Body不是合法JSON`)
-        return false
+    if (api.request.method === 'POST' && api.request.body) {
+      try {
+        JSON.parse(api.request.body);
+      } catch (e) {
+        ElMessage.error(`第${i + 1}个前置接口Body不是合法JSON`);
+        return false;
       }
     }
   }
-  return true
-}
 
+  // 主流程步骤校验
+  for (const [i, step] of localCaseData.value.steps.entries()) {
+    if (!step.action) {
+      ElMessage.error(`第${i + 1}个主流程步骤的动作不能为空`);
+      return false;
+    }
 
-const pageOptions = computed(() => {
-return [
-{label: '登录按钮', value: '//*[@id="login"]'},
-{label: '用户名输入框', value: '//*[@id="login1"]'}
-]
-})
+    switch (step.action) {
+      case 'goto':
+        if (!step.url) {
+          ElMessage.error(`第${i + 1}个主流程步骤的URL不能为空`);
+          return false;
+        }
+        break;
 
+      case 'click':
+        if (!step.selector) {
+          ElMessage.error(`第${i + 1}个主流程步骤的选择器不能为空`);
+          return false;
+        }
+        break;
 
+      case 'input':
+        if (!step.selector) {
+          ElMessage.error(`第${i + 1}个主流程步骤的选择器不能为空`);
+          return false;
+        }
+        if (!step.value) {
+          ElMessage.error(`第${i + 1}个主流程步骤的输入值不能为空`);
+          return false;
+        }
+        break;
 
+      case 'sleep':
+        if (!step.seconds || step.seconds <= 0) {
+          ElMessage.error(`第${i + 1}个主流程步骤的等待时间必须大于0`);
+          return false;
+        }
+        break;
 
+      case 'execute_script':
+        if (!step.script) {
+          ElMessage.error(`第${i + 1}个主流程步骤的JS代码不能为空`);
+          return false;
+        }
+        break;
 
+      case 'upload':
+        if (!step.selector) {
+          ElMessage.error(`第${i + 1}个主流程步骤的选择器不能为空`);
+          return false;
+        }
+        if (!step.filePath) {
+          ElMessage.error(`第${i + 1}个主流程步骤的文件路径不能为空`);
+          return false;
+        }
+        break;
 
+      case 'assert':
+        // console.error('assert === ', step)
+        if (!step.assert_type) {
+          ElMessage.error(`第${i + 1}个主流程步骤的断言类型不能为空`);
+          return false;
+        }
 
+        // if (step.selector) {
+        //   if (step.selector === '') {
+        //     ElMessage.error(`第${i + 1}个主流程步骤的选择器不能为空`);
+        //     return false;
+        //   }
+          
+        // }
+        // if (step.expect === '') {
+        //   console.error('assert expect === ', step.expect)
 
+        //   ElMessage.error(`第${i + 1}个主流程步骤的期望文本不能为空`);
+        //   return false;
 
+          
+        // }
+        break;
+
+      default:
+        ElMessage.error(`第${i + 1}个主流程步骤的动作不合法`);
+        return false;
+    }
+  }
+
+  // 后置处理步骤校验
+  for (const [i, step] of localCaseData.value.post_steps.entries()) {
+    if (!step.type) {
+      ElMessage.error(`第${i + 1}个后置处理步骤的类型不能为空`);
+      return false;
+    }
+
+    switch (step.type) {
+      case 'sql':
+        if (!step.sql) {
+          ElMessage.error(`第${i + 1}个后置处理步骤的SQL语句不能为空`);
+          return false;
+        }
+        break;
+
+      case 'api':
+        if (!step.apiUrl) {
+          ElMessage.error(`第${i + 1}个后置处理步骤的接口URL不能为空`);
+          return false;
+        }
+        if (!step.apiMethod) {
+          ElMessage.error(`第${i + 1}个后置处理步骤的请求方法不能为空`);
+          return false;
+        }
+        if (step.apiBody) {
+          try {
+            JSON.parse(step.apiBody);
+          } catch (e) {
+            ElMessage.error(`第${i + 1}个后置处理步骤的请求体不是合法JSON`);
+            return false;
+          }
+        }
+        break;
+
+      case 'shell':
+        if (!step.shellCmd) {
+          ElMessage.error(`第${i + 1}个后置处理步骤的Shell命令不能为空`);
+          return false;
+        }
+        break;
+
+      default:
+        ElMessage.error(`第${i + 1}个后置处理步骤的类型不合法`);
+        return false;
+    }
+  }
+
+  return true;
+};
 
 
 
@@ -430,6 +680,64 @@ async function onRun() {
     console.error('保存失败:', error);
   }
 }
+
+
+const fileOptions = ref<{ label: string; value: string }[]>([]);
+
+async function fetchFileOptions() {
+  try {
+    // 假设 store.testFileList 是一个数组，包含文件信息
+    const testFileList = await store.fetchTestFileList();
+    console.log
+    if (!testFileList || !testFileList.length) {
+      ElMessage.warning('未获取到文件列表数据');
+      return;
+    }
+
+    // 将文件列表映射到 fileOptions
+    fileOptions.value = testFileList.map((file: { name: string; file_name: string }) => ({
+      label: file.file_name, // 文件名称
+      value: file.file_name, // 文件路径
+    }));
+  } catch (error) {
+    console.error('获取文件列表失败:', error);
+    ElMessage.error('获取文件列表失败，请稍后重试');
+  }
+}
+
+
+// 关于元素选择
+const pageOptions = ref<{ label: string; value: string }[]>([]);
+
+async function fetchPageOptions() {
+  try {
+    // 调用接口获取数据
+    const response = await store.fetchSimpleUiElementList();
+    if (!response || !response.length) {
+      ElMessage.warning('未获取到页面选项数据');
+      return;
+    }
+
+    // 将接口返回的数据映射到 pageOptions
+    pageOptions.value = response.map((item: simpleElementType) => ({
+      label: item.name, // 显示名称
+      value: item.locator_type + "=" + item.locator_value, // 元素定位值
+    }));
+  } catch (error) {
+    console.error('获取页面选项失败:', error);
+    ElMessage.error('获取页面选项失败，请稍后重试');
+  }
+}
+
+onMounted(async () => {
+  fetchPageOptions(); // 页面加载时调用
+  await fetchFileOptions()
+});
+
+
+
+
+
 </script>
 
 <style scoped>
@@ -441,7 +749,7 @@ margin-bottom:8px;
 /* width: 100%;
 min-width: 400px;
 max-width: 800px; */
-width: 700px;
+/* width: 700px; */
 }
 
 

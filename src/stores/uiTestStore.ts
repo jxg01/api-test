@@ -25,7 +25,7 @@ export interface CaseData {
   steps: Step[]
   post_steps: []
   enable: boolean
-  module: number
+  module?: number
 }
 
 
@@ -57,6 +57,12 @@ export interface CaseTreeNode {
   caseData?: CaseData  // 仅type=case时有
 }
 
+export interface simpleElementType {
+  id: number
+  name: string
+  locator_type: string
+  locator_value: string
+}
 
 export const useUiTestStore = defineStore('uiTest', {
   state: () => ({
@@ -70,10 +76,21 @@ export const useUiTestStore = defineStore('uiTest', {
       locator_type: '',
       name: '',
     },
-    moduleList: [] as CaseTreeNode[]
-
+    moduleList: [] as CaseTreeNode[],
+    simpleElementList: [] as simpleElementType[],
   }),
   actions: {
+    async fetchSimpleUiElementList(project_id?: number | string | null) {
+      const res = await uiTestApi.getSimpleElementPageList({
+        project_id: useProjectStore().currentProjectId,
+      })
+      if (res) {
+        this.simpleElementList = res.data
+        return res.data
+      }
+    },
+
+
     async fetchUiPage(project_id: number | string | null) {
       const res = await uiTestApi.getElementPageList({
         project_id: project_id,
@@ -103,7 +120,6 @@ export const useUiTestStore = defineStore('uiTest', {
     },
 
     async handleSizeChange(size: number) {
-      console.log('handleSizeChange', size)
       this.pageSize = size
       this.currentPage = 1
       this.fetchUiElementList()
@@ -202,16 +218,31 @@ export const useUiTestStore = defineStore('uiTest', {
     },
 
     async editUiTestCase(caseData: any) {
-      const res = uiTestApi.updateUiTestCase(caseData.id, caseData)
+      const res = await uiTestApi.updateUiTestCase(caseData.id, caseData)
       if (res) {
         return res
       }
     },
 
     async deleteUiTestCase(caseId: number | string) {
-      uiTestApi.deleteUiTestCase(caseId)
+      await uiTestApi.deleteUiTestCase(caseId)
       await this.fetchModuleList()
     },
+
+    async runUiTestCase(caseId: number) {
+      const res = await uiTestApi.runUiTestCase(caseId)
+      if (res) {
+        return res
+      }
+    },
+
+    async fetchTestFileList() {
+      const res = await uiTestApi.getFilesList()
+      if (res) {
+        return res.data
+      }
+    },
+
 
   },
 })

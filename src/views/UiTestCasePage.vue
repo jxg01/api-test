@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <el-row style="height: 100vh;">
+  <div style="width: calc(100vh-180px);">
+    <el-row>
       <!-- 左侧树结构 -->
       <el-col :span="6" style="height: 100%; border-right: 1px solid #eee; overflow-y: auto; text-align: left;">
         <el-button type="primary" :icon="Plus" @click="openAddDialog" style="margin: 12px 0 12px 0;">新建分组</el-button>
@@ -30,7 +30,7 @@
               </el-icon>
               <div class="tree-node-content">
                 <!-- 名称区加 ellipsis 和 Tooltip -->
-                <el-tooltip :content="data.label" placement="top">
+                <!-- <el-tooltip :content="data.label" placement="top"> -->
                   <span
                     style="
                       display: inline-block;
@@ -41,7 +41,7 @@
                       vertical-align: middle;
                     "
                   >{{ data.label }}</span>
-                </el-tooltip>
+                <!-- </el-tooltip> -->
                 <!-- <span
                   v-else
                   style="
@@ -116,6 +116,7 @@ import CaseEditor from '@/components/UiTest/CaseEditor.vue'
 import { Plus } from '@element-plus/icons-vue'
 import { useUiTestStore, CaseTreeNode, CaseData } from '@/stores/uiTestStore'
 import BaseDialog from '@/components/BaseDialog.vue'
+import { number } from 'echarts'
 
 const store = useUiTestStore()
 
@@ -161,13 +162,13 @@ function addCase(group: CaseTreeNode) {
     label: '新建用例',
     type: 'case',
     caseData: {
-      id,
+      id: '0',
       name: '新建用例',
       description: '',
       steps: [],
       pre_apis: [],
       post_steps: [],
-      enable: true
+      enable: true,
     }
   };
 
@@ -267,22 +268,6 @@ function closeTab(id: string) {
   }
 }
 
-const saveCase1 = async(tab: Tab) => {
-  // 保存到树
-  console.log('保存用例:', tab)
-  try {
-    const action = tab.id
-    ? store.editUiTestCase(tab.caseData)
-    : store.createUiTestCase(tab.caseData)
-
-    const res =  await action
-    console.log('res', res)
-
-  } catch (e) {
-    console.error(e)
-  }
-}
-
 const saveCase = async (tab: Tab) => {
   console.log('保存用例:', tab);
 
@@ -341,9 +326,17 @@ const saveCase = async (tab: Tab) => {
 
 
 
-function runCase(tab: Tab) {
+async function runCase(tab: Tab) {
   // 可调后端接口
-  ElMessage.info(`调试运行: ${tab.name}`)
+  if (!tab.id) {
+    ElMessage.error('用例未保存')
+    return  
+  }
+  
+  const r = await store.runUiTestCase(Number(tab.id))
+  if (r) {
+    ElMessage.success('用例已提交运行')
+  }
 }
 
 // 添加模块相关 ================================================================

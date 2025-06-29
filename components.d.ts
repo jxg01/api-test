@@ -23,6 +23,7 @@ declare module '@vue/runtime-core' {
     CaseForm: typeof import('./src/components/testcase/CaseForm.vue')['default']
     CaseSearch: typeof import('./src/components/testcase/CaseSearch.vue')['default']
     CaseSelector: typeof import('./src/components/suite/CaseSelector.vue')['default']
+    CaseSteps: typeof import('./src/components/UiTest/CaseSteps.vue')['default']
     CaseTabs: typeof import('./src/components/testcase/CaseTabs.vue')['default']
     CurrentProjectSelector: typeof import('./src/components/CurrentProjectSelector.vue')['default']
     ElAside: typeof import('element-plus/es')['ElAside']
