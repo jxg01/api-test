@@ -182,7 +182,7 @@ const routes: Array<RouteRecordRaw> = [
                     {
                         path: 'ui-excution-history',
                         name: 'ui-excution-history',
-                        component: MtTool,
+                        component: () => import('@/views/UiExecutionHistoryPage.vue'),
                         meta: {
                             title: 'UI测试报告',
                             icon: 'ScaleToOriginal'

@@ -20,6 +20,7 @@ declare module '@vue/runtime-core' {
     CaseEditor: typeof import('./src/components/UiTest/CaseEditor.vue')['default']
     CaseExecuteHistory: typeof import('./src/components/testcase/CaseExecuteHistory.vue')['default']
     CaseExecuteHistoryDetail: typeof import('./src/components/testcase/CaseExecuteHistoryDetail.vue')['default']
+    CaseExecutionDetail: typeof import('./src/components/UiTest/CaseExecutionDetail.vue')['default']
     CaseForm: typeof import('./src/components/testcase/CaseForm.vue')['default']
     CaseSearch: typeof import('./src/components/testcase/CaseSearch.vue')['default']
     CaseSelector: typeof import('./src/components/suite/CaseSelector.vue')['default']

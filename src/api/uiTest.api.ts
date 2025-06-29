@@ -54,5 +54,9 @@ export const uiTestApi = {
   /** 获取测试用例模块列表 */
   getFilesList: () => 
     http.get('/ui-test-files/'),
+
+  /** 获取测试用例模块列表 */
+  getExecutionHistory: (params: any) => 
+    http.get('/ui-executions/', params),
   
 }
