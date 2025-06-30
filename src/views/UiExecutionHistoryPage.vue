@@ -1,31 +1,13 @@
 <template>
   <div class="execution-history-page">
     <div class="searchTool">
-      <!-- <el-select v-model="filterParams.type" placeholder="选择类型" clearable>
-        <el-option label="测试用例" value="case" />
-        <el-option label="测试套件" value="suite" />
-      </el-select> -->
-      <el-select v-model="filterParams.status" clearable placeholder="选择状态">
+      <el-select v-model="filterParams.case_status" clearable placeholder="选择状态">
         <el-option label="成功" value="passed" />
         <el-option label="失败" value="failed" />
         <el-option label="执行中" value="running" />
       </el-select>
-      <!-- <el-date-picker
-          v-model="filterParams.start_date"
-          type="date"
-          placeholder="请选择开始日期"
-          style="width: 100%"
-          format="YYYY-MM-DD"
-          value-format="YYYY-MM-DD"
-        />
-      <el-date-picker
-          v-model="filterParams.end_date"
-          type="date"
-          placeholder="请选择结束日期"
-          style="width: 100%"
-          format="YYYY-MM-DD"
-          value-format="YYYY-MM-DD" 
-        /> -->
+      <el-input v-model="filterParams.case_name" placeholder="搜索用例名称" clearable ></el-input>
+      <el-input v-model="filterParams.executed_by" placeholder="搜索执行人" clearable ></el-input>
       <el-button type="primary" @click.stop="fetchList" :icon="Search"> 搜索</el-button>
       <el-button type="primary" @click.stop="cancelSearchInput" :icon="RefreshLeft" plain> 重置</el-button>
     </div>
@@ -89,10 +71,10 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(20)
 const filterParams = ref({
-  // end_date: '',
-  // start_date: '',
   status: '',
-  // type: ''
+  case_name: '',
+  case_status: '',
+  executed_by: ''
 })
 
 type UiHistory = {
@@ -153,10 +135,10 @@ const fetchList = async() => {
 
 const cancelSearchInput = () => {
   filterParams.value = {
-    // end_date: '',
-    // start_date: '',
     status: '',
-    // type: ''
+    case_name: '',
+    case_status: '',
+    executed_by: ''
   }
   fetchList()
 }
@@ -206,7 +188,7 @@ onMounted(() => {
   align-items: center;
   /* margin-bottom: 12px; */
   padding: 10px;
-  max-width: 400px;
+  max-width: 600px;
   min-width: 200px;
   gap: 10px;
 }
