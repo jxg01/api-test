@@ -334,6 +334,7 @@ async function runCase(tab: Tab) {
   }
   
   const r = await store.runUiTestCase(Number(tab.id))
+  console.log('r', r)
   if (r) {
     ElMessage.success('用例已提交运行')
   }

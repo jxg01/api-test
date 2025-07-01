@@ -75,7 +75,7 @@ const popInfo = ref<executionDetail[]>()
 const openDrawer = async (row: any) => {
   loading.value = true;
   // console.log(row)
-  popInfo.value = row.steps_log
+  popInfo.value = row.steps_log.steps_result
   drawerVisible.value = true;
   title.value = row.testcase_name
   status.value = row.status

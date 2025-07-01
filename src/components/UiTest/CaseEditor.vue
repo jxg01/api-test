@@ -241,21 +241,31 @@
       </el-form-item>
       <!-- 后置处理步骤区 -->
       <el-form-item label="后置处理">
-        <el-card shadow="never" >
+        <el-card shadow="never" style="width: 100%" >
           <div
             v-for="(step, i) in localCaseData.post_steps"
             :key="i"
             style="margin-bottom:12px;display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px dashed #eee"
           >
-            <el-select v-model="step.type" style="width:90px" @change="emitChange">
+            <el-select v-model="step.type" style="width: 190px" @change="emitChange">
               <el-option label="SQL" value="sql" />
               <!-- <el-option label="接口" value="api" />
               <el-option label="Shell" value="shell" /> -->
             </el-select>
             <!-- SQL类型 -->
             <template v-if="step.type === 'sql'">
-              <el-input v-model="step.sql" placeholder="SQL语句" style="width:220px" @input="emitChange" />
               <!-- <el-input v-model="step.dbEnv" placeholder="数据库环境/别名" style="width:120px" @input="emitChange" /> -->
+
+              <el-select v-model="step.dbEnv" style="width: 300px;" placeholder="数据库环境/别名" @change="emitChange">
+                <el-option
+                  v-for="env in projectStore.current?.envs"
+                  :key="env.id"
+                  :label="env.name"
+                  :value="env.id"
+                />
+              </el-select>
+
+              <el-input type="textarea" v-model="step.sql" placeholder="SQL语句" style="width: 100%;" @input="emitChange" />
             </template>
             <!-- API类型 -->
             <template v-if="step.type === 'api'">
@@ -310,7 +320,9 @@ import Draggable from 'vuedraggable'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useUiTestStore, simpleElementType } from '@/stores/uiTestStore'
+import { useProjectStore } from '@/stores/project'
 
+const projectStore = useProjectStore()
 const store = useUiTestStore()
 
 type ExtractVar = { varName: string, jsonpath: string }
