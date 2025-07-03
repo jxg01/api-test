@@ -51,6 +51,10 @@ export const uiTestApi = {
   runUiTestCase: (id: number) => 
     http.post(`/ui-testcases/${id}/run/`),
 
+  // 批量执行用例
+  runSelectedUiTestCase: (params: any) => 
+    http.post("/ui-testcases/run-selected/", params),
+
   /** 获取测试用例模块列表 */
   getFilesList: () => 
     http.get('/ui-test-files/'),
@@ -58,5 +62,6 @@ export const uiTestApi = {
   /** 获取测试用例模块列表 */
   getExecutionHistory: (params: any) => 
     http.get('/ui-executions/', params),
+
   
 }

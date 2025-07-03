@@ -17,6 +17,7 @@
         
       </template>
       <div>
+        <el-divider content-position="left"><b>用例步骤</b></el-divider>
         <el-collapse :expand-icon-position="'left'" accordion>
           <el-collapse-item
             v-for="(item, index) in popInfo || []"
@@ -39,6 +40,31 @@
 
           </el-collapse-item>
         </el-collapse>
+
+        <el-divider content-position="left" style="margin-top: 80px;"><b>清理数据</b></el-divider>
+        <div v-if="postSteps.length !== 0" class="request-detail">
+          <el-collapse :expand-icon-position="'left'" accordion>
+            <el-collapse-item
+              v-for="(item, index) in postSteps || []"
+              :key="index"
+              :name="String(index)"
+            >
+              <template #title>
+                <span>
+                  sql结果 {{ index + 1 }}
+                </span>
+              </template>
+              <div style="float: left; text-align: left;" class="request-detail">
+                <span>SQL: {{ item.sql }}</span>
+                <span>执行结果：{{ item.sql_result }}</span>
+              </div>
+
+            </el-collapse-item>
+          </el-collapse>
+        </div>
+        <div v-else>
+          <el-empty description="暂无数据" />
+        </div>
       </div>
     </el-drawer>
   </div>
@@ -70,6 +96,7 @@ const activeName = ref('first')
 const title = ref('Null')
 const status = ref('passed')
 const popInfo = ref<executionDetail[]>()
+const postSteps = ref()
 
 // 打开抽屉并加载数据
 const openDrawer = async (row: any) => {
@@ -80,6 +107,7 @@ const openDrawer = async (row: any) => {
   title.value = row.testcase_name
   status.value = row.status
   loading.value = false;
+  postSteps.value = row.steps_log.post_steps_result
 };
 
 // 暴露打开方法供父组件调用
@@ -112,7 +140,7 @@ defineExpose({
 .request-detail span {
   display: block; /* 将 span 设置为块级元素 */
   margin-bottom: 20px; /* 添加下方间距，避免内容过于紧凑 */
-  border-bottom: 1px dotted #181717  ;
+  /* border-bottom: 1px dotted #181717  ; */
   font-size: 14px;
 }
 
@@ -125,5 +153,11 @@ defineExpose({
 .dot.red { background-color: #ff5f56; }
 .dot.yellow { background-color: #ffbd2e; }
 .dot.green { background-color: #27c93f; }
+
+
+.title-detail {
+  /* color: red; */
+  font-size: 24px;
+}
 
 </style>

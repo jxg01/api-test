@@ -4,6 +4,7 @@
       <!-- 左侧树结构 -->
       <el-col :span="6" style="height: 100%; border-right: 1px solid #eee; overflow-y: auto; text-align: left;">
         <el-button type="primary" :icon="Plus" @click="openAddDialog" style="margin: 12px 0 12px 0;">新建分组</el-button>
+        <el-button type="success" :icon="VideoPlay" @click="runByModule" style="float: right;margin: 12px 0 12px 0;">批量执行</el-button>
         <el-input
           v-model="searchText"
           placeholder="输入分组名称或接口名称搜索"
@@ -22,6 +23,8 @@
           default-expand-all
           :filter-node-method="filterNode"
           @tab-remove="closeTab"
+          show-checkbox
+          @check-change="onCheckChange"
         >
           <template #default="{ node, data }">
             <div class="tree-node">
@@ -113,10 +116,11 @@
 import { ref, markRaw, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CaseEditor from '@/components/UiTest/CaseEditor.vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, VideoPlay } from '@element-plus/icons-vue'
 import { useUiTestStore, CaseTreeNode, CaseData } from '@/stores/uiTestStore'
 import BaseDialog from '@/components/BaseDialog.vue'
 import { number } from 'echarts'
+import { uiTestApi } from '@/api'
 
 const store = useUiTestStore()
 
@@ -390,7 +394,36 @@ const deleteModule = async (row: any) => {
   }
 }
 
+const checkedNodeIds = ref<number[]>([]); // 存储选中的节点 ID
 
+function onCheckChange(data: any, checked: boolean, indeterminate: boolean) {
+  // 获取所有选中的节点
+  const checkedNodes = treeRef.value?.getCheckedNodes();
+  checkedNodeIds.value = checkedNodes
+    .filter((node: any) => node.type === 'case') // 仅保留有父节点的节点（即二级节点）
+    .map((node: any) => node.id);
+  // console.log('选中的节点 ID:', checkedNodeIds.value);
+}
+
+const runByModule = async () => {
+  console.log('in run by module')
+  if (checkedNodeIds.value.length === 0) {
+    ElMessage.warning('选择的用例为空');
+    return;
+  }
+
+  try {
+    const response = await uiTestApi.runSelectedUiTestCase({"case_ids": checkedNodeIds.value})
+    // const response = await store.runUiTestCases(checkedNodeIds.value); // 假设接口为 runUiTestCases
+    if (response) {
+      ElMessage.success('批量执行已提交');
+    }
+    // console.log('批量执行结果:', response);
+  } catch (error) {
+    console.error('批量执行失败:', error);
+    // ElMessage.error('批量执行失败，请稍后重试');
+  }
+}
 
 
 

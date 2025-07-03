@@ -170,15 +170,15 @@ const routes: Array<RouteRecordRaw> = [
                             icon: 'Files'
                         }
                     },
-                    {
-                        path: 'ui-suite',
-                        name: 'ui-suite',
-                        component: MtTool,
-                        meta: {
-                            title: 'UI测试套件',
-                            icon: 'SetUp'
-                        }
-                    },
+                    // {
+                    //     path: 'ui-suite',
+                    //     name: 'ui-suite',
+                    //     component: MtTool,
+                    //     meta: {
+                    //         title: 'UI测试套件',
+                    //         icon: 'SetUp'
+                    //     }
+                    // },
                     {
                         path: 'ui-excution-history',
                         name: 'ui-excution-history',
