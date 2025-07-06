@@ -17,32 +17,63 @@
         
       </template>
       <div>
-        <el-divider content-position="left"><b>用例步骤</b></el-divider>
-        <el-collapse :expand-icon-position="'left'" accordion>
-          <el-collapse-item
-            v-for="(item, index) in popInfo || []"
-            :key="index"
-            :name="String(index)"
-          >
-            <template #title>
-              <span :style="{ color: item.status === 'pass' ? 'green' : 'red' }">
-                步骤{{ index+1 }}. {{ item.step.action }} 
-              </span>
-            </template>
-            <div style="float: left; text-align: left;" class="request-detail">
-              <span>日志: {{ item.log }}</span>
-              <span v-if="item.error"><div></div>异常: {{ item.error }}</span>
-              <span v-if="item.screenshot">
-                <div></div>截图: 
-                <a :href="baseFileUrl + item.screenshot " target="_blank">{{ baseFileUrl + item.screenshot }}</a>
-              </span>
-            </div>
+        <el-divider content-position="left"><b>前置接口</b></el-divider>
+        <el-card v-if="pre_apis && pre_apis.length > 0">
+          <el-collapse :expand-icon-position="'left'" accordion>
+            <el-collapse-item
+              v-for="(item, index) in pre_apis || []"
+              :key="index"
+              :name="String(index)"
+            >
+              <template #title>
+                <span style="color: green;">
+                  前置接口 {{ index + 1 }}
+                </span>
+              </template>
+              <div style="float: left; text-align: left;" class="request-detail">
+                <span><b>API 请求体:</b> {{ item.request }}</span>
+                <span><b>API 响应体:</b> {{ item.response }}</span>
+                <span><b>变量池:</b> {{ item.variables }}</span>
+              </div>
 
-          </el-collapse-item>
-        </el-collapse>
+            </el-collapse-item>
+          </el-collapse>
+        </el-card>
+        <div v-else>
+          <!-- <el-empty description="暂无数据" /> -->
+          <el-card>
+            <span style="color:darkgray;">暂无数据</span>
+          </el-card>
+        </div>
 
-        <el-divider content-position="left" style="margin-top: 80px;"><b>清理数据</b></el-divider>
-        <div v-if="postSteps.length !== 0" class="request-detail">
+        <el-divider content-position="left" style="margin-top: 40px;"><b>用例步骤</b></el-divider>
+        <el-card>
+          <el-collapse :expand-icon-position="'left'" accordion>
+            <el-collapse-item
+              v-for="(item, index) in popInfo || []"
+              :key="index"
+              :name="String(index)"
+            >
+              <template #title>
+                <span :style="{ color: item.status === 'pass' ? 'green' : 'red' }">
+                  步骤{{ index+1 }}. {{ item.step.action }} 
+                </span>
+              </template>
+              <div style="float: left; text-align: left;" class="request-detail">
+                <span><b>日志:</b> {{ item.log }}</span>
+                <span v-if="item.error"><b>异常:</b> {{ item.error }}</span>
+                <span v-if="item.screenshot">
+                  <b>截图: </b> 
+                  <a :href="baseFileUrl + item.screenshot " target="_blank">{{ baseFileUrl + item.screenshot }}</a>
+                </span>
+              </div>
+
+            </el-collapse-item>
+          </el-collapse>
+        </el-card>
+
+        <el-divider content-position="left" style="margin-top: 40px;"><b>清理数据</b></el-divider>
+        <el-card v-if="postSteps && postSteps.length > 0">
           <el-collapse :expand-icon-position="'left'" accordion>
             <el-collapse-item
               v-for="(item, index) in postSteps || []"
@@ -50,20 +81,23 @@
               :name="String(index)"
             >
               <template #title>
-                <span>
+                <span style="color: green;">
                   sql结果 {{ index + 1 }}
                 </span>
               </template>
               <div style="float: left; text-align: left;" class="request-detail">
-                <span>SQL: {{ item.sql }}</span>
-                <span>执行结果：{{ item.sql_result }}</span>
+                <span><b>SQL语句:</b> {{ item.sql }}</span>
+                <span><b>SQL执行结果:</b> {{ item.sql_result }}</span>
               </div>
 
             </el-collapse-item>
           </el-collapse>
-        </div>
+        </el-card>
         <div v-else>
-          <el-empty description="暂无数据" />
+          <!-- <el-empty description="暂无数据" /> -->
+          <el-card>
+            <span style="color:darkgray;">暂无数据</span>
+          </el-card>
         </div>
       </div>
     </el-drawer>
@@ -97,6 +131,7 @@ const title = ref('Null')
 const status = ref('passed')
 const popInfo = ref<executionDetail[]>()
 const postSteps = ref()
+const pre_apis = ref()
 
 // 打开抽屉并加载数据
 const openDrawer = async (row: any) => {
@@ -108,6 +143,7 @@ const openDrawer = async (row: any) => {
   status.value = row.status
   loading.value = false;
   postSteps.value = row.steps_log.post_steps_result
+  pre_apis.value = row.steps_log.pre_apis_result
 };
 
 // 暴露打开方法供父组件调用

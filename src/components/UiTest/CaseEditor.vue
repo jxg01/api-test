@@ -708,8 +708,8 @@ async function fetchFileOptions() {
 
     // 将文件列表映射到 fileOptions
     fileOptions.value = testFileList.map((file: { name: string; file_name: string }) => ({
-      label: file.file_name, // 文件名称
-      value: file.file_name, // 文件路径
+      label: file.file_name || '', // 文件名称
+      value: file.file_name || '', // 文件路径
     }));
   } catch (error) {
     console.error('获取文件列表失败:', error);

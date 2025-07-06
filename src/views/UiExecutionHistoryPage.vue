@@ -172,7 +172,12 @@ const getStatusType = (status: string) => {
 const uiCaseDrawer = ref();
 
 const viewHistoryDetail = (row: SuiteHistory) => {
-  uiCaseDrawer.value.openDrawer(row);
+  console.log(row)
+  if (row.status === 'failed' || row.status === 'passed') {
+    uiCaseDrawer.value.openDrawer(row); // 打开弹窗
+  } else {
+    ElMessage.warning('任务正在执行中！ '); // 提示用户
+  }
 }
 
 onMounted(() => {

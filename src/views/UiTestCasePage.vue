@@ -4,10 +4,10 @@
       <!-- 左侧树结构 -->
       <el-col :span="6" style="height: 100%; border-right: 1px solid #eee; overflow-y: auto; text-align: left;">
         <el-button type="primary" :icon="Plus" @click="openAddDialog" style="margin: 12px 0 12px 0;">新建分组</el-button>
-        <el-button type="success" :icon="VideoPlay" @click="runByModule" style="float: right;margin: 12px 0 12px 0;">批量执行</el-button>
+        <el-button type="success" :icon="VideoPlay" @click="openBatchRunDialog" style="float: right;margin: 12px 0 12px 0;">批量执行</el-button>
         <el-input
           v-model="searchText"
-          placeholder="输入分组名称或接口名称搜索"
+          placeholder="输入分组名称或用例名称搜索"
           clearable
           size="large"
           style="margin-bottom: 8px;"
@@ -32,8 +32,6 @@
                 <component :is="data.type === 'case' ? 'Document' : 'Folder'" />
               </el-icon>
               <div class="tree-node-content">
-                <!-- 名称区加 ellipsis 和 Tooltip -->
-                <!-- <el-tooltip :content="data.label" placement="top"> -->
                   <span
                     style="
                       display: inline-block;
@@ -44,20 +42,6 @@
                       vertical-align: middle;
                     "
                   >{{ data.label }}</span>
-                <!-- </el-tooltip> -->
-                <!-- <span
-                  v-else
-                  style="
-                    display: inline-block;
-                    max-width: 600px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                    width: 100%;
-                  "
-                >{{ data.label }}</span> -->
-                <!-- 操作按钮区始终右对齐 -->
-                <!-- <span style="margin-left:10px; flex-shrink: 0;"> -->
                 <span class="action-buttons">
                   <template v-if="data.type === 'case'">
                     <el-button link type="primary" size="small" @click.stop="openCase(data)">编辑</el-button>
@@ -109,11 +93,34 @@
         @click.stop
       
       ></base-dialog>
+
+      <el-dialog v-model="browserDialog.visible" title="选择运行配置" width="400px">
+        <el-form :model="browserDialog.form">
+          <!-- 浏览器类型 -->
+          <el-form-item label="浏览器类型">
+            <el-select v-model="browserDialog.form.browser_type" placeholder="请选择浏览器类型" clearable>
+              <el-option label="Chrome" value="chromium" />
+              <el-option label="Firefox" value="firefox" />
+              <el-option label="Safari" value="webkit" />
+            </el-select>
+          </el-form-item>
+
+          <!-- 是否无头模式 -->
+          <el-form-item label="无头模式">
+            <el-switch v-model="browserDialog.form.headless" />
+          </el-form-item>
+        </el-form>
+
+        <template #footer>
+          <el-button @click="browserDialog.visible = false">取消</el-button>
+          <el-button type="primary" @click="handleBatchRunTestCases">确认</el-button>
+        </template>
+      </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, markRaw, computed, watch, onMounted } from 'vue'
+import { ref, markRaw, reactive , watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CaseEditor from '@/components/UiTest/CaseEditor.vue'
 import { Plus, VideoPlay } from '@element-plus/icons-vue'
@@ -394,7 +401,25 @@ const deleteModule = async (row: any) => {
   }
 }
 
+// 批量执行用例相关
 const checkedNodeIds = ref<number[]>([]); // 存储选中的节点 ID
+  const browserDialog = reactive({
+  visible: false,
+  form: {
+    browser_type: '', // 浏览器类型
+    headless: false, // 是否无头模式
+  },
+});
+
+// 打开弹窗
+function openBatchRunDialog() {
+  if (checkedNodeIds.value.length === 0) {
+    ElMessage.warning('选择的用例为空');
+    return;
+  }
+  browserDialog.visible = true;
+}
+
 
 function onCheckChange(data: any, checked: boolean, indeterminate: boolean) {
   // 获取所有选中的节点
@@ -405,23 +430,29 @@ function onCheckChange(data: any, checked: boolean, indeterminate: boolean) {
   // console.log('选中的节点 ID:', checkedNodeIds.value);
 }
 
-const runByModule = async () => {
+const handleBatchRunTestCases = async () => {
   console.log('in run by module')
-  if (checkedNodeIds.value.length === 0) {
-    ElMessage.warning('选择的用例为空');
-    return;
-  }
+  // if (checkedNodeIds.value.length === 0) {
+  //   ElMessage.warning('选择的用例为空');
+  //   return;
+  // }
 
   try {
-    const response = await uiTestApi.runSelectedUiTestCase({"case_ids": checkedNodeIds.value})
-    // const response = await store.runUiTestCases(checkedNodeIds.value); // 假设接口为 runUiTestCases
+    const payload = {
+      browser_type: browserDialog.form.browser_type || null, // 如果为空，传递 null
+      headless: browserDialog.form.headless,
+      case_ids: checkedNodeIds.value
+    };
+    console.log('提交的参数:', payload);
+    const response = await uiTestApi.runSelectedUiTestCase(payload)
     if (response) {
       ElMessage.success('批量执行已提交');
+      browserDialog.visible = false; // 关闭弹窗  
     }
     // console.log('批量执行结果:', response);
   } catch (error) {
     console.error('批量执行失败:', error);
-    // ElMessage.error('批量执行失败，请稍后重试');
+    ElMessage.error('批量执行失败，请稍后重试');
   }
 }
 
