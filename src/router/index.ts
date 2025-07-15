@@ -223,12 +223,12 @@ const routes: Array<RouteRecordRaw> = [
 
             },
             {
-                path: '/settings',
-                name: 'settings',
-                component: SettingsPageVue,
+                path: '/schedule-tasks',
+                name: 'schedule-tasks',
+                component: () => import('@/views/ScheduleTasksPage.vue'),
                 meta: {
-                    title: '系统设置',
-                    isShow: false,
+                    title: '定时任务',
+                    isShow: true,
                     icon: 'Clock'
                 },
             },
