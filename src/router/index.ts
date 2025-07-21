@@ -9,7 +9,6 @@ import TestCasePage from '@/views/TestCasePage.vue';
 import DashboardPageVue from '@/views/DashboardPage.vue';
 import SettingsPageVue from '@/views/SettingsPage.vue';
 import SuitePageVue from '@/views/SuitePage.vue';
-import TaskPageVue from '@/views/TaskPage.vue';
 import TraderToolsPageVue from '@/views/TraderToolsPage.vue';
 import SuiteEditorVue from '@/components/suite/SuiteEditor.vue';
 import SuggestionPageVue from '@/views/SuggestionPage.vue';
@@ -195,7 +194,7 @@ const routes: Array<RouteRecordRaw> = [
                 name: 'task',
                 meta: {
                     title: '任务管理',
-                    isShow: false,
+                    isShow: true,
                     icon: 'Clock'
                 },
                 children: [
@@ -203,7 +202,7 @@ const routes: Array<RouteRecordRaw> = [
                         path: 'test',
                         name: 'test',
                         // component: TaskPageVue,
-                        component: () => import('@/components/suite/SuiteEditor.vue'),
+                        component: () => import('@/views/TaskPage.vue'),
                         meta: {
                             title: '任务配置',
                             icon: 'Clock'
