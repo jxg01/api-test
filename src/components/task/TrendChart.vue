@@ -1,38 +1,54 @@
 <template>
   <div class="detail-card">
     <div class="panel-header">近7天执行趋势</div>
-    <div ref="chart" class="chart-container"></div>
+    <VChart 
+      class="chart-container" 
+      :option="chartOption" 
+      autoresize 
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import * as echarts from 'echarts';
+import { use } from 'echarts/core';
+import { BarChart } from 'echarts/charts';
+import { 
+  GridComponent,
+  TooltipComponent,
+  LegendComponent
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+import VChart from 'vue-echarts';
+import { ref, computed, onMounted } from 'vue';
 import { useTaskStore } from '@/stores/taskStore';
 import { storeToRefs } from 'pinia';
 
+// 注册必要的组件
+use([
+  BarChart,
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  CanvasRenderer
+]);
+
 const taskStore = useTaskStore();
 const { selectedTask } = storeToRefs(taskStore);
-const chart = ref<echarts.ECharts | null>(null);
-const chartDom = ref<HTMLDivElement | null>(null);
 
-const renderChart = () => {
-  if (!chartDom.value) return;
-  
-  if (chart.value) {
-    chart.value.dispose();
-  }
-  
-  chart.value = echarts.init(chartDom.value);
-  
+// 生成近7天日期
+const generateDates = () => {
   const dates = [];
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
     dates.push(`${date.getMonth()+1}-${date.getDate()}`);
   }
-  
-  const option = {
+  return dates;
+};
+
+// 图表配置
+const chartOption = computed(() => {
+  return {
     tooltip: {
       trigger: 'axis',
       axisPointer: {
@@ -40,21 +56,28 @@ const renderChart = () => {
       }
     },
     legend: {
-      data: ['成功', '失败', '退出']
+      data: ['成功', '失败', '退出'],
+      bottom: 0
     },
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '3%',
+      bottom: '10%',
+      top: '5%',
       containLabel: true
     },
     xAxis: {
       type: 'category',
-      data: dates
+      data: generateDates(),
+      axisLabel: {
+        interval: 0,
+        rotate: 0
+      }
     },
     yAxis: {
       type: 'value',
-      name: '执行次数'
+      name: '执行次数',
+      minInterval: 1
     },
     series: [
       {
@@ -63,7 +86,11 @@ const renderChart = () => {
         stack: 'total',
         emphasis: { focus: 'series' },
         data: [5, 4, 7, 3, 6, 5, 4],
-        itemStyle: { color: '#67C23A' }
+        itemStyle: { color: '#67C23A' },
+        label: {
+          show: true,
+          position: 'inside'
+        }
       },
       {
         name: '失败',
@@ -71,7 +98,11 @@ const renderChart = () => {
         stack: 'total',
         emphasis: { focus: 'series' },
         data: [0, 1, 0, 0, 0, 0, 1],
-        itemStyle: { color: '#F56C6C' }
+        itemStyle: { color: '#F56C6C' },
+        label: {
+          show: true,
+          position: 'inside'
+        }
       },
       {
         name: '退出',
@@ -79,45 +110,31 @@ const renderChart = () => {
         stack: 'total',
         emphasis: { focus: 'series' },
         data: [0, 0, 0, 1, 0, 0, 0],
-        itemStyle: { color: '#E6A23C' }
+        itemStyle: { color: '#E6A23C' },
+        label: {
+          show: true,
+          position: 'inside'
+        }
       }
     ]
   };
-  
-  chart.value.setOption(option);
-};
-
-const handleResize = () => {
-  chart.value?.resize();
-};
-
-onMounted(() => {
-  renderChart();
-  window.addEventListener('resize', handleResize);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
-  chart.value?.dispose();
-});
-
-// 当任务切换时重新渲染图表
-watch(selectedTask, () => {
-  nextTick(() => {
-    renderChart();
-  });
 });
 </script>
 
 <style scoped>
 .chart-container {
-  height: 300px;
+  height: 250px;
   width: 100%;
 }
 
+.detail-card {
+  height: 300px;
+}
+
 .panel-header {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
-  color: #303133;
+  margin-bottom: 10px;
+  color: #000;
 }
 </style>

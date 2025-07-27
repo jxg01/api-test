@@ -194,7 +194,7 @@ const routes: Array<RouteRecordRaw> = [
                 name: 'task',
                 meta: {
                     title: '任务管理',
-                    isShow: true,
+                    isShow: false,
                     icon: 'Clock'
                 },
                 children: [

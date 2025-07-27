@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <TaskList />
+    <TaskList @delete-task="deleteTask" />
     <div class="right-panel">
       <div v-if="selectedTask" class="detail-content">
         <div class="top-row">
@@ -32,9 +32,11 @@
       />
     </div>
   </div>
+
 </template>
 
 <script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue'
 import { storeToRefs } from 'pinia';
 import { useTaskStore } from '@/stores/taskStore';
 import TaskList from '@/components/task/TaskList.vue';
@@ -42,6 +44,7 @@ import TaskInfo from '@/components/task/TaskInfo.vue';
 import TrendChart from '@/components/task/TrendChart.vue';
 import ExecutionHistory from '@/components/task/ExecutionHistory.vue';
 import LogDrawer from '@/components/task/LogDrawer.vue';
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const taskStore = useTaskStore();
 const { 
@@ -51,8 +54,10 @@ const {
   selectedLog
 } = storeToRefs(taskStore);
 
+
 const updateTask = (updatedTask: any) => {
   taskStore.updateTask(updatedTask);
+  ElMessage.success('任务已更新');
 };
 
 const showLogDetail = (log: any) => {
@@ -62,6 +67,31 @@ const showLogDetail = (log: any) => {
 const updateLogDrawer = (value: boolean) => {
   taskStore.logDrawerVisible = value;
 };
+
+const deleteTask = async (task: any) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除任务 "${task.name}" 吗？`, 
+      '提示', 
+      {
+        type: 'warning',
+        confirmButtonText: '确认',
+        cancelButtonText: '取消'
+      }
+    )
+    await taskStore.deleteTask(task.id);
+    ElMessage.success('任务已删除')
+    await taskStore.fetchTasksList();
+  } catch (e) {
+    console.error('删除任务失败:', e);
+  }
+}
+
+
+onMounted(() => {
+  taskStore.fetchTasksList()
+})
+
 </script>
 
 <style scoped>
@@ -116,6 +146,7 @@ const updateLogDrawer = (value: boolean) => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
 }
 
 .top-row {
@@ -127,7 +158,9 @@ const updateLogDrawer = (value: boolean) => {
 
 .top-col {
   flex: 1;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch; /* 确保子元素填充父容器 */
 }
 
 :deep(.el-form-item__label) {

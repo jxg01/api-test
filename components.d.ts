@@ -96,6 +96,7 @@ declare module '@vue/runtime-core' {
     KeyValueViewer: typeof import('./src/components/interface/KeyValueViewer.vue')['default']
     LogDrawer: typeof import('./src/components/task/LogDrawer.vue')['default']
     MethodTag: typeof import('./src/components/interface/MethodTag.vue')['default']
+    NewTaskDialog: typeof import('./src/components/task/NewTaskDialog.vue')['default']
     ProjectSelect: typeof import('./src/components/ProjectSelect.vue')['default']
     ProjectSelector: typeof import('./src/components/interface/ProjectSelector.vue')['default']
     RecentExecutionTable: typeof import('./src/components/dashboard/RecentExecutionTable.vue')['default']

@@ -1,111 +1,170 @@
 <template>
-  <el-row class="schedule-tasks-layout" style="height: 100%;">
-    <!-- 左侧：定时任务列表 -->
-    <el-col :style="{ width: '320px', minWidth: '220px', maxWidth: '400px', borderRight: '1px solid #eee', height: '100%' }">
-      <ScheduleTaskList
-        :tasks="tableDataList"
-        :loading="loading"
-        @edit="openEditDialog"
-        @delete="confirmDelete"
-        @select="handleSelectTask"
-        @add="openAddDialog"
+  <div class="container">
+    <TaskList @delete-task="deleteTask" />
+    <div class="right-panel">
+      <div v-if="selectedTask" class="detail-content">
+        <div class="top-row">
+          <div class="top-col">
+            <TaskInfo 
+              :task="selectedTask" 
+              @update-task="updateTask" 
+            />
+          </div>
+          <div class="top-col">
+            <TrendChart />
+          </div>
+        </div>
+        <ExecutionHistory 
+          :history="filteredHistory"
+          @show-log="showLogDetail"
+        />
+      </div>
+      
+      <div v-else class="detail-card empty-state">
+        <div class="empty-icon">📋</div>
+        <div>请从左侧选择一个任务查看详情</div>
+      </div>
+      
+      <LogDrawer 
+        :visible="logDrawerVisible" 
+        :log="selectedLog"
+        @update:visible="updateLogDrawer"
       />
-    </el-col>
-    <!-- 右侧：任务执行结果 -->
-    <el-col :style="{ flex: 1, height: '100%' }">
-      <ScheduleTaskResult :task="selectedTask" />
-    </el-col>
-  </el-row>
+    </div>
+  </div>
 
-  <!-- 新建/编辑弹窗 -->
-  <ScheduleTaskDialog
-    v-model:visible="dialogVisible"
-    :is-editing="isEditing"
-    :task="currentTasks"
-    :task-types="taskTypes"
-    :form-rules="formRules"
-    @submit="submitForm"
-  />
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import ScheduleTaskList from '@/components/ScheduleTasks/ScheduleTaskList.vue'
-import ScheduleTaskResult from '@/components/ScheduleTasks/ScheduleTaskResult.vue'
-// import ScheduleTaskDialog from '@/components/ScheduleTasks/ScheduleTaskDialog.vue'
+import { storeToRefs } from 'pinia';
+import { useTaskStore } from '@/stores/taskStore';
+import TaskList from '@/components/task/TaskList.vue';
+import TaskInfo from '@/components/task/TaskInfo.vue';
+import TrendChart from '@/components/task/TrendChart.vue';
+import ExecutionHistory from '@/components/task/ExecutionHistory.vue';
+import LogDrawer from '@/components/task/LogDrawer.vue';
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { scheduleTasksApi } from '@/api'
 
-const loading = ref(false)
-const dialogVisible = ref(false)
-const isEditing = ref(false)
-const currentTasks = ref<any>({})
-const selectedTask = ref<any>(null)
-const tableDataList = ref<any[]>([])
-const taskTypes = [
-  { label: 'API', value: 'api' },
-  { label: 'UI', value: 'ui' },
-]
-const formRules = reactive({
-  name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
-  task_type: [{ required: true, message: '请选择任务类型', trigger: 'change' }],
-  cron: [{ required: true, message: '请输入时间表达式', trigger: 'blur' }],
-})
+const taskStore = useTaskStore();
+const { 
+  selectedTask, 
+  filteredHistory,
+  logDrawerVisible,
+  selectedLog
+} = storeToRefs(taskStore);
 
-const fetchTasksList = async () => {
-  loading.value = true
+
+const updateTask = (updatedTask: any) => {
+  taskStore.updateTask(updatedTask);
+  ElMessage.success('任务已更新');
+};
+
+const showLogDetail = (log: any) => {
+  taskStore.showLogDetail(log);
+};
+
+const updateLogDrawer = (value: boolean) => {
+  taskStore.logDrawerVisible = value;
+};
+
+const deleteTask = async (task: any) => {
   try {
-    const res = await scheduleTasksApi.getScheduleTasksList({
-        page:1,
-        pageSize: 20
-      })
-    tableDataList.value = res.data
-  } catch (error) {
-    ElMessage.error('获取任务列表失败')
-  } finally {
-    loading.value = false
+    await ElMessageBox.confirm(
+      `确定要删除任务 "${task.name}" 吗？`, 
+      '提示', 
+      {
+        type: 'warning',
+        confirmButtonText: '确认',
+        cancelButtonText: '取消'
+      }
+    )
+    await taskStore.deleteTask(task.id);
+    ElMessage.success('任务已删除')
+    await taskStore.fetchTasksList();
+  } catch (e) {
+    console.error('删除任务失败:', e);
   }
 }
 
-const openAddDialog = () => {
-  isEditing.value = false
-  dialogVisible.value = true
-  currentTasks.value = { name: '', task_type: '', cron: '', enabled: false }
-}
-const openEditDialog = (task: any) => {
-  isEditing.value = true
-  dialogVisible.value = true
-  currentTasks.value = { ...task }
-}
-const confirmDelete = async (task: any) => {
-  try {
-    await ElMessageBox.confirm(`确定要删除任务 "${task.name}" 吗？`, '提示', { type: 'warning' })
-    await scheduleTasksApi.deleteScheduleTask(task.id)
-    ElMessage.success('任务已删除')
-    fetchTasksList()
-    if (selectedTask.value?.id === task.id) selectedTask.value = null
-  } catch (e) {}
-}
-const handleSelectTask = (task: any) => {
-  selectedTask.value = task
-}
-const submitForm = async (task: any) => {
-  // 你的表单提交逻辑
-  dialogVisible.value = false
-  fetchTasksList()
-}
 
-onMounted(fetchTasksList)
+onMounted(() => {
+  taskStore.fetchTasksList()
+})
+
 </script>
 
 <style scoped>
-.schedule-tasks-layout {
-  height: 100%;
-  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
-  color: #222;
-  background: #fafbfc;
-  font-size: 15px;
+.container {
+  display: flex;
+  min-height: calc(100vh - 160px);
+  gap: 20px;
+  padding: 20px;
+  background-color: #f5f7fa;
 }
 
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  float: left;
+}
+
+.detail-card {
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.panel-header {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #303133;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #909399;
+}
+
+.empty-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+  color: #dcdfe6;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.top-row {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.top-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch; /* 确保子元素填充父容器 */
+}
+
+:deep(.el-form-item__label) {
+  justify-content: flex-start;
+}
 
 </style>

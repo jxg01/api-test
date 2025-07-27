@@ -14,7 +14,7 @@
       <el-table-column prop="trigger" label="触发方式" />
       <el-table-column label="操作" width="80">
         <template #default="{ row }">
-          <el-button type="text" @click="showLogDetail(row)">详情</el-button>
+          <el-button link type="primary" @click="showLogDetail(row)">详情</el-button>
         </template>
       </el-table-column>
     </el-table>

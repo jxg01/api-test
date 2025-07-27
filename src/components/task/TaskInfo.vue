@@ -12,55 +12,66 @@
         </template>
       </div>
     </div>
-    
-    <div class="detail-form">
-      <div class="form-item">
-        <div class="form-label">任务名称</div>
-        <div v-if="!isEditing" class="form-value">{{ task.name }}</div>
-        <el-input v-else v-model="editingTask.name" />
-      </div>
-      <div class="form-item">
-        <div class="form-label">cron表达式</div>
-        <div v-if="!isEditing" class="form-value">{{ task.cron }}</div>
-        <el-input v-else v-model="editingTask.cron" />
-      </div>
-      <div class="form-item">
-        <div class="form-label">状态</div>
-        <div v-if="!isEditing" class="form-value">
-          <el-tag :type="task.status ? 'success' : 'danger'">
-            {{ task.status ? '开启' : '关闭' }}
-          </el-tag>
-        </div>
-        <el-switch v-else v-model="editingTask.status" 
-                  :active-value="1" 
-                  :inactive-value="0" />
-      </div>
-      <div class="form-item">
-        <div class="form-label">任务类型</div>
-        <div v-if="!isEditing" class="form-value">{{ task.type }}</div>
-        <el-select v-else v-model="editingTask.type" placeholder="请选择任务类型">
-          <el-option label="数据同步" value="数据同步" />
-          <el-option label="报表生成" value="报表生成" />
-          <el-option label="数据清理" value="数据清理" />
-          <el-option label="API调用" value="API调用" />
-        </el-select>
-      </div>
-      <div class="form-item">
-        <div class="form-label">创建人</div>
-        <div class="form-value">{{ task.creator }}</div>
-      </div>
-      <div class="form-item">
-        <div class="form-label">编辑人</div>
-        <div class="form-value">{{ task.editor }}</div>
-      </div>
-    </div>
+
+    <el-form
+      ref="formRef"
+      :model="editingTask"
+      :rules="rules"
+      label-width="80px"
+      label-position="top"
+      class="detail-form"
+    >
+      <el-row :gutter="24">
+        <!-- 任务名称 -->
+        <el-col :span="10">
+          <el-form-item label="任务名称" prop="name">
+             <el-input v-model="editingTask.name" :disabled="!isEditing" />
+          </el-form-item>
+        </el-col>
+        <!-- cron表达式 -->
+        <el-col :span="10">
+          <el-form-item label="cron表达式" prop="cron">
+            <el-input v-model="editingTask.cron" :disabled="!isEditing" />
+          </el-form-item>
+        </el-col>
+        <!-- 状态 -->
+        <el-col :span="10">
+          <el-form-item label="状态" prop="enabled">
+            <el-switch v-model="editingTask.enabled" :active-value="true" :inactive-value="false" :disabled="!isEditing" />
+          </el-form-item>
+        </el-col>
+        <!-- 任务类型 -->
+        <el-col :span="10">
+          <el-form-item label="任务类型" prop="task_type">
+            <el-select  v-model="editingTask.task_type" placeholder="请选择任务类型" :disabled="!isEditing">
+              <el-option label="ui" value="ui" />
+              <el-option label="api" value="api" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <!-- 创建人 -->
+        <el-col :span="10">
+          <el-form-item label="创建人">
+            <div class="form-value">{{ task.created_by }}</div>
+          </el-form-item>
+        </el-col>
+        <!-- 编辑人 -->
+        <el-col :span="10">
+          <el-form-item label="编辑人">
+            <div class="form-value">{{ task.updated_by }}</div>
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
+import type { FormInstance, FormRules } from 'element-plus'
 import type { Task } from '@/stores/taskStore';
 import { useTaskStore } from '@/stores/taskStore';
+import { on } from 'ace-builds-internal/config';
 
 const props = defineProps<{
   task: Task;
@@ -69,6 +80,31 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update-task', task: Task): void;
 }>();
+
+const formRef = ref<FormInstance>()
+const rules: FormRules = {
+  name: [{ required: true, message: '任务名称不能为空', trigger: 'blur' }],
+  cron: [
+    { required: true, message: 'cron表达式不能为空', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        // 简单cron格式校验（可根据实际需求调整正则）
+        // const cronRegex = /^(\*|([0-9]|[1-5][0-9]))(\s+(\*|([0-9]|[1-5][0-9]))){4,5}$/
+        const cronRegex = /^(\*|([0-9]|[1-5][0-9])|([0-9]-[0-9])|(\*\/[0-9]+))(\s+(\*|([0-9]|[1-5][0-9])|([0-9]-[0-9])|(\*\/[0-9]+))){4}$/;
+
+        
+        if (!cronRegex.test(value)) {
+          callback(new Error('请输入有效的cron表达式'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  task_type: [{ required: true, message: '请选择任务类型', trigger: 'change' }],
+  enabled: [{ required: true, message: '请选择状态', trigger: 'change' }]
+}
 
 const isEditing = ref(false);
 const editingTask = ref<Task>({ ...props.task });
@@ -79,19 +115,27 @@ const startEditing = () => {
 };
 
 const saveEdit = () => {
-  isEditing.value = false;
-  editingTask.value.editor = 'admin';
-  emit('update-task', editingTask.value);
+  formRef.value?.validate((valid) => {
+    if (valid) {
+      isEditing.value = false;
+      // editingTask.value.editor = 'admin';
+      emit('update-task', editingTask.value);
+    }
+  });
 };
 
+// 在cancelEdit方法中清除校验提示
 const cancelEdit = () => {
   isEditing.value = false;
+  editingTask.value = { ...props.task }; // 恢复为原始数据
+  formRef.value?.clearValidate(); // 清除所有校验提示
 };
 
 // 当传入的task变化时，重置编辑状态
 watch(() => props.task, (newTask) => {
   isEditing.value = false;
   editingTask.value = { ...newTask };
+  formRef.value?.clearValidate(); // 清除所有校验提示
 }, { deep: true });
 </script>
 
@@ -101,6 +145,8 @@ watch(() => props.task, (newTask) => {
   border-radius: 4px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   padding: 20px;
+  /* height: 100%; */
+  height: 300px;
 }
 
 .detail-header {
@@ -121,7 +167,13 @@ watch(() => props.task, (newTask) => {
   gap: 10px;
 }
 
-.detail-form {
+/* 可选：让两列间距更美观 */
+.detail-form .el-row {
+  row-gap: 0;
+  column-gap: 24px;
+}
+
+/* .detail-form {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
@@ -131,12 +183,12 @@ watch(() => props.task, (newTask) => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
+} */
 
-.form-label {
+/* .form-label {
   font-size: 14px;
   color: #606266;
-}
+} */
 
 .form-value {
   font-size: 14px;

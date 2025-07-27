@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia';
+import { scheduleTasksApi } from '@/api'
 
 export interface Task {
   id: number;
   name: string;
-  type: string;
-  status: number; // 0: 关闭, 1: 开启
+  task_type: string;
+  enabled: number; // 0: 关闭, 1: 开启
   cron: string;
-  creator: string;
-  editor: string;
+  created_by: string;
+  updated_by: string;
 }
 
 export interface ExecutionLog {
@@ -23,13 +24,7 @@ export interface ExecutionLog {
 
 export const useTaskStore = defineStore('task', {
   state: () => ({
-    tasks: [
-      { id: 1, name: '用户数据同步', type: '数据同步', status: 1, cron: '0 0 3 * * ?', creator: 'admin', editor: 'admin' },
-      { id: 2, name: '日报表生成', type: '报表生成', status: 0, cron: '0 30 4 * * ?', creator: 'admin', editor: 'user1' },
-      { id: 3, name: '日志清理任务', type: '数据清理', status: 1, cron: '0 0 2 * * ?', creator: 'user2', editor: 'admin' },
-      { id: 4, name: '外部API同步', type: 'API调用', status: 1, cron: '0 */30 * * * ?', creator: 'user1', editor: 'user1' },
-      { id: 5, name: '备份任务', type: '数据备份', status: 0, cron: '0 0 1 * * ?', creator: 'admin', editor: 'admin' }
-    ] as Task[],
+    tasks: [] as Task[],
     selectedTaskId: null as number | null,
     executionHistory: [
       { id: 1, taskId: 1, taskName: '用户数据同步', time: '2025-07-21 03:00:02', result: '成功', duration: 125, trigger: '定时触发', logContent: '任务开始执行...\n连接数据库成功\n数据同步完成\n共处理记录: 12,458条\n任务执行成功' },
@@ -56,18 +51,67 @@ export const useTaskStore = defineStore('task', {
       this.selectedTaskId = taskId;
     },
     updateTaskStatus(task: Task) {
-      console.log(`更新任务状态: ${task.name} -> ${task.status ? '开启' : '关闭'}`);
+      console.log(`更新任务状态: ${task.name} -> ${task.enabled ? '开启' : '关闭'}`);
       // 在实际项目中这里调用API
     },
-    updateTask(updatedTask: Task) {
-      const index = this.tasks.findIndex(t => t.id === updatedTask.id);
-      if (index !== -1) {
-        this.tasks[index] = updatedTask;
+    async updateTask(updatedTask: Task) {
+      // 在实际项目中这里调用API
+      const { id, ...updateData } = updatedTask;
+      const res = await scheduleTasksApi.editScheduleTask(id, updateData);
+      if (!res) {
+        console.error('更新任务失败');
+        return;
       }
+      const index = this.tasks.findIndex(t => t.id === id);
+      if (index !== -1) {
+        this.tasks[index] = { ...this.tasks[index], ...updateData };
+      }
+      await this.fetchTasksList(); // 刷新任务列表
+
+      // const index = this.tasks.findIndex(t => t.id === updatedTask.id);
+      // if (index !== -1) {
+      //   this.tasks[index] = updatedTask;
+      // }
     },
     showLogDetail(log: ExecutionLog) {
       this.selectedLog = log;
       this.logDrawerVisible = true;
+    },
+    async fetchTasksList() {
+      try {
+        const res = await scheduleTasksApi.getScheduleTasksList()
+        this.tasks = res.data
+      } catch (error) {
+        // 你可以在这里处理错误
+        console.error('获取任务列表失败', error);
+      }
+    },
+    async deleteTask(taskId: number) {
+      try {
+        await scheduleTasksApi.deleteScheduleTask(taskId);
+        this.tasks = this.tasks.filter(task => task.id !== taskId);
+        console.log(`任务 ${taskId} 删除成功`);
+      } catch (error) {
+        console.error(`删除任务 ${taskId} 失败`, error);
+      }
+    },
+
+    async addTask(newTask: Task) {
+      try {
+        const res = await scheduleTasksApi.createScheduleTask(newTask);
+        if (!res) {
+          console.error('添加任务失败');
+          return;
+        }
+        this.tasks.push(res);
+        console.log(`任务 ${newTask.name} 添加成功`);
+        console.log('新任务详情1:', res);
+        this.selectedTaskId = res.id; // 设置新任务为选中状态
+        this.fetchTasksList(); // 刷新任务列表
+      } catch (error) {
+        console.error(`添加任务 ${newTask.name} 失败`, error);
+      }
     }
+
   }
 });
