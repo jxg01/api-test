@@ -11,7 +11,7 @@
             />
           </div>
           <div class="top-col">
-            <TrendChart />
+            <!-- <TrendChart /> -->
           </div>
         </div>
         <ExecutionHistory 

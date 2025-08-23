@@ -1,6 +1,6 @@
 <template>
   <div class="detail-card">
-    <div class="panel-header">近7天执行趋势</div>
+    <div class="panel-header">近7次执行趋势</div>
     <VChart 
       class="chart-container" 
       :option="chartOption" 

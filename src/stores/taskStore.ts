@@ -13,37 +13,76 @@ export interface Task {
 
 export interface ExecutionLog {
   id: number;
-  taskId: number;
-  taskName: string;
-  time: string;
-  result: '成功' | '失败' | '退出';
+  schedule?: number;
+  total?: number;
+  passed?: number;
+  failed?: number;
+  success_rate?: number;
+  schedule_name: string;
+  start_time: string;
+  end_time: string;
+  status: 'completed' | 'error' | 'running';
   duration: number;
   trigger: string;
-  logContent: string;
+  created_at: string;
+  executor: string;
+  test_cases_result: any[];
 }
+
+
 
 export const useTaskStore = defineStore('task', {
   state: () => ({
     tasks: [] as Task[],
     selectedTaskId: null as number | null,
     executionHistory: [
-      { id: 1, taskId: 1, taskName: '用户数据同步', time: '2025-07-21 03:00:02', result: '成功', duration: 125, trigger: '定时触发', logContent: '任务开始执行...\n连接数据库成功\n数据同步完成\n共处理记录: 12,458条\n任务执行成功' },
-      { id: 2, taskId: 1, taskName: '用户数据同步', time: '2025-07-20 03:00:01', result: '成功', duration: 118, trigger: '定时触发', logContent: '任务开始执行...\n连接数据库成功\n数据同步完成\n共处理记录: 11,982条\n任务执行成功' },
-      { id: 3, taskId: 1, taskName: '用户数据同步', time: '2025-07-19 03:00:03', result: '失败', duration: 23, trigger: '定时触发', logContent: '任务开始执行...\n连接数据库失败\n错误代码: 1045\n错误信息: Access denied for user\n任务执行失败' },
-      { id: 4, taskId: 1, taskName: '用户数据同步', time: '2025-07-18 03:00:01', result: '成功', duration: 132, trigger: '定时触发', logContent: '任务开始执行...\n连接数据库成功\n数据同步完成\n共处理记录: 13,205条\n任务执行成功' },
-      { id: 5, taskId: 1, taskName: '用户数据同步', time: '2025-07-17 03:00:02', result: '成功', duration: 121, trigger: '定时触发', logContent: '任务开始执行...\n连接数据库成功\n数据同步完成\n共处理记录: 12,076条\n任务执行成功' },
-      { id: 6, taskId: 1, taskName: '用户数据同步', time: '2025-07-16 03:00:04', result: '退出', duration: 45, trigger: '手动触发', logContent: '任务开始执行...\n用户手动终止任务\n任务已退出' }
+      {
+            "id": 18,
+            "schedule": 1,
+            "schedule_name": "冒烟测试，每天早上8点10ewqw",
+            "start_time": "2025-08-23 00:46:00",
+            "end_time": "2025-08-23 00:46:22",
+            "duration": 22.42,
+            "executor": "System",
+            "trigger": "auto",
+            "created_at": "2025-08-23 00:46:00",
+            "total": 2,
+            "passed": 1,
+            "failed": 1,
+            "success_rate": 50.0,
+            "status": "completed"
+        },
+      {
+            "id": 17,
+            "schedule": 1,
+            "schedule_name": "冒烟测试，每天早上8点10ewqw",
+            "start_time": "2025-08-23 00:43:00",
+            "end_time": "2025-08-23 00:43:22",
+            "duration": 22.346,
+            "executor": "System",
+            "trigger": "auto",
+            "created_at": "2025-08-23 00:43:00",
+            "total": 2,
+            "passed": 1,
+            "failed": 1,
+            "success_rate": 50.0,
+            "status": "completed"
+        },
     ] as ExecutionLog[],
     logDrawerVisible: false,
-    selectedLog: null as ExecutionLog | null
+    selectedLog: {} as ExecutionLog,
+    loading: false,
+    currentPage: 1,
+    pageSize: 10,
+    total: 0,
   }),
   getters: {
     selectedTask(): Task | null {
-      return this.tasks.find(task => task.id === this.selectedTaskId) || null;
+      return this.tasks.find(task => task.id === this.selectedTaskId) || this.tasks[0] || null;
     },
     filteredHistory(): ExecutionLog[] {
       if (!this.selectedTaskId) return [];
-      return this.executionHistory.filter(h => h.taskId === this.selectedTaskId);
+      return this.executionHistory.filter(h => h.schedule === this.selectedTaskId);
     }
   },
   actions: {
@@ -111,7 +150,43 @@ export const useTaskStore = defineStore('task', {
       } catch (error) {
         console.error(`添加任务 ${newTask.name} 失败`, error);
       }
-    }
+    },
+
+    async fetchExecutionHistory() {
+      try {
+        this.loading = true;
+        const params = {
+          page: this.currentPage,
+          size: this.pageSize,
+          schedule_id: this.selectedTaskId
+        }
+        const res = await scheduleTasksApi.getScheduleTaskLogs(params);
+        console.log('res', res)
+        this.executionHistory = res.data;
+        this.total = res.meta.pagination.total;
+        this.currentPage = res.meta.pagination.page;
+        this.pageSize = res.meta.pagination.per_page;
+
+        // console.log('获取执行历史成功:', res.data);
+        console.log('获取执行历史成功 === ');
+      } catch (error) {
+        console.error('获取执行历史失败', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    setCurrentPage(page: number) {
+      this.currentPage = page
+      this.fetchExecutionHistory()
+    },
+
+    setPageSize(size: number) {
+      console.log('setPageSize size', size)
+      this.pageSize = size
+      this.currentPage = 1
+      this.fetchExecutionHistory()
+    },
 
   }
 });

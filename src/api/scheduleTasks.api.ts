@@ -25,4 +25,14 @@ export const scheduleTasksApi = {
   /** 删除任务 */
   deleteScheduleTask: (id: number) => 
     http.delete<BaseResponse>(`/scheduled-tasks/${id}/`),
+  /** 获取任务结果 */
+  getScheduleTaskLogs: (params: Object) => 
+    http.get('/scheduled-task-results/', params),
+  /** 获取任务结果详情 */
+  getScheduleTaskLogDetail: (id: number) => 
+    http.get(`/scheduled-tasks/logs/${id}/`),
+  /** 立即执行任务 */
+  runScheduleTaskNow: (id: number) => 
+    http.post<BaseResponse>(`/scheduled-tasks/${id}/run/`),
+
 }
