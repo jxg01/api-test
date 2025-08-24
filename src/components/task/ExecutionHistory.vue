@@ -40,6 +40,7 @@ import { useTaskStore } from '@/stores/taskStore';
 import { onMounted } from 'vue';
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
+import { ElMessage } from 'element-plus';
 
 const store = useTaskStore();
 
@@ -56,11 +57,7 @@ const tableColumns: TableColumn[] = [
   { prop: 'created_at', label: '创建时间' },
   { prop: 'executor', label: '创建人' },
   { prop: 'operation', label: '操作', width: 135, slot: 'operation' }
-]
-
-
-
-
+];
 
 const emit = defineEmits<{
   (e: 'show-log', log: ExecutionLog): void;
@@ -85,6 +82,10 @@ const getResultDisplay = (result: string) => {
 };
 
 const showLogDetail = (log: ExecutionLog) => {
+  if (log.status === 'running') {
+    ElMessage.warning('该任务正在执行中，暂无详情可查看');
+    return;
+  }
   emit('show-log', log);
 };
 

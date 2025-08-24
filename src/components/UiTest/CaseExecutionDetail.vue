@@ -1,199 +1,373 @@
 <template>
-  <!-- 在其他页面调用这个组件 -->
-  <div class="customer-header">
-    <el-drawer
-      v-model="drawerVisible"
-      direction="rtl"
-      size="900"
-      @open="activeName='first'"
-    >
-      <template #header>
-        <div class="customer-title" style="display: flex; text-align: center;">
+  <el-drawer
+    v-model="drawerVisible"
+    direction="rtl"
+    size="1200px"
+    class="case-execution-drawer"
+    @open="activeName = 'first'"
+  >
+    <template #header>
+      <div class="drawer-header">
+        <div class="status-indicator">
           <svg style="margin-right: 10px; width: 24px; height: 24px;">
-            <circle cx="12" cy="12" r="10 " :fill="status==='passed'?'lightgreen':'red'" />
+            <circle cx="12" cy="12" r="10" :fill="status === 'passed' ? 'lightgreen' : 'red'" />
           </svg>
-          <h4>测试结果 - {{ title }}</h4>
         </div>
-        
-      </template>
-      <div>
-        <el-divider content-position="left"><b>前置接口</b></el-divider>
-        <el-card v-if="pre_apis && pre_apis.length > 0">
-          <el-collapse :expand-icon-position="'left'" accordion>
-            <el-collapse-item
-              v-for="(item, index) in pre_apis || []"
-              :key="index"
-              :name="String(index)"
-            >
-              <template #title>
-                <span style="color: green;">
-                  前置接口 {{ index + 1 }}
-                </span>
-              </template>
-              <div style="float: left; text-align: left;" class="request-detail">
-                <span><b>API 请求体:</b> {{ item.request }}</span>
-                <span><b>API 响应体:</b> {{ item.response }}</span>
-                <span><b>变量池:</b> {{ item.variables }}</span>
-              </div>
-
-            </el-collapse-item>
-          </el-collapse>
-        </el-card>
-        <div v-else>
-          <!-- <el-empty description="暂无数据" /> -->
-          <el-card>
-            <span style="color:darkgray;">暂无数据</span>
-          </el-card>
+        <h3>测试结果 - {{ title }}</h3>
+      </div>
+    </template>
+    
+    <div class="case-execution-content">
+      <div v-if="currentCase" class="case-detail">
+        <!-- 用例基本信息 -->
+        <div class="case-basic-info">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="用例名称">{{ currentCase.testcase_name }}</el-descriptions-item>
+            <el-descriptions-item label="状态">
+              <el-tag :type="getStatusType(currentCase.status)">
+                {{ getStatusText(currentCase.status) }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="执行时长">{{ currentCase.duration.toFixed(2) }} 秒</el-descriptions-item>
+            <el-descriptions-item label="执行时间">{{ currentCase.executed_at }}</el-descriptions-item>
+            <el-descriptions-item label="浏览器信息">{{ currentCase.browser_info }}</el-descriptions-item>
+            <el-descriptions-item label="执行人">{{ currentCase.executed_by }}</el-descriptions-item>
+          </el-descriptions>
         </div>
 
-        <el-divider content-position="left" style="margin-top: 40px;"><b>用例步骤</b></el-divider>
-        <el-card>
-          <el-collapse :expand-icon-position="'left'" accordion>
-            <el-collapse-item
-              v-for="(item, index) in popInfo || []"
-              :key="index"
-              :name="String(index)"
+        <!-- 执行日志展示 -->
+        <div class="execution-log-section">
+          <h3>执行日志</h3>
+          <div class="log-viewer">
+            <div class="log-toolbar">
+              <el-button
+                size="small"
+                @click="copyLogs"
+                icon="CopyDocument"
+              >
+                复制日志
+              </el-button>
+              <el-button
+                size="small"
+                @click="downloadLogs"
+                icon="Download"
+              >
+                下载日志
+              </el-button>
+              <el-button
+                size="small"
+                @click="toggleWrap"
+                :icon="wrapLines ? 'Close' : 'FullScreen'"
+              >
+                {{ wrapLines ? '取消换行' : '自动换行' }}
+              </el-button>
+              <el-input
+                v-model="logSearch"
+                placeholder="搜索日志内容"
+                :prefix-icon="Search"
+                size="small"
+                style="width: 200px; margin-left: 10px;"
+              />
+            </div>
+            <div
+              class="log-content"
+              :class="{ 'wrap-lines': wrapLines }"
+              ref="logContent"
             >
-              <template #title>
-                <span :style="{ color: item.status === 'pass' ? 'green' : 'red' }">
-                  步骤{{ index+1 }}. {{ item.step.action }} 
-                </span>
-              </template>
-              <div style="float: left; text-align: left;" class="request-detail">
-                <span><b>日志:</b> {{ item.log }}</span>
-                <span v-if="item.error"><b>异常:</b> {{ item.error }}</span>
-                <span v-if="item.screenshot">
-                  <b>截图: </b> 
-                  <a :href="baseFileUrl + item.screenshot " target="_blank">{{ baseFileUrl + item.screenshot }}</a>
-                </span>
+              <div
+                v-for="(line, index) in filteredLogLines"
+                :key="index"
+                class="log-line"
+                :class="getLogLineClass(line)"
+              >
+                <span class="line-content" v-html="highlightSearch(line)"></span>
               </div>
+            </div>
+          </div>
+        </div>
 
-            </el-collapse-item>
-          </el-collapse>
-        </el-card>
-
-        <el-divider content-position="left" style="margin-top: 40px;"><b>清理数据</b></el-divider>
-        <el-card v-if="postSteps && postSteps.length > 0">
-          <el-collapse :expand-icon-position="'left'" accordion>
-            <el-collapse-item
-              v-for="(item, index) in postSteps || []"
-              :key="index"
-              :name="String(index)"
-            >
-              <template #title>
-                <span style="color: green;">
-                  sql结果 {{ index + 1 }}
-                </span>
-              </template>
-              <div style="float: left; text-align: left;" class="request-detail">
-                <span><b>SQL语句:</b> {{ item.sql }}</span>
-                <span><b>SQL执行结果:</b> {{ item.sql_result }}</span>
-              </div>
-
-            </el-collapse-item>
-          </el-collapse>
-        </el-card>
-        <div v-else>
-          <!-- <el-empty description="暂无数据" /> -->
-          <el-card>
-            <span style="color:darkgray;">暂无数据</span>
-          </el-card>
+        <!-- 失败截图 -->
+        <div v-if="currentCase.screenshot" class="screenshot-section">
+          <h3>失败截图</h3>
+          <div class="screenshot-container">
+            <el-image
+              :src="currentCase.screenshot"
+              :preview-src-list="[currentCase.screenshot]"
+              fit="contain"
+              style="max-height: 400px;"
+            />
+          </div>
         </div>
       </div>
-    </el-drawer>
-  </div>
+    </div>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, nextTick } from 'vue';
+import { ElMessage } from 'element-plus';
+import { Search } from '@element-plus/icons-vue';
 
-const baseFileUrl = ref(import.meta.env.VITE_FILE_BASE_URL)
+// const baseFileUrl = ref(import.meta.env.VITE_FILE_BASE_URL || '');
 
-type executionDetail = {
-  log: string
-  step: {
-    action: string, 
-    url?: string, 
-    seconds?: string,
-    selector?: string,
-    filePath?: string
-  }
-  status: string
-  error?: string
-  screenshot?: string
+interface ExecutionDetail {
+  browser_info: string;
+  duration: number;
+  executed_at: string;
+  executed_by: string;
+  executed_by__username: string;
+  screenshot?: string;
+  status: string;
+  steps_log: string;
+  testcase_name: string;
 }
 
 const drawerVisible = ref(false);
 const loading = ref(false);
-const activeName = ref('first')
+const activeName = ref('first');
+const title = ref('Null');
+const status = ref('passed');
+const currentCase = ref<ExecutionDetail>();
 
-const title = ref('Null')
-const status = ref('passed')
-const popInfo = ref<executionDetail[]>()
-const postSteps = ref()
-const pre_apis = ref()
+// 日志相关状态
+const logContent = ref<HTMLElement | null>(null);
+const wrapLines = ref(false);
+const logSearch = ref('');
 
 // 打开抽屉并加载数据
 const openDrawer = async (row: any) => {
   loading.value = true;
-  // console.log(row)
-  popInfo.value = row.steps_log.steps_result
+  currentCase.value = row;
   drawerVisible.value = true;
-  title.value = row.testcase_name
-  status.value = row.status
+  title.value = row.testcase_name;
+  status.value = row.status;
   loading.value = false;
-  postSteps.value = row.steps_log.post_steps_result
-  pre_apis.value = row.steps_log.pre_apis_result
+  
+  // 滚动到日志底部
+  nextTick(() => {
+    if (logContent.value) {
+      logContent.value.scrollTop = logContent.value.scrollHeight;
+    }
+  });
 };
 
 // 暴露打开方法供父组件调用
 defineExpose({
   openDrawer
 });
+
+// 过滤日志行
+const filteredLogLines = computed(() => {
+  if (!currentCase.value?.steps_log) return [];
+  
+  const logs = currentCase.value.steps_log.split('\n');
+  if (!logSearch.value) return logs;
+  
+  const keyword = logSearch.value.toLowerCase();
+  return logs.filter(line => line.toLowerCase().includes(keyword));
+});
+
+// 获取状态标签类型
+const getStatusType = (status: string) => {
+  const statusMap: Record<string, string> = {
+    'passed': 'success',
+    'failed': 'danger',
+    'error': 'warning',
+    'running': 'info',
+    'pending': 'info'
+  };
+  return statusMap[status] || 'info';
+};
+
+// 获取状态文本
+const getStatusText = (status: string) => {
+  const statusMap: Record<string, string> = {
+    'passed': '通过',
+    'failed': '失败',
+    'error': '错误',
+    'running': '执行中',
+    'pending': '待执行'
+  };
+  return statusMap[status] || status;
+};
+
+// 获取日志行CSS类
+const getLogLineClass = (line: string) => {
+  if (line.includes('ERROR') || line.includes('错误') || line.includes('执行失败')) return 'log-error';
+  if (line.includes('WARN') || line.includes('警告')) return 'log-warn';
+  if (line.includes('INFO') || line.includes('信息')) return 'log-info';
+  if (line.includes('DEBUG') || line.includes('调试')) return 'log-debug';
+  return '';
+};
+
+// HTML转义函数
+function escapeHtml(str: string) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// 高亮搜索关键词
+const highlightSearch = (line: string) => {
+  const escaped = escapeHtml(line);
+  if (!logSearch.value) return escaped;
+  const regex = new RegExp(`(${logSearch.value})`, 'gi');
+  return escaped.replace(regex, '<span style="background-color: yellow;font-weight: bold;padding: 0 2px;">$1</span>');
+};
+
+// 复制日志
+const copyLogs = () => {
+  if (!currentCase.value?.steps_log) return;
+  
+  navigator.clipboard.writeText(currentCase.value.steps_log)
+    .then(() => {
+      ElMessage.success('日志已复制到剪贴板');
+    })
+    .catch(err => {
+      console.error('复制失败:', err);
+      ElMessage.error('复制失败');
+    });
+};
+
+// 下载日志
+const downloadLogs = () => {
+  if (!currentCase.value?.steps_log) return;
+  
+  const blob = new Blob([currentCase.value.steps_log], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `log_${currentCase.value.testcase_name}_${Date.now()}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+// 切换换行模式
+const toggleWrap = () => {
+  wrapLines.value = !wrapLines.value;
+};
 </script>
 
 <style scoped>
-.case-detail-drawer {
-  /* padding: 20px; */
+.case-execution-drawer :deep(.el-drawer__header) {
+  background-color: #2f1b86;
+  border-bottom: 1px solid #181717;
+  margin-bottom: 0;
+  /* font-size: 18px; */
+  font-weight: bold;
+  /* padding: 16px 20px; */
+  /* color: #fff; */
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+}
+
+.status-indicator {
+  margin-right: 10px;
+}
+
+.case-execution-content {
+  padding: 20px;
   height: 100%;
   overflow-y: auto;
 }
 
-:deep(.el-drawer__header) {
-  background-color: #2f1b86;
-  border-bottom: 1px solid #181717;
-  margin-bottom: 0 0 12px;
-  font-size: 18px;
-  font-weight: bold;
-  padding: 0 20px;
-  color: #fff;
+.case-basic-info {
+  margin-bottom: 20px;
 }
 
-.customer-title {
+.execution-log-section,
+.screenshot-section {
+  margin-bottom: 20px;
+}
+
+.execution-log-section h3,
+.screenshot-section h3 {
+  margin-bottom: 10px;
+  color: #303133;
+  border-left: 4px solid #409eff;
+  padding-left: 10px;
+}
+
+.log-viewer {
+  border: 1px solid #e6e6e6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.log-toolbar {
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #e6e6e6;
+  display: flex;
   align-items: center;
 }
 
-.request-detail span {
-  display: block; /* 将 span 设置为块级元素 */
-  margin-bottom: 20px; /* 添加下方间距，避免内容过于紧凑 */
-  /* border-bottom: 1px dotted #181717  ; */
-  font-size: 14px;
+.log-content {
+  height: 400px;
+  overflow-y: auto;
+  background-color: #fafafa;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-.dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+.log-content.wrap-lines {
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
-.dot.red { background-color: #ff5f56; }
-.dot.yellow { background-color: #ffbd2e; }
-.dot.green { background-color: #27c93f; }
-
-
-.title-detail {
-  /* color: red; */
-  font-size: 24px;
+.log-line {
+  display: flex;
+  padding: 2px 10px;
+  border-bottom: 1px solid #eee;
+  color: #333;
 }
 
+.log-line:hover {
+  background-color: #f0f9eb;
+}
+
+.line-content {
+  flex: 1;
+  text-align: left;
+}
+
+.log-error {
+  color: #f56c6c;
+  background-color: #fef0f0;
+}
+
+.log-warn {
+  color: #e6a23c;
+  background-color: #fdf6ec;
+}
+
+.log-info {
+  color: #409eff;
+}
+
+.log-debug {
+  color: #909399;
+}
+
+.highlight {
+  background-color: yellow;
+  font-weight: bold;
+  padding: 0 2px;
+}
+
+.screenshot-container {
+  text-align: center;
+  padding: 10px;
+  background-color: #fafafa;
+  border-radius: 4px;
+}
 </style>

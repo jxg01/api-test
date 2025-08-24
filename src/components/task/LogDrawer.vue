@@ -52,12 +52,12 @@
         </div>
       </el-card>
       
-      <!-- <el-card class="summary-card error">
+      <el-card class="summary-card error">
         <div class="card-content">
           <div class="number">{{ log.error }}</div>
           <div class="label">错误</div>
         </div>
-      </el-card> -->
+      </el-card>
       
       <el-card class="summary-card success-rate">
         <div class="card-content">
@@ -88,12 +88,11 @@
               </el-button>
               <el-input
                 v-model="searchKeyword"
-                placeholder="搜索用例名称或状态"
+                placeholder="搜索用例名称"
                 :prefix-icon="Search"
                 style="width: 250px; margin-left: 10px;"
               />
             </div>
-            
           </div>
         </template>
 
@@ -227,9 +226,9 @@
         </div>
       </div>
 
-      <template #footer>
+      <!-- <template #footer>
         <el-button @click="detailDialogVisible = false">关闭</el-button>
-      </template>
+      </template> -->
     </el-dialog>
   </div>
 
@@ -266,7 +265,7 @@ const visible = computed({
 interface TestCaseResult {
   id: number;
   testcase__name: string;
-  status: 'passed' | 'failed' | 'running';
+  status: 'passed' | 'failed' | 'running' | 'error';
   duration: number;
   executed_at: string;
   executed_by__username: string;
@@ -275,30 +274,14 @@ interface TestCaseResult {
   browser_info: string;
 }
 
-// const report = ref({
-//   task_id: '',
-//   start_time: '',
-//   duration: 0,
-//   executor: '',
-//   total_cases: 0,
-//   passed: 0,
-//   failed: 0,
-//   error: 0,
-//   success_rate: 0,
-//   test_cases: []
-// })
 const baseFileUrl = ref(import.meta.env.VITE_FILE_BASE_URL || '');
 const logContent = ref<HTMLElement | null>(null);
 const wrapLines = ref(false);
 const logSearch = ref('');
 
-    const searchKeyword = ref('')
-    const detailDialogVisible = ref(false)
-    const currentCase = ref<TestCaseResult>()
-    // const logContent = ref(null)
-    // const wrapLines = ref(false)
-    // const logSearch = ref('')
-
+const searchKeyword = ref('')
+const detailDialogVisible = ref(false)
+const currentCase = ref<TestCaseResult>()
 const filterStatus = ref<string | null>(null);
 
 function toggleFilter(status: string) {
@@ -319,129 +302,117 @@ const filteredTestCases = computed(() => {
   );
 });
 
+// 过滤日志行
+const filteredLogLines = computed(() => {
+  if (!currentCase.value) return []
+  
+  const logs = currentCase.value.steps_log.split('\n')
+  if (!logSearch.value) return logs
+  
+  const keyword = logSearch.value.toLowerCase()
+  return logs.filter(line => line.toLowerCase().includes(keyword))
+})
 
-    // 过滤测试用例
-    // const filteredTestCases = computed(() => {
-    //   if (!searchKeyword.value) return props.log.test_cases_result
-      
-    //   const keyword = searchKeyword.value.toLowerCase()
-    //   return props.log.test_cases_result.filter(caseItem => 
-    //     caseItem.testcase__name.toLowerCase().includes(keyword) || 
-    //     caseItem.status.toLowerCase().includes(keyword)
-    //   )
-    // })
-    
-    // 过滤日志行
-    const filteredLogLines = computed(() => {
-      if (!currentCase.value) return []
-      
-      const logs = currentCase.value.steps_log.split('\n')
-      if (!logSearch.value) return logs
-      
-      const keyword = logSearch.value.toLowerCase()
-      return logs.filter(line => line.toLowerCase().includes(keyword))
+// 查看用例详情
+const viewDetails = (testCase: TestCaseResult) => {
+  currentCase.value = testCase
+  detailDialogVisible.value = true
+  
+  // 滚动到日志底部
+  nextTick(() => {
+    if (logContent.value) {
+      logContent.value.scrollTop = logContent.value.scrollHeight
+    }
+  })
+}
+
+// 获取状态标签类型
+const getStatusType = (status: 'passed' | 'failed' | 'running' | 'error') => {
+  const statusMap = {
+    'passed': 'success',
+    'failed': 'danger',
+    'error': 'warning',
+    'running': 'info',
+    // 'pending': 'info'
+  }
+  return statusMap[status] || 'info'
+}
+
+// 获取状态文本
+const getStatusText = (status: 'passed' | 'failed' | 'running' | 'error') => {
+  const statusMap = {
+    'passed': '通过',
+    'failed': '失败',
+    'error': '错误',
+    'running': '执行中',
+    'pending': '待执行'
+  }
+  return statusMap[status] || status
+}
+
+// 获取日志行CSS类
+const getLogLineClass = (line: string) => {
+  if (line.includes('ERROR') || line.includes('错误') || line.includes('执行失败')) return 'log-error'
+  if (line.includes('WARN') || line.includes('警告')) return 'log-warn'
+  if (line.includes('INFO') || line.includes('信息')) return 'log-info'
+  if (line.includes('DEBUG') || line.includes('调试')) return 'log-debug'
+  return ''
+}
+
+function escapeHtml(str: string) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+const highlightSearch = (line: string) => {
+  const escaped = escapeHtml(line);
+  if (!logSearch.value) return escaped;
+  const regex = new RegExp(`(${logSearch.value})`, 'gi');
+  return escaped.replace(regex, '<span style="background-color: yellow;font-weight: bold;padding: 0 2px;">$1</span>');
+};
+
+// 复制日志
+const copyLogs = () => {
+  if (!currentCase.value) return
+  
+  navigator.clipboard.writeText(currentCase.value.steps_log)
+    .then(() => {
+      ElMessage.success('日志已复制到剪贴板')
     })
-    
-    // 查看用例详情
-    const viewDetails = (testCase: TestCaseResult) => {
-      currentCase.value = testCase
-      detailDialogVisible.value = true
-      
-      // 滚动到日志底部
-      nextTick(() => {
-        if (logContent.value) {
-          logContent.value.scrollTop = logContent.value.scrollHeight
-        }
-      })
-    }
-    
-    // 获取状态标签类型
-    const getStatusType = (status: 'passed' | 'failed' | 'running') => {
-      const statusMap = {
-        'passed': 'success',
-        'failed': 'danger',
-        // 'error': 'warning',
-        'running': 'info',
-        // 'pending': 'info'
-      }
-      return statusMap[status] || 'info'
-    }
-    
-    // 获取状态文本
-    const getStatusText = (status: 'passed' | 'failed' | 'running') => {
-      const statusMap = {
-        'passed': '通过',
-        'failed': '失败',
-        'error': '错误',
-        'running': '执行中',
-        'pending': '待执行'
-      }
-      return statusMap[status] || status
-    }
-    
-    // 获取日志行CSS类
-    const getLogLineClass = (line: string) => {
-      if (line.includes('ERROR') || line.includes('错误') || line.includes('执行失败')) return 'log-error'
-      if (line.includes('WARN') || line.includes('警告')) return 'log-warn'
-      if (line.includes('INFO') || line.includes('信息')) return 'log-info'
-      if (line.includes('DEBUG') || line.includes('调试')) return 'log-debug'
-      return ''
-    }
-    
-    function escapeHtml(str: string) {
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
+    .catch(err => {
+      console.error('复制失败:', err)
+      ElMessage.error('复制失败')
+    })
+}
 
-    const highlightSearch = (line: string) => {
-      const escaped = escapeHtml(line);
-      if (!logSearch.value) return escaped;
-      const regex = new RegExp(`(${logSearch.value})`, 'gi');
-      return escaped.replace(regex, '<span class="highlight">$1</span>');
-    };
-    
-    // 复制日志
-    const copyLogs = () => {
-      if (!currentCase.value) return
-      
-      navigator.clipboard.writeText(currentCase.value.steps_log)
-        .then(() => {
-          ElMessage.success('日志已复制到剪贴板')
-        })
-        .catch(err => {
-          console.error('复制失败:', err)
-          ElMessage.error('复制失败')
-        })
-    }
-    
-    // 下载日志
-    const downloadLogs = () => {
-      if (!currentCase.value) return
-      
-      const blob = new Blob([currentCase.value.steps_log], { type: 'text/plain' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `log_${currentCase.value.testcase__name}_${Date.now()}.txt`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    }
-    
-    // 切换换行模式
-    const toggleWrap = () => {
-      wrapLines.value = !wrapLines.value
-    }
-    
-    // 处理行点击事件
-    const handleRowClick = (row: TestCaseResult) => {
-      viewDetails(row)
-    }
+// 下载日志
+const downloadLogs = () => {
+  if (!currentCase.value) return
+  
+  const blob = new Blob([currentCase.value.steps_log], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `log_${currentCase.value.testcase__name}_${Date.now()}.txt`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+// 切换换行模式
+const toggleWrap = () => {
+  wrapLines.value = !wrapLines.value
+}
+
+// 处理行点击事件
+const handleRowClick = (row: TestCaseResult) => {
+  viewDetails(row)
+}
 </script>
 
 <style scoped>
@@ -649,12 +620,6 @@ const filteredTestCases = computed(() => {
 
 .log-debug {
   color: #909399;
-}
-
-.highlight {
-  background-color: yellow;
-  font-weight: bold;
-  padding: 0 2px;
 }
 
 .screenshot-container {

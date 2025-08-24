@@ -211,6 +211,16 @@ const routes: Array<RouteRecordRaw> = [
                 ]
             },
             {
+                path: '/schedule-tasks',
+                name: 'schedule-tasks',
+                component: () => import('@/views/ScheduleTasksPage.vue'),
+                meta: {
+                    title: '定时任务',
+                    isShow: true,
+                    icon: 'Clock'
+                },
+            },
+            {
                 path: '/variable',
                 name: 'variable',
                 component: GlobalVariablePage,
@@ -220,16 +230,6 @@ const routes: Array<RouteRecordRaw> = [
                     icon: 'Coin'
                 },
 
-            },
-            {
-                path: '/schedule-tasks',
-                name: 'schedule-tasks',
-                component: () => import('@/views/ScheduleTasksPage.vue'),
-                meta: {
-                    title: '定时任务',
-                    isShow: true,
-                    icon: 'Clock'
-                },
             },
             {
                 path: '/mt_tool',

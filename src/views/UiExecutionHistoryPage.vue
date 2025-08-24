@@ -151,8 +151,10 @@ const getStatusDisplay = (status: string) => {
       return '失败'
     case 'running':
       return '执行中'
+    case 'error':
+      return '异常'
     default:
-      return '异常状态'
+      return '未定义状态'
   }
 }
 
@@ -164,6 +166,8 @@ const getStatusType = (status: string) => {
       return 'danger'
     case 'running':
       return 'warning'
+    case 'error':
+      return 'warning'
     default:
       return 'info'
   }
@@ -173,7 +177,7 @@ const uiCaseDrawer = ref();
 
 const viewHistoryDetail = (row: SuiteHistory) => {
   console.log(row)
-  if (row.status === 'failed' || row.status === 'passed') {
+  if (row.status === 'failed' || row.status === 'passed' || row.status === 'error') {
     uiCaseDrawer.value.openDrawer(row); // 打开弹窗
   } else {
     ElMessage.warning('任务正在执行中！ '); // 提示用户

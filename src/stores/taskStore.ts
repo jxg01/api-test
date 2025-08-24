@@ -17,6 +17,7 @@ export interface ExecutionLog {
   total?: number;
   passed?: number;
   failed?: number;
+  error?: number;
   success_rate?: number;
   schedule_name: string;
   start_time: string;
