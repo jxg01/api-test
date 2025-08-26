@@ -4,7 +4,6 @@
     direction="rtl"
     size="1200px"
     class="case-execution-drawer"
-    @open="activeName = 'first'"
   >
     <template #header>
       <div class="drawer-header">
@@ -104,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, nextTick, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 
@@ -124,7 +123,6 @@ interface ExecutionDetail {
 
 const drawerVisible = ref(false);
 const loading = ref(false);
-const activeName = ref('first');
 const title = ref('Null');
 const status = ref('passed');
 const currentCase = ref<ExecutionDetail>();
@@ -251,6 +249,10 @@ const downloadLogs = () => {
 const toggleWrap = () => {
   wrapLines.value = !wrapLines.value;
 };
+
+onMounted(() => {
+  // 空的钩子函数
+});
 </script>
 
 <style scoped>

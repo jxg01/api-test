@@ -54,8 +54,8 @@ import BasePagination from '@/components/BasePagination.vue';
 import { uiTestApi   } from '@/api';
 import { Search, RefreshLeft } from '@element-plus/icons-vue';
 import type { SuiteHistory } from '@/types/suite';
-import { dashboardApi } from '@/api'
 import CaseExecutionDetail from '@/components/UiTest/CaseExecutionDetail.vue';
+import { ElMessage } from 'element-plus';
 
 // 表格配置 =================================================================
 const tableColumns: TableColumn[] = [
@@ -173,12 +173,16 @@ const getStatusType = (status: string) => {
   }
 }
 
-const uiCaseDrawer = ref();
+const uiCaseDrawer = ref<InstanceType<typeof CaseExecutionDetail> | null>(null);
 
 const viewHistoryDetail = (row: SuiteHistory) => {
   console.log(row)
   if (row.status === 'failed' || row.status === 'passed' || row.status === 'error') {
-    uiCaseDrawer.value.openDrawer(row); // 打开弹窗
+    if (uiCaseDrawer.value) {
+      uiCaseDrawer.value.openDrawer(row); // 打开弹窗
+    } else {
+      console.error('CaseExecutionDetail component not initialized');
+    }
   } else {
     ElMessage.warning('任务正在执行中！ '); // 提示用户
   }
