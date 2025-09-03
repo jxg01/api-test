@@ -69,8 +69,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus'
-import type { Task } from '@/stores/taskStore';
-import { useTaskStore } from '@/stores/taskStore';
+import type { Task } from '@/stores/tasksStore';
+import { useTaskStore } from '@/stores/tasksStore';
 import { on } from 'ace-builds-internal/config';
 
 const props = defineProps<{

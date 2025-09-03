@@ -38,7 +38,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { storeToRefs } from 'pinia';
-import { useTaskStore } from '@/stores/taskStore';
+import { useTaskStore } from '@/stores/tasksStore';
 import TaskList from '@/components/task/TaskList.vue';
 import TaskInfo from '@/components/task/TaskInfo.vue';
 import TrendChart from '@/components/task/TrendChart.vue';

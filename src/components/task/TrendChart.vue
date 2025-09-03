@@ -20,7 +20,7 @@ import {
 import { CanvasRenderer } from 'echarts/renderers';
 import VChart from 'vue-echarts';
 import { ref, computed, onMounted } from 'vue';
-import { useTaskStore } from '@/stores/taskStore';
+import { useTaskStore } from '@/stores/tasksStore';
 import { storeToRefs } from 'pinia';
 
 // 注册必要的组件

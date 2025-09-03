@@ -241,7 +241,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue';
 import { ElMessage } from 'element-plus';
-import type { ExecutionLog } from '@/stores/taskStore';
+import type { ExecutionLog } from '@/stores/tasksStore';
 import { Search } from '@element-plus/icons-vue';
 
 const props = defineProps<{

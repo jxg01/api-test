@@ -35,8 +35,8 @@
 </template>
 
 <script setup lang="ts">
-import type { ExecutionLog } from '@/stores/taskStore';
-import { useTaskStore } from '@/stores/taskStore';
+import type { ExecutionLog } from '@/stores/tasksStore';
+import { useTaskStore } from '@/stores/tasksStore';
 import { onMounted } from 'vue';
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'

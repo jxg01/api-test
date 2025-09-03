@@ -53,9 +53,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useTaskStore } from '@/stores/taskStore';
+import { useTaskStore } from '@/stores/tasksStore';
 import { storeToRefs } from 'pinia';
-import type { Task } from '@/stores/taskStore';
+import type { Task } from '@/stores/tasksStore';
 import ScheduleTaskDialog from '@/components/task/NewTaskDialog.vue';
 import { Delete } from '@element-plus/icons-vue';
 

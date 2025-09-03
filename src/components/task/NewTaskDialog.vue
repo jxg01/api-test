@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch, computed } from 'vue';
-import type { Task } from '@/stores/taskStore';
+import type { Task } from '@/stores/tasksStore';
 import type { FormInstance, FormRules } from 'element-plus';
 import { en } from 'element-plus/es/locale';
 
