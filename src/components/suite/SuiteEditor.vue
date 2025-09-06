@@ -160,6 +160,7 @@ import { useSuiteStore, Suite, TestCase } from '@/stores/suiteStore'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import SuiteDetailHistory from './SuiteDetailHistory.vue'
 import { useProjectStore } from '@/stores/project'
+import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
 import ViewRelatedTestCase from './ViewRelatedTestCase.vue'
 
 const route = useRoute()
@@ -354,7 +355,7 @@ const runCurrentSuite = async () => {
   }
   
   try {
-    const selectEnvInfo = projectStore.current?.envs.filter(env => env.id === Number(store.projectEnvsSelect))
+    const selectEnvInfo = projectStore.current?.envs.filter((env: { id: number, name: string, url?: string }) => env.id === Number(store.projectEnvsSelect))
     const res = await store.runSuite(Number(formData.value.id), selectEnvInfo[0].url)
     console.log('运行套件结果:', res)
     if (res) {
@@ -368,10 +369,18 @@ const runCurrentSuite = async () => {
 }
 
 
+// 项目切换时返回列表页
+useProjectChangeListener((newProjectId, oldProjectId) => {
+  // 确保只有在项目真正发生变化时才执行重定向
+  if (oldProjectId && newProjectId !== oldProjectId && route.params.id) {
+    router.push('/automation/suite')
+  }
+}, false, false)
+
 onMounted(async () => {
   isEditing.value = !route.params.id
   await initData();
-  
+
 
   // 确保 current 项目存在（支持刷新场景）
   if (!projectStore.currentProjectId) {

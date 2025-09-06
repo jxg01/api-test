@@ -8,7 +8,7 @@
       </el-select>
       <el-input v-model="filterParams.case_name" placeholder="搜索用例名称" clearable ></el-input>
       <el-input v-model="filterParams.executed_by" placeholder="搜索执行人" clearable ></el-input>
-      <el-button type="primary" @click.stop="fetchList" :icon="Search"> 搜索</el-button>
+      <el-button type="primary" @click.stop="fetchList()" :icon="Search"> 搜索</el-button>
       <el-button type="primary" @click.stop="cancelSearchInput" :icon="RefreshLeft" plain> 重置</el-button>
     </div>
 
@@ -56,6 +56,8 @@ import { Search, RefreshLeft } from '@element-plus/icons-vue';
 import type { SuiteHistory } from '@/types/suite';
 import CaseExecutionDetail from '@/components/UiTest/CaseExecutionDetail.vue';
 import { ElMessage } from 'element-plus';
+import { useProjectStore } from '@/stores/project';
+import { useProjectChangeListener } from '@/composables/useProjectChangeListener';
 
 // 表格配置 =================================================================
 const tableColumns: TableColumn[] = [
@@ -67,6 +69,7 @@ const tableColumns: TableColumn[] = [
   { prop: 'operation', label: '操作', width: 120, slot: 'operation' }
 ]
 
+const projectStore = useProjectStore();
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -100,20 +103,12 @@ const setPageSize = (size: number) => {
 }
 
 // 获取列表
-const fetchList = async() => {
-  // if (filterParams.value.start_date && filterParams.value.end_date) {
-  //   if (new Date(filterParams.value.start_date) > new Date(filterParams.value.end_date)) {
-  //     filterParams.value.end_date = filterParams.value.start_date
-  //   }
-  // } else if (filterParams.value.start_date && !filterParams.value.end_date) {
-  //   filterParams.value.end_date = filterParams.value.start_date
-  // } else if (!filterParams.value.start_date && filterParams.value.end_date) {
-  //   filterParams.value.start_date = filterParams.value.end_date
-  // }
+const fetchList = async(projectId?: number | string) => {
   loading.value = true
   try {
     const response = await uiTestApi.getExecutionHistory({
       ...filterParams.value,
+      project_id: projectId || projectStore.currentProjectId,
       page: currentPage.value,
       size: pageSize.value
     })
@@ -175,7 +170,8 @@ const getStatusType = (status: string) => {
 
 const uiCaseDrawer = ref<InstanceType<typeof CaseExecutionDetail> | null>(null);
 
-const viewHistoryDetail = (row: SuiteHistory) => {
+// 打开详情抽屉
+const viewHistoryDetail = (row: UiHistory) => {
   console.log(row)
   if (row.status === 'failed' || row.status === 'passed' || row.status === 'error') {
     if (uiCaseDrawer.value) {
@@ -188,8 +184,35 @@ const viewHistoryDetail = (row: SuiteHistory) => {
   }
 }
 
+// 整合初始化数据逻辑，包括重试机制
+async function initDataWithRetry(projectId: number | string) {
+  // 重置分页
+  currentPage.value = 1;
+  try {
+    await fetchList(projectId);
+  } catch (error) {
+    console.error('首次加载数据失败，将重试:', error);
+    // 首次加载失败，尝试重试一次
+    setTimeout(async () => {
+      if (projectStore.currentProjectId) {
+        try {
+          await fetchList(projectId);
+        } catch (retryError) {
+          console.error('重试加载数据也失败:', retryError);
+        }
+      }
+    }, 500);
+  }
+}
+
+// 使用项目切换监听器组合式函数，整合所有初始化逻辑
+useProjectChangeListener(async (newProjectId: number | string) => {
+  await initDataWithRetry(newProjectId);
+}, true, false);
+
+// 初始化钩子 - 仅保留日志输出，所有初始化逻辑已整合到useProjectChangeListener中
 onMounted(() => {
-  fetchList()
+  console.log('UiExecutionHistoryPage: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
 })
 
 </script>

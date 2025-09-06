@@ -63,9 +63,23 @@ import { onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { variableApi } from '@/api'
 import { useProjectStore } from '@/stores/project'
+import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
 
 const store = useCaseStore()
 const projectStore = useProjectStore()
+
+// 刷新测试用例数据
+async function refreshTestCaseData(projectId: number | string) {
+  try {
+    store.editTabs = []
+    store.activeTab = 'list'
+    await store.fetchCaseList(Number(projectId))
+    // 刷新Python函数名称列表
+    await fetchPythonNameList()
+  } catch (error) {
+    console.error('刷新测试用例数据失败:', error)
+  }
+}
 
 // 表格配置
 const tableColumns: TableColumn[] = [
@@ -78,22 +92,33 @@ const tableColumns: TableColumn[] = [
   { prop: 'operation', label: '操作', width: 135, slot: 'operation' }
 ]
 
-// 初始化数据
-onMounted(async() => {
-  store.editTabs = []
-  store.activeTab = 'list'
-  // 确保 current 项目存在（支持刷新场景）
-  if (!projectStore.currentProjectId) {
-    await projectStore.initCurrentProject()
+// 整合初始化数据逻辑，包括重试机制
+async function initDataWithRetry(projectId: number | string) {
+  try {
+    await refreshTestCaseData(projectId);
+  } catch (error) {
+    console.error('首次加载数据失败，将重试:', error);
+    // 首次加载失败，尝试重试一次
+    setTimeout(async () => {
+      if (projectStore.currentProjectId) {
+        try {
+          await refreshTestCaseData(projectId);
+        } catch (retryError) {
+          console.error('重试加载数据也失败:', retryError);
+        }
+      }
+    }, 500);
   }
+}
 
-  if (projectStore.currentProjectId) {
-    console.log('projectStore.currentProjectId => ', projectStore.currentProjectId)
-    const projectId = projectStore.currentProjectId
-    store.fetchCaseList(projectId)
-  }
-  fetchPythonNameList()
-  
+// 使用项目切换监听器组合式函数，整合所有初始化逻辑
+useProjectChangeListener(async (newProjectId: number | string) => {
+  await initDataWithRetry(newProjectId)
+}, true, false)
+
+// 初始化钩子 - 仅保留日志输出，所有初始化逻辑已整合到useProjectChangeListener中
+onMounted(() => {
+  console.log('TestCasePage: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
 })
 
 const handleDelete = async (row: any) => {

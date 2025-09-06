@@ -6,7 +6,7 @@
           <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z" fill="#00FF00"/>
         </svg>
       </div>
-      <CurrentProjectSelector />
+      <CurrentProjectSelector @changed="onProjectChanged" />
     </div>
 
     <div class="right-header">
@@ -90,6 +90,14 @@ const submit = async() => {
 const closeDialog = () => {
   suggestionFormRef.value?.resetFields()
   dialogVisit.value = false
+}
+
+function onProjectChanged() {
+  // 方案一：强制回到仪表盘（与你现在的交互一致）
+  // router.push('/dashboard')
+
+  // 方案二（推荐）：不跳转，保持当前页；让各业务页 watch 项目变化刷新数据
+  // 这里什么也不做
 }
 
 

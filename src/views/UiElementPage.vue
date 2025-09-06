@@ -137,26 +137,54 @@ import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
 import { useProjectStore } from '@/stores/project'
 import { useUiTestStore, PageElement } from '@/stores/uiTestStore'
+import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
 
 const projectStore = useProjectStore()
 const store = useUiTestStore()
 
-onMounted(async() => {
-  // 确保 current 项目存在（支持刷新场景）
-  if (!projectStore.currentProjectId) {
-    await projectStore.initCurrentProject()
-  }
-
-  if (projectStore.currentProjectId) {
-    const projectId = projectStore.currentProjectId
+// 加载页面和元素数据
+async function loadPageAndElementData(projectId: number | string) {
+  try {
     // 1. 先加载页面数据
-    await store.fetchUiPage(projectId)
+    await store.fetchUiPage(Number(projectId))
     console.log('页面数据加载完成:', store.uiPageList)
     
     // 2. 再加载元素数据
-    await store.fetchUiElementList(projectId)
+    await store.fetchUiElementList(Number(projectId))
     console.log('元素数据加载完成')
+  } catch (error) {
+    console.error('加载页面和元素数据失败:', error)
+    ElMessage.error('加载数据失败')
   }
+}
+
+// 整合初始化数据逻辑，包括重试机制
+async function initDataWithRetry(projectId: number | string) {
+  try {
+    await loadPageAndElementData(projectId);
+  } catch (error) {
+    console.error('首次加载数据失败，将重试:', error);
+    // 首次加载失败，尝试重试一次
+    setTimeout(async () => {
+      if (projectStore.currentProjectId) {
+        try {
+          await loadPageAndElementData(projectStore.currentProjectId);
+        } catch (retryError) {
+          console.error('重试加载数据也失败:', retryError);
+        }
+      }
+    }, 500);
+  }
+}
+
+// 使用项目切换监听器组合式函数，整合所有初始化逻辑
+useProjectChangeListener(async (newProjectId: number | string) => {
+  await initDataWithRetry(newProjectId);
+}, true, false);
+
+// 初始化钩子 - 仅保留日志输出，所有初始化逻辑已整合到useProjectChangeListener中
+onMounted(() => {
+  console.log('UiElementPage: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
 })
 
 

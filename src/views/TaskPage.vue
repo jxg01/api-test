@@ -45,6 +45,7 @@ import TrendChart from '@/components/task/TrendChart.vue';
 import ExecutionHistory from '@/components/task/ExecutionHistory.vue';
 import LogDrawer from '@/components/task/LogDrawer.vue';
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
 
 const taskStore = useTaskStore();
 const { 
@@ -88,8 +89,28 @@ const deleteTask = async (task: any) => {
 }
 
 
+// 刷新任务列表数据
+async function refreshTasks() {
+  try {
+    await taskStore.fetchTasksList()
+    // 如果当前有选中的任务，重新加载其执行历史
+    if (taskStore.selectedTaskId) {
+      await taskStore.fetchExecutionHistory()
+    }
+  } catch (error) {
+    console.error('刷新任务数据失败:', error)
+  }
+}
+
+// 使用项目切换监听器组合式函数
+useProjectChangeListener(async (newProjectId: number | string) => {
+  // 清除当前选中的任务，避免显示错误数据
+  taskStore.selectedTaskId = null
+  await refreshTasks()
+}, true, false)
+
 onMounted(() => {
-  taskStore.fetchTasksList()
+  // 初始化逻辑已在 useProjectChangeListener 中处理
 })
 
 </script>

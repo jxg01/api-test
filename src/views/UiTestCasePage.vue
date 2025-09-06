@@ -121,15 +121,59 @@
 
 <script setup lang="ts">
 import { ref, markRaw, reactive , watch, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElInput } from 'element-plus'
 import CaseEditor from '@/components/UiTest/CaseEditor.vue'
 import { Plus, VideoPlay } from '@element-plus/icons-vue'
 import { useUiTestStore, CaseTreeNode, CaseData } from '@/stores/uiTestStore'
 import BaseDialog from '@/components/BaseDialog.vue'
 import { number } from 'echarts'
 import { uiTestApi } from '@/api'
+import { useProjectStore } from '@/stores/project'
+import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
 
 const store = useUiTestStore()
+const projectStore = useProjectStore()
+
+// 重置页面状态
+function resetViewStateOnProjectChange() {
+  openTabs.value = []
+  activeTab.value = ''
+  searchText.value = ''
+}
+
+// 加载页面数据
+async function loadPageData(projectId?: number | string) {
+  const currentProjectId = projectId || projectStore.currentProjectId
+  if (!currentProjectId) {
+    return
+  }
+  await store.fetchModuleList()
+}
+
+// 整合初始化数据逻辑，包括重试机制
+async function initDataWithRetry(projectId: number | string) {
+  resetViewStateOnProjectChange()
+  try {
+    await loadPageData(projectId);
+  } catch (error) {
+    console.error('首次加载数据失败，将重试:', error);
+    // 首次加载失败，尝试重试一次
+    setTimeout(async () => {
+      if (projectStore.currentProjectId) {
+        try {
+          await loadPageData(projectStore.currentProjectId);
+        } catch (retryError) {
+          console.error('重试加载数据也失败:', retryError);
+        }
+      }
+    }, 1000);
+  }
+}
+
+// 使用自定义的项目切换监听器组合式函数
+useProjectChangeListener(async (newProjectId: number | string) => {
+  await initDataWithRetry(newProjectId);
+}, true, false)
 
 // tree搜索功能
 const searchText = ref('')
@@ -358,8 +402,8 @@ const moduleDialogFormFields = ref(
     { 
       prop: 'name', 
       label: '分组名称',
-      component: markRaw(ElInput),
-      attrs: { placeholder: '请输入分组名称' } 
+      component: 'input',
+      attrs: { options: undefined } 
     }
   ]
 )
@@ -459,8 +503,9 @@ const handleBatchRunTestCases = async () => {
 
 
 
-onMounted(async () => {
-  await store.fetchModuleList()
+// 初始化钩子 - 仅保留日志输出，所有初始化逻辑已整合到useProjectChangeListener中
+onMounted(() => {
+  console.log('UiTestCasePage: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
 })
 
 

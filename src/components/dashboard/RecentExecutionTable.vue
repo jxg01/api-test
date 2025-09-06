@@ -11,8 +11,6 @@
         height="auto"
       >
         <template #name="{ row }">
-          <!-- <span v-if="row.suite_id">{{ row.suite_name }}</span>
-          <span v-else>{{ row.case_name }}</span> -->
           <span>【{{ row.type==='case'?'测试用例':'测试套件' }}】  </span>
           <span>{{ row.type==='case'?row.case_name:row.name }}</span>
         </template>
@@ -25,23 +23,18 @@
 
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import { dashboardApi } from '@/api'
+import { useProjectStore } from '@/stores/project'
 
 // 表格配置 =================================================================
 const tableColumns: TableColumn[] = [
-  // { prop: 'id', label: 'ID', width: 60 },
-  // { prop: 'type', label: '类型', width: 100 },
-  // { prop: 'suite_name', label: '套件名称' },
-  // { prop: 'case_name', label: '用例名称' },
   { prop: 'name', label: '测试内容', slot: 'name' },
   { prop: 'status', label: '状态', slot: 'status' },
   { prop: 'started_at', label: '开始时间' },
   { prop: 'duration', label: '耗时(s)' },
   { prop: 'executed_by_username', label: '执行人', width: 100 },
-  
-  // { prop: 'operation', label: '操作', width: 120, slot: 'operation' }
 ]
 
 interface ExecutionRecord {
@@ -60,14 +53,29 @@ interface ExecutionRecord {
 
 const loading = ref(false)
 const recentExecutions = ref<ExecutionRecord[]>([])
+const lastFetchTime = ref(0) // 用于防止短时间内重复请求
+const MIN_FETCH_INTERVAL = 1000 // 最小请求间隔(ms)
+
+const projectStore = useProjectStore()
 
 const fetchRecentExecutions = async () => {
+  // 防止短时间内重复请求
+  const now = Date.now()
+  if (now - lastFetchTime.value < MIN_FETCH_INTERVAL && lastFetchTime.value > 0) {
+    return
+  }
+  
   loading.value = true
   try {
-    const response = await dashboardApi.getExecutionCaseAndSuiteHistory({
-      limit: 10,
-    })
-    recentExecutions.value = response.data || []
+    const params: any = { limit: 10 }
+    const pid = projectStore.currentProjectId ?? projectStore.current?.id
+    // 只有当有项目ID时才请求，避免无项目ID的请求
+    if (pid) {
+      params.project_id = pid
+      lastFetchTime.value = now
+      const response = await dashboardApi.getExecutionCaseAndSuiteHistory(params)
+      recentExecutions.value = response?.data || []
+    }
   } catch (error) {
     console.error('获取最近执行记录失败:', error)
   } finally {
@@ -75,34 +83,46 @@ const fetchRecentExecutions = async () => {
   }
 }
 
-// 获取状态标签类型, 不同标签显示不同颜色
+// 获取状态标签类型
 const getStatusType = (status: string) => {
   switch (status) {
-    case 'passed':
-      return 'success'
-    case 'failed':
-      return 'danger'
-    case 'running':
-      return 'warning'
+    case 'passed': return 'success'
+    case 'failed': return 'danger'
+    case 'running': return 'warning'
+    default: return ''
   }
 }
 
 const getStatusDisplayName = (status: string) => {
   switch (status) {
-    case 'passed':
-      return '成功'
-    case 'failed':
-      return '失败'
-    case 'running':
-      return '执行中'
+    case 'passed': return '成功'
+    case 'failed': return '失败'
+    case 'running': return '执行中'
+    default: return status
   }
 }
 
-
-onMounted(() => {
-  fetchRecentExecutions()
+// 初始化时等待项目数据准备好再请求
+onMounted(async () => {
+  // 确保项目数据已加载
+  await projectStore.ensureReady()
+  // 只有当有项目ID时才请求数据
+  if (projectStore.currentProjectId || projectStore.current?.id) {
+    fetchRecentExecutions()
+  }
 })
 
+// 项目切换时自动刷新
+watch(
+  () => projectStore.currentProjectId ?? projectStore.current?.id,
+  (newId, oldId) => {
+    // 确保ID发生了实际变化且新ID存在
+    if (newId && newId !== oldId) {
+      fetchRecentExecutions()
+    }
+  },
+  { immediate: false }
+)
 </script>
 
 

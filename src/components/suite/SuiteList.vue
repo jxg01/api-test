@@ -48,6 +48,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {Search, Plus} from '@element-plus/icons-vue'
 import { useProjectStore } from '@/stores/project'
+import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
 const router = useRouter()
 const route = useRoute()
 
@@ -66,6 +67,35 @@ const tableColumns: TableColumn[] = [
 
 const suiteStore = useSuiteStore()
 const projectStore = useProjectStore()
+
+// 刷新套件数据
+async function refreshSuiteData(projectId: number | string) {
+  try {
+    suiteStore.localProjectId = Number(projectId)
+    await suiteStore.fetchSuites()
+  } catch (error) {
+    console.error('刷新套件数据失败:', error)
+  }
+}
+
+// 整合初始化数据逻辑，包括重试机制
+async function initDataWithRetry(projectId: number | string) {
+  try {
+    await refreshSuiteData(projectId);
+  } catch (error) {
+    console.error('首次加载数据失败，将重试:', error);
+    // 首次加载失败，尝试重试一次
+    setTimeout(async () => {
+      if (projectStore.currentProjectId) {
+        try {
+          await refreshSuiteData(projectId);
+        } catch (retryError) {
+          console.error('重试加载数据也失败:', retryError);
+        }
+      }
+    }, 500);
+  }
+}
 
 const openForm = async (suite: Suite) => {
   suiteStore.currentSuite = suite
@@ -95,18 +125,14 @@ const deleteSuite = async (row: Suite) => {
   }
 }
 
-// 初始化数据
-onMounted(async () => {
-  if (!projectStore.currentProjectId) {
-    await projectStore.initCurrentProject()
-  }
+// 使用项目切换监听器组合式函数，整合所有初始化逻辑
+useProjectChangeListener(async (newProjectId: number | string) => {
+  await initDataWithRetry(newProjectId)
+}, true, false)
 
-  if (projectStore.currentProjectId) {
-    console.log('projectStore.currentProjectId => ', projectStore.currentProjectId)
-    const projectId = projectStore.currentProjectId
-    suiteStore.localProjectId = projectId
-    suiteStore.fetchSuites()
-  }
+// 初始化钩子 - 仅保留日志输出，所有初始化逻辑已整合到useProjectChangeListener中
+onMounted(() => {
+  console.log('SuiteList: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
 })
 
 </script>

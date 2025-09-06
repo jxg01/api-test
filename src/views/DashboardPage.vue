@@ -84,12 +84,10 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { dashboardApi } from '@/api'
-import ExecutionTrentChart from '@/components/dashboard/ExecutionTrentChart.vue'
-import RecentExecutionTable from '@/components/dashboard/RecentExecutionTable.vue'
+import { useProjectStore } from '@/stores/project'
 
-// 定义接口
 interface StatData {
   projects: number
   interfaces: number
@@ -97,23 +95,24 @@ interface StatData {
   testsuites: number
 }
 
-// 响应式数据
-const stats = ref<StatData>()
-const pieChart = ref<HTMLElement | null>(null)
+const stats = ref<StatData | null>(null)
+const projectStore = useProjectStore()
 
-// 加载模拟数据
-const fetchSummary = async() => {
-  try {
-    const response = await dashboardApi.getSummary()
-    stats.value = response.data
-  } catch (error) {
-    console.error('获取统计数据失败:', error)
+async function fetchSummary() {
+  const pid = projectStore.currentProjectId
+  if (!pid) {
+    stats.value = null
+    return
   }
+  // 如果后端支持按项目统计，建议带上 project_id
+  // const res = await dashboardApi.getSummary({ project_id: pid })
+  const res = await dashboardApi.getSummary()
+  stats.value = res?.data ?? null
 }
 
-onMounted(() => {
-  fetchSummary()
-})
+// ✅ 当项目切换时自动刷新；首次立即执行
+watch(() => projectStore.currentProjectId, () => { fetchSummary() }, { immediate: true })
+
 </script>
 
 <style scoped>
