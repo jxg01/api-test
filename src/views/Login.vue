@@ -20,7 +20,7 @@
             class="login-form"
           >
             <el-form-item label="用户名" prop="username">
-              <el-input v-model="loginForm.username" placeholder="请输入用户名" clearable />
+              <el-input v-model="loginForm.username" placeholder="请输入用户名" clearable @keyup.enter="onLogin" />
             </el-form-item>
 
             <el-form-item label="密码" prop="password">
@@ -29,6 +29,7 @@
                 type="password"
                 placeholder="请输入密码"
                 show-password
+                @keyup.enter="onLogin"
               />
             </el-form-item>
 

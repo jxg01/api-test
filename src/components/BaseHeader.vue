@@ -20,7 +20,7 @@
         <!-- <el-avatar class="custom-avatar">{{ userStore.usernameDisplay }}</el-avatar> -->
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item>个人设置</el-dropdown-item>
+            <el-dropdown-item @click.stop="openSettingsDialog">个人设置</el-dropdown-item>
             <el-dropdown-item divided @click="userStore.logout">退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -43,54 +43,124 @@
       </div>
     </template>
   </el-dialog>
+
+  <!-- 个人设置弹窗 -->
+  <el-dialog v-model="settingsDialogVisible" title="个人设置" width="400px" @closed="closeSettingsDialog">
+    <el-tabs v-model="activeTab">
+      <el-tab-pane label="修改密码" name="changePassword">
+        <el-form :model="passwordForm" ref="passwordFormRef" :rules="passwordRules" size="default" label-position="right" label-width="100px">
+          <el-form-item label="旧密码" prop="oldPassword">
+            <el-input v-model="passwordForm.oldPassword" type="password" placeholder="请输入旧密码" />
+          </el-form-item>
+          <el-form-item label="新密码" prop="newPassword">
+            <el-input v-model="passwordForm.newPassword" type="password" placeholder="请输入新密码" show-password />
+          </el-form-item>
+          <el-form-item label="确认密码" prop="confirmPassword">
+            <el-input v-model="passwordForm.confirmPassword" type="password" placeholder="请再次输入新密码" show-password />
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
+      <el-tab-pane label="个人信息" name="profile">
+        <div class="profile-info">
+          <div class="info-item">
+            <span class="info-label">用户名：</span>
+            <span class="info-value">{{ userStore.usernameDisplay }}</span>
+          </div>
+          <!-- 其他个人信息可以在这里添加 -->
+        </div>
+      </el-tab-pane>
+    </el-tabs>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeSettingsDialog">取消</el-button>
+        <el-button type="primary" @click.stop="handleChangePassword" v-if="activeTab === 'changePassword'">
+          确认修改
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
   
   <script setup lang="ts">
   import { 
-    UserFilled,
-    ArrowDown,
+    UserFilled, 
+    ArrowDown, 
+    PhoneFilled 
   } from '@element-plus/icons-vue'
   import { useUserStore } from '@/stores/user'
   import { useProjectStore } from '@/stores/project'
-  import { ref,reactive } from 'vue'
+  import { ref, reactive } from 'vue'
   import { ElMessage, type FormInstance } from 'element-plus'
   import CurrentProjectSelector from './CurrentProjectSelector.vue'
+  import { useRouter } from 'vue-router'
 
   const userStore = useUserStore()
   const store = useProjectStore()
+  const router = useRouter()
 
-const suggestionFormRef = ref<FormInstance>()
+const suggestionFormRef = ref<FormInstance>();
 const form = reactive({
   content: '',
-})
-const dialogVisit = ref(false)
+});
+const dialogVisit = ref(false);
 const rules = {
   content: [
     { required: true, message: '内容不能为空', trigger: 'blur' },
   ]
-}
+};
+
+// 个人设置弹窗相关
+const settingsDialogVisible = ref(false);
+const activeTab = ref('changePassword'); // 默认选中修改密码标签
+const passwordFormRef = ref<FormInstance>();
+const passwordForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+});
+const passwordRules = {
+  oldPassword: [
+    { required: true, message: '请输入旧密码', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于 6 位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认密码', trigger: 'blur' },
+    {
+      validator: (_: any, value: string) => {
+        if (value !== passwordForm.newPassword) {
+          return new Error('两次输入的密码不一致');
+        }
+        return true;
+      },
+      trigger: 'blur'
+    }
+  ]
+};
 
 const openDialog = () => {
-  console.log('project', store.current)
-  dialogVisit.value = true
-}
+  console.log('project', store.current);
+  dialogVisit.value = true;
+};
 const submit = async() => {
-  if (!form.content.trim()){ return }
+  if (!form.content.trim()){ return; }
   try {
-    const res = await userStore.createUserSuggestion(form.content.trim())
+    const res = await userStore.createUserSuggestion(form.content.trim());
     if (res) {
-      ElMessage.success('创建成功')
-      dialogVisit.value = false
+      ElMessage.success('创建成功');
+      dialogVisit.value = false;
     }
   } catch (error) {
-    console.error(error)
+    console.error(error);
   }
-}
+};
 
 const closeDialog = () => {
-  suggestionFormRef.value?.resetFields()
-  dialogVisit.value = false
-}
+  suggestionFormRef.value?.resetFields();
+  dialogVisit.value = false;
+};
 
 function onProjectChanged() {
   // 方案一：强制回到仪表盘（与你现在的交互一致）
@@ -99,6 +169,37 @@ function onProjectChanged() {
   // 方案二（推荐）：不跳转，保持当前页；让各业务页 watch 项目变化刷新数据
   // 这里什么也不做
 }
+
+// 打开个人设置弹窗
+const openSettingsDialog = () => {
+  activeTab.value = 'changePassword'; // 重置为默认选中修改密码标签
+  settingsDialogVisible.value = true;
+};
+
+// 关闭个人设置弹窗
+const closeSettingsDialog = () => {
+  passwordFormRef.value?.resetFields();
+  settingsDialogVisible.value = false;
+};
+
+// 处理修改密码
+const handleChangePassword = async () => {
+  try {
+    await passwordFormRef.value?.validate();
+    const res = await userStore.changePassword({
+      old_password: passwordForm.oldPassword,
+      new_password: passwordForm.newPassword,
+    });
+    ElMessage.success(res);
+    closeSettingsDialog();
+    // 密码修改成功后跳转到登录页面，因为后端已让token失效
+    setTimeout(() => {
+      router.push('/login');
+    }, 1000);
+  } catch (error) {
+    console.error('修改密码失败:', error);
+  }
+};
 
 
 
@@ -152,5 +253,27 @@ function onProjectChanged() {
       transition: transform 0.3s;
     }
   }
-  
-  </style>
+
+/* 个人设置弹窗样式 */
+.profile-info {
+  padding: 20px 0;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-label {
+  font-weight: 500;
+  color: var(--el-text-color-regular);
+  min-width: 80px;
+}
+
+.info-value {
+  color: var(--el-text-color-primary);
+  flex: 1;
+}
+</style>

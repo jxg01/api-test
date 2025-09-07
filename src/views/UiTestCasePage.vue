@@ -1,16 +1,18 @@
 <template>
-  <div style="width: calc(100vh-180px);">
-    <el-row>
+  <div class="ui-test-case-container">
+    <el-row class="main-content-row">
       <!-- 左侧树结构 -->
-      <el-col :span="6" style="height: 100%; border-right: 1px solid #eee; overflow-y: auto; text-align: left;">
-        <el-button type="primary" :icon="Plus" @click="openAddDialog" style="margin: 12px 0 12px 0;">新建分组</el-button>
-        <el-button type="success" :icon="VideoPlay" @click="openBatchRunDialog" style="float: right;margin: 12px 0 12px 0;">批量执行</el-button>
+      <el-col :span="6" class="tree-container">
+        <div class="tree-header">
+          <el-button type="primary" :icon="Plus" @click="openAddDialog" class="add-group-btn">新建分组</el-button>
+          <el-button type="success" :icon="VideoPlay" @click="openBatchRunDialog" class="batch-run-btn">批量执行</el-button>
+        </div>
         <el-input
           v-model="searchText"
           placeholder="输入分组名称或用例名称搜索"
           clearable
           size="large"
-          style="margin-bottom: 8px;"
+          class="search-input"
         />
         <el-tree
           ref="treeRef"
@@ -19,7 +21,7 @@
           :props="{ label: 'label', children: 'children' }"
           @node-click="onTreeNodeClick"
           highlight-current
-          style="padding: 0 8px"
+          class="case-tree"
           default-expand-all
           :filter-node-method="filterNode"
           @tab-remove="closeTab"
@@ -32,20 +34,11 @@
                 <component :is="data.type === 'case' ? 'Document' : 'Folder'" />
               </el-icon>
               <div class="tree-node-content">
-                  <span
-                    style="
-                      display: inline-block;
-                      max-width: 600px;
-                      overflow: hidden;
-                      text-overflow: ellipsis;
-                      white-space: nowrap;
-                      vertical-align: middle;
-                    "
-                  >{{ data.label }}</span>
+                  <span class="tree-node-label">{{ data.label }}</span>
                 <span class="action-buttons">
                   <template v-if="data.type === 'case'">
-                    <el-button link type="primary" size="small" @click.stop="openCase(data)">编辑</el-button>
-                    <el-button link type="primary" size="small" @click.stop="deleteCase(data)">删除</el-button>
+                    <el-button link type="primary" size="small" @click.stop="copyCase(data)" :icon="CopyDocument" class="icon-btn"></el-button>
+                    <el-button link type="danger" size="small" @click.stop="deleteCase(data)" :icon="Delete" class="icon-btn"></el-button>
                   </template>
                   <template v-else>
                     <el-button link type="warning" size="small" @click.stop="addCase(data)">新建用例</el-button>
@@ -59,14 +52,16 @@
       </el-col>
 
       <!-- 右侧Tab页和编辑区 -->
-      <el-col :span="18" style="height: 100%; overflow: auto; padding: 0 16px;">
-        <el-button type="danger" size="small" @click="closeAllTabs" style="margin-right: 4px; float: right;">关闭全部Tab</el-button>
+      <el-col :span="18" class="editor-container">
+        <div class="editor-header">
+          <el-button type="danger" size="small" @click="closeAllTabs" class="close-all-btn">关闭全部Tab</el-button>
+        </div>
         <el-tabs
           v-model="activeTab"
           type="card"
           closable
           @tab-remove="closeTab"
-          style="flex: 1"
+          class="case-tabs"
         >
           <el-tab-pane
             v-for="tab in openTabs"
@@ -81,7 +76,7 @@
             />
           </el-tab-pane>
         </el-tabs>
-        <div v-if="openTabs.length === 0" style="color:#aaa;text-align:center;padding:90px 0 0 0;">← 点击左侧用例树节点编辑</div>
+        <div v-if="openTabs.length === 0" class="empty-state">← 点击左侧用例树节点编辑</div>
       </el-col>
     </el-row>
     <base-dialog
@@ -130,6 +125,7 @@ import { number } from 'echarts'
 import { uiTestApi } from '@/api'
 import { useProjectStore } from '@/stores/project'
 import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
+import { CopyDocument, Document, Folder, Delete } from '@element-plus/icons-vue'
 
 const store = useUiTestStore()
 const projectStore = useProjectStore()
@@ -447,6 +443,75 @@ const deleteModule = async (row: any) => {
 
 // 批量执行用例相关
 const checkedNodeIds = ref<number[]>([]); // 存储选中的节点 ID
+
+// 复制用例功能
+const copyCase = async (node: CaseTreeNode) => {
+  try {
+    // 检查node和node.label是否存在
+    if (!node || !node.label) {
+      ElMessage.error('用例信息不完整');
+      return;
+    }
+    
+    await ElMessageBox.confirm(`确认复制 ${node.label} 吗？`, '提示', {
+      type: 'info',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
+    
+    // 查找所属模块
+    let parentModuleId = null;
+    for (const module of store.moduleList) {
+      if (module.children?.some(child => child.id === node.id)) {
+        parentModuleId = module.id;
+        break;
+      }
+    }
+    
+    if (!parentModuleId) {
+      ElMessage.error('未找到所属模块');
+      return;
+    }
+    
+    // 检查caseData是否存在
+    if (!node.caseData) {
+      ElMessage.error('用例数据不完整');
+      return;
+    }
+    
+    // 创建复制的用例数据
+    const copiedCaseData = {
+      ...JSON.parse(JSON.stringify(node.caseData)),
+      id: '0', // 新用例ID为0表示新建
+      name: `${node.caseData.name}-copy`, // 名称后增加-copy后缀
+      module: parentModuleId // 添加所属模块ID
+    };
+    
+    // 调用创建接口直接创建新用例
+    const res = await store.createUiTestCase(copiedCaseData);
+    
+    // 刷新模块列表以显示新创建的用例
+    await store.fetchModuleList();
+    
+    ElMessage.success('用例复制成功！');
+    
+    // 查找新创建的用例并打开编辑页面
+    for (const module of store.moduleList) {
+      if (module.id === parentModuleId && module.children) {
+        const newCaseNode = module.children.find(child => 
+          child.type === 'case' && child.label === copiedCaseData.name
+        );
+        if (newCaseNode) {
+          openCase(newCaseNode);
+          break;
+        }
+      }
+    }
+  } catch (e) {
+    // 用户取消确认也会走到这里，不做处理
+    console.error(e);
+  }
+}
   const browserDialog = reactive({
   visible: false,
   form: {
@@ -512,21 +577,123 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.el-icon {
-  font-size: 20px;
-  margin-right: 5px;
-  color: #e6a23c;
-  
-  &[data-type="case"] {
-    color: #67c23a;
-  }
+/* 主容器样式 */
+.ui-test-case-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 900px; /* 确保整体页面有最小宽度，防止布局错乱 */
 }
 
+.main-content-row {
+  height: 100%;
+  display: flex;
+  flex-wrap: nowrap; /* 禁止换行，确保左右两列始终在同一行 */
+  min-height: 0;
+}
+
+/* 左侧树容器样式 */
+.tree-container {
+  height: 100%;
+  border-right: 1px solid #eee;
+  overflow-y: auto;
+  overflow-x: hidden; /* 隐藏横向滚动条 */
+  text-align: left;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-width: 280px; /* 设置最小宽度，防止随页面变小而一直变窄 */
+}
+
+.tree-header {
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  background-color: #fff;
+  flex-shrink: 0;
+}
+
+.add-group-btn {
+  margin: 0 !important;
+  flex-shrink: 0;
+}
+
+.batch-run-btn {
+  margin: 0 !important;
+  flex-shrink: 0;
+  
+}
+
+.search-input {
+  margin: 8px 12px !important;
+  width: calc(100% - 24px);
+  flex-shrink: 0;
+}
+
+.case-tree {
+  flex: 1;
+  padding: 0 8px;
+  margin-top: 0;
+  width: 100%;
+  min-width: 0; /* 确保内容不会强制容器变宽 */
+}
+
+/* 右侧编辑容器样式 */
+.editor-container {
+  height: 100%;
+  overflow: auto;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* 占据剩余空间 */
+  min-width: 500px; /* 为右侧编辑区设置最小宽度 */
+  min-height: 0;
+}
+
+.editor-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.close-all-btn {
+  margin: 0 !important;
+}
+
+.case-tabs {
+  flex: 1;
+  margin-top: 0;
+  padding: 0 16px;
+}
+
+.empty-state {
+  color: #aaa;
+  text-align: center;
+  padding: 90px 0;
+  font-size: 14px;
+}
+
+/* 树节点样式 */
 .tree-node {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  height: 36px;
+  line-height: 36px;
+  padding: 0 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.tree-node:hover {
+  background-color: #f0f0f0;
 }
 
 .tree-node-content {
@@ -534,15 +701,107 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  min-width: 0; /* 防止flex子元素溢出容器 */
 }
 
+.tree-node-label {
+  display: inline-block;
+  flex: 1;
+  max-width: calc(100% - 60px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  font-size: 14px;
+  min-width: 0;
+}
+
+/* 图标样式 */
+.el-icon {
+  font-size: 16px;
+  margin-right: 6px;
+  color: #e6a23c;
+  
+  &[data-type="case"] {
+    color: #67c23a;
+  }
+}
+
+/* 树头部样式 */
+.tree-header {
+  padding-right: 10px; /* 防止右侧边缘内容被遮挡 */
+}
+
+/* 批量执行按钮样式 */
+.batch-run-btn {
+  margin-right: 15px; /* 为按钮添加明显的右侧边距 */
+}
+
+/* 按钮样式 */
 .action-buttons {
   display: none; /* 默认隐藏按钮 */
+  gap: 4px;
 }
 
 .tree-node:hover .action-buttons {
   display: inline-flex; /* 鼠标悬浮时显示按钮 */
-  gap: 2px; /* 按钮之间的间距 */
+}
+
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 选中节点的样式增强 */
+.el-tree-node.is-current > .el-tree-node__content {
+  background-color: #e6f7ff !important;
+  color: #1890ff;
+  font-weight: 500;
+}
+
+/* 滚动条样式优化 */
+.tree-container::-webkit-scrollbar,
+.editor-container::-webkit-scrollbar {
+  width: 6px;
+  height: 0; /* 隐藏横向滚动条 */
+}
+
+.tree-container::-webkit-scrollbar-track,
+.editor-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.tree-container::-webkit-scrollbar-thumb,
+.editor-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.tree-container::-webkit-scrollbar-thumb:hover,
+.editor-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 针对Edge浏览器的滚动条隐藏 */
+.tree-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 确保el-tree组件不会产生横向滚动条 */
+.el-tree {
+  overflow-x: hidden !important;
+}
+
+/* 确保树节点内容不会溢出 */
+.el-tree-node__content {
+  min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 
 </style>

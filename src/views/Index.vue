@@ -30,8 +30,9 @@
               :key="child.path" 
               :index="`${route.path}/${child.path}`"
             >
-              <el-icon><component :is="child.meta.icon" /></el-icon>
-              <span>{{ child.meta.title }}</span>
+              <!-- 添加可选链操作符确保类型安全 -->
+              <el-icon><component :is="child.meta?.icon" /></el-icon>
+              <span>{{ child.meta?.title }}</span>
             </el-menu-item>
           </el-sub-menu>
           
@@ -52,7 +53,8 @@
         <base-header />
       </el-header>
       <el-main class="main-content">
-        <RouterView />
+        <!-- 添加:key="$route.fullPath"确保二级菜单切换时也重新创建组件，清除所有状态 -->
+        <RouterView :key="$route.fullPath" />
       </el-main>
     </el-container>
   </el-container>

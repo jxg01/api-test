@@ -49,4 +49,8 @@ export const userApi = {
   getUserSuggestionList: (params: any) => 
     http.get('/suggestion/', params),
 
+  /** 修改密码 */
+  changePassword: (data: { old_password: string; new_password: string; }) => 
+    http.post('/users/change-password/', data),
+
 }

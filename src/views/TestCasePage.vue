@@ -64,9 +64,13 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { variableApi } from '@/api'
 import { useProjectStore } from '@/stores/project'
 import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
+import { useGlobalRouteStateClearer } from '@/composables/useGlobalRouteStateClearer'
 
 const store = useCaseStore()
 const projectStore = useProjectStore()
+
+// 使用全局路由状态清除器，确保离开页面时清除搜索条件和分页状态
+useGlobalRouteStateClearer('testcase')
 
 // 刷新测试用例数据
 async function refreshTestCaseData(projectId: number | string) {

@@ -9,13 +9,14 @@ interface Task {
   cron: string;
   created_by: string;
   updated_by: string;
+  project_id?: number;
 }
 
 // 接口集合
 export const scheduleTasksApi = {
   /** 获取项目列表 */
-  getScheduleTasksList: () => 
-    http.get('/scheduled-tasks/'),
+  getScheduleTasksList: (params: any) => 
+    http.get('/scheduled-tasks/', params),
   /** 创建任务 */
   createScheduleTask: (params: Object) => 
     http.post<Task>('/scheduled-tasks/', params),

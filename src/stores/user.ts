@@ -76,6 +76,14 @@ export const useUserStore = defineStore('user', {
       const res = await userApi.createUserSuggestion({content: content})
       return res
 
+    },
+
+    // 修改密码
+    async changePassword(data: { old_password: string; new_password: string; }) {
+      const res = await userApi.changePassword(data)
+      if (res) {
+        return '密码修改成功'
+      }
     }
 
     

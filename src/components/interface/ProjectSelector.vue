@@ -30,10 +30,11 @@
   import { CirclePlusFilled } from '@element-plus/icons-vue'
   import BaseDialog from '@/components/BaseDialog.vue'
   import { ref, computed, markRaw, onMounted } from 'vue'
-  import { ElMessage } from 'element-plus/es'
+  import { ElMessage, ElSelect, ElInput } from 'element-plus/es'
   import { projectApi } from '@/api'
-const store = useInterfaceStore()
-const projectStore = useProjectStore()
+  
+  const store = useInterfaceStore()
+  const projectStore = useProjectStore()
   // 表单配置 =================================================================
   const dialogRef = ref()
   const formFields = ref(
@@ -111,17 +112,10 @@ const projectStore = useProjectStore()
     store.envs = res.data || []
   }
 
-  onMounted(async() => {
-    console.log('BaseProjectSelect => ', projectStore.current)
-    if (!projectStore.current) {
-      await projectStore.initCurrentProject()
-    }
-
-    if (projectStore.current) {
-      const projectId = projectStore.current.id
-      handleProjectChange(projectId)
-      store.fetchAllLevelModules(projectId)
-    }
+  // 移除onMounted中的数据加载逻辑，避免与父组件重复调用接口
+  // 数据加载由父组件InterfacePage.vue通过useProjectChangeListener统一管理
+  onMounted(() => {
+    console.log('ProjectSelector: 组件已挂载，数据加载由父组件InterfacePage统一处理')
   })
 
   

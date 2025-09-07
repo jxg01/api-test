@@ -39,6 +39,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { storeToRefs } from 'pinia';
 import { useTaskStore } from '@/stores/tasksStore';
+import { useProjectStore } from '@/stores/project';
+import { useProjectChangeListener } from '@/composables/useProjectChangeListener';
 import TaskList from '@/components/task/TaskList.vue';
 import TaskInfo from '@/components/task/TaskInfo.vue';
 import TrendChart from '@/components/task/TrendChart.vue';
@@ -88,8 +90,14 @@ const deleteTask = async (task: any) => {
 }
 
 
+// 项目切换时刷新任务列表
+useProjectChangeListener(async () => {
+  await taskStore.fetchTasksList()
+}, true, false)
+
+// 组件挂载时的初始化逻辑
 onMounted(() => {
-  taskStore.fetchTasksList()
+  console.log('ScheduleTasksPage mounted')
 })
 
 </script>

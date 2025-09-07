@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { scheduleTasksApi } from '@/api'
+import { useProjectStore } from './project'
 
 export interface Task {
   id: number;
@@ -87,8 +88,10 @@ export const useTaskStore = defineStore('task', {
     }
   },
   actions: {
-    selectTask(taskId: number) {
+    async selectTask(taskId: number) {
       this.selectedTaskId = taskId;
+      // 切换任务后立即刷新执行历史数据
+      await this.fetchExecutionHistory();
     },
     updateTaskStatus(task: Task) {
       console.log(`更新任务状态: ${task.name} -> ${task.enabled ? '开启' : '关闭'}`);
@@ -97,7 +100,13 @@ export const useTaskStore = defineStore('task', {
     async updateTask(updatedTask: Task) {
       // 在实际项目中这里调用API
       const { id, ...updateData } = updatedTask;
-      const res = await scheduleTasksApi.editScheduleTask(id, updateData);
+      const projectStore = useProjectStore()
+      await projectStore.ensureReady()
+      const taskWithProject = {
+        ...updateData,
+        project: projectStore.currentProjectId
+      }
+      const res = await scheduleTasksApi.editScheduleTask(id, taskWithProject);
       if (!res) {
         console.error('更新任务失败');
         return;
@@ -107,11 +116,6 @@ export const useTaskStore = defineStore('task', {
         this.tasks[index] = { ...this.tasks[index], ...updateData };
       }
       await this.fetchTasksList(); // 刷新任务列表
-
-      // const index = this.tasks.findIndex(t => t.id === updatedTask.id);
-      // if (index !== -1) {
-      //   this.tasks[index] = updatedTask;
-      // }
     },
     showLogDetail(log: ExecutionLog) {
       this.selectedLog = log;
@@ -119,8 +123,20 @@ export const useTaskStore = defineStore('task', {
     },
     async fetchTasksList() {
       try {
-        const res = await scheduleTasksApi.getScheduleTasksList()
+        const projectStore = useProjectStore()
+        await projectStore.ensureReady()
+        const params = {
+          project_id: projectStore.currentProjectId
+        }
+        const res = await scheduleTasksApi.getScheduleTasksList(params)
         this.tasks = res.data
+        
+        // 确保在任务列表加载后，如果有任务但没有选中的任务，则自动选中第一个任务并获取其执行历史
+        if (this.tasks.length > 0 && (!this.selectedTaskId || !this.tasks.find(t => t.id === this.selectedTaskId))) {
+          this.selectedTaskId = this.tasks[0].id
+          // 选中任务后获取其执行历史
+          await this.fetchExecutionHistory()
+        }
       } catch (error) {
         // 你可以在这里处理错误
         console.error('获取任务列表失败', error);
@@ -138,7 +154,13 @@ export const useTaskStore = defineStore('task', {
 
     async addTask(newTask: Task) {
       try {
-        const res = await scheduleTasksApi.createScheduleTask(newTask);
+        const projectStore = useProjectStore()
+        await projectStore.ensureReady()
+        const taskWithProject = {
+          ...newTask,
+          project: projectStore.currentProjectId
+        }
+        const res = await scheduleTasksApi.createScheduleTask(taskWithProject);
         if (!res) {
           console.error('添加任务失败');
           return;
@@ -156,10 +178,13 @@ export const useTaskStore = defineStore('task', {
     async fetchExecutionHistory() {
       try {
         this.loading = true;
+        const projectStore = useProjectStore()
+        await projectStore.ensureReady()
         const params = {
           page: this.currentPage,
           size: this.pageSize,
-          schedule_id: this.selectedTaskId
+          schedule_id: this.selectedTaskId,
+          project_id: projectStore.currentProjectId
         }
         const res = await scheduleTasksApi.getScheduleTaskLogs(params);
         console.log('res', res)

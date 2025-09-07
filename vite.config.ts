@@ -6,6 +6,11 @@ import Icons from 'unplugin-icons/vite'
 import IconsResolver from 'unplugin-icons/resolver'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import path from 'path';
+import { fileURLToPath, URL } from 'url';
+
+// 为ES模块创建等效的__dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -33,11 +38,15 @@ export default defineConfig({
     }),
   ],
   optimizeDeps: {
-    include: ['element-plus/es/components/container/style/css'] // 显式包含问题组件:ml-citation{ref="2" data="citationList"}
+    include: ['element-plus/es/components/container/style/css']
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src')
     }
+  },
+  define: {
+    // 明确设置Vue特性标志以避免控制台警告
+    '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': false
   }
 })

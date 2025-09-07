@@ -9,7 +9,7 @@
     >
       <el-form :model="currentTasks" :rules="rules" ref="formRef" label-width="120px" label-position="top">
         <el-form-item label="任务名称" prop="name">
-          <el-input v-model="currentTasks.name" />
+          <el-input v-model="currentTasks.name" placeholder="请输入任务名称" />
         </el-form-item>
         <el-form-item label="任务类型" prop="task_type">
           <el-select v-model="currentTasks.task_type" placeholder="请选择任务类型">
@@ -18,7 +18,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="时间表达式" prop="cron">
-          <el-input v-model="currentTasks.cron" />
+          <el-input v-model="currentTasks.cron" placeholder="请输入时间表达式(示例: 5 2 * * *)" />
         </el-form-item>
         <el-form-item label="状态" prop="enabled">
           <el-switch v-model="currentTasks.enabled" :active-value="true" :inactive-value="false"/>

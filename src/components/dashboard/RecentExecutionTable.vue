@@ -89,7 +89,7 @@ const getStatusType = (status: string) => {
     case 'passed': return 'success'
     case 'failed': return 'danger'
     case 'running': return 'warning'
-    default: return ''
+    default: return 'info'
   }
 }
 

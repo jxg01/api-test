@@ -21,9 +21,13 @@ import InterfaceTree from '@/components/interface/InterfaceTree.vue'
 import InterfaceTabs from '@/components/interface/InterfaceTabs.vue'
 import { useProjectStore } from '@/stores/project'
 import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
+import { useGlobalRouteStateClearer } from '@/composables/useGlobalRouteStateClearer'
 
 const interfaceStore = useInterfaceStore()
 const projectStore = useProjectStore()
+
+// 使用全局路由状态清除器，确保离开页面时清除搜索条件和分页状态
+useGlobalRouteStateClearer('interface')
 
 // 页面筛选与分页状态（可根据实际页面扩展）
 const filters = reactive<{ keyword?: string; method?: string; moduleId?: number | null }>({

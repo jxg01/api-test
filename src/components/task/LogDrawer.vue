@@ -352,7 +352,7 @@ const getStatusText = (status: 'passed' | 'failed' | 'running' | 'error') => {
 
 // 获取日志行CSS类
 const getLogLineClass = (line: string) => {
-  if (line.includes('ERROR') || line.includes('错误') || line.includes('执行失败')) return 'log-error'
+  if (line.includes('ERROR') || line.includes('错误') || line.includes('失败')) return 'log-error'
   if (line.includes('WARN') || line.includes('警告')) return 'log-warn'
   if (line.includes('INFO') || line.includes('信息')) return 'log-info'
   if (line.includes('DEBUG') || line.includes('调试')) return 'log-debug'
