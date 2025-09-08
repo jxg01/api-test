@@ -37,8 +37,11 @@
                   <span class="tree-node-label">{{ data.label }}</span>
                 <span class="action-buttons">
                   <template v-if="data.type === 'case'">
-                    <el-button link type="primary" size="small" @click.stop="copyCase(data)" :icon="CopyDocument" class="icon-btn"></el-button>
-                    <el-button link type="danger" size="small" @click.stop="deleteCase(data)" :icon="Delete" class="icon-btn"></el-button>
+                    <!-- <el-button link type="primary" size="small" @click.stop="copyCase(data)" :icon="CopyDocument" class="icon-btn"></el-button>
+                    <el-button link type="danger" size="small" @click.stop="deleteCase(data)" :icon="Delete" class="icon-btn"></el-button> -->
+                    <el-button link type="warning" size="small" @click.stop="copyCase(data)">复制</el-button>
+                    <el-button link type="danger" size="small" @click.stop="deleteCase(data)">删除</el-button>
+
                   </template>
                   <template v-else>
                     <el-button link type="warning" size="small" @click.stop="addCase(data)">新建用例</el-button>
@@ -398,7 +401,7 @@ const moduleDialogFormFields = ref(
     { 
       prop: 'name', 
       label: '分组名称',
-      component: 'input',
+      component: 'el-input',
       attrs: { options: undefined } 
     }
   ]
