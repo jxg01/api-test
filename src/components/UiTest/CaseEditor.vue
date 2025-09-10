@@ -24,8 +24,8 @@
           >
             <div style="display:flex;align-items:center;gap:8px;">
               <el-select v-model="step.name" placeholder="前置接口类型" style="width:120px;" @change="emitChange">
-                <el-option label="登录" value="token" />
-                <el-option label="其他" value="other" />
+                <el-option label="API" value="api" />
+                <!-- <el-option label="其他" value="other" /> -->
               </el-select>
               <el-input v-model="step.request.url" placeholder="接口URL" style="width:210px;" @input="emitChange" :status="!step.request.url ? 'error':undefined"/>
               <el-select v-model="step.request.method" placeholder="方法" style="width:90px" @change="emitChange">
@@ -430,7 +430,7 @@ function removeStep(idx: number) {
 }
 function addPreApiStep() {
   localCaseData.value.pre_apis.push({
-    name: 'token',
+    name: 'api',
     request: {url: '', method: 'POST', body: ''},
     // url: '',
     // method: 'POST',

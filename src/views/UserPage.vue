@@ -11,7 +11,7 @@
           <el-col :span="4">
           <el-input v-model="filterParams.email" placeholder="请输入邮箱" clearable  />
         </el-col>
-        <el-button type="primary" @click="fetchUserData" :icon="Search">搜索</el-button>
+        <el-button type="primary" @click="handleSearch" :icon="Search">搜索</el-button>
       </el-row>
     </div>
 
@@ -51,11 +51,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import BaseDialog from '@/components/BaseDialog.vue'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElInput } from 'element-plus'
 import { userApi } from '@/api/'
 import { CirclePlus, Search } from '@element-plus/icons-vue'
 
@@ -79,7 +79,15 @@ const tableColumns: TableColumn[] = [
 ]
 
 // 表单配置 =================================================================
-const formFields = [
+// 定义表单字段的类型
+interface CustomDialogField {
+  prop: string;
+  label: string;
+  component: any;
+  attrs: any;
+}
+
+const formFields = ref<CustomDialogField[]>([
   { 
     prop: 'username', 
     label: '用户名',
@@ -113,7 +121,7 @@ const formFields = [
       placeholder: '请再次输入密码',
     }
   }
-]
+])
 
 const formRules = {
   username: [
@@ -150,23 +158,29 @@ onMounted(() => {
   fetchUserData()
 })
 // 数据获取
-const fetchUserData = async () => {
-  try {
-    loading.value = true
-    const res = await userApi.getUserList({
-      username: filterParams.username,
-      email: filterParams.email,
-      page: pagination.page,
-      size: pagination.size
-    })
-    
-    tableData.value = res.data
-    pagination.total = res.meta.pagination.total
-    pagination.page = res.meta.pagination.page
-  } finally {
-    loading.value = false
+  const fetchUserData = async () => {
+    try {
+      loading.value = true
+      const res = await userApi.getUserList({
+        username: filterParams.username,
+        email: filterParams.email,
+        page: pagination.page,
+        size: pagination.size
+      })
+      
+      tableData.value = res.data
+      pagination.total = res.meta.pagination.total
+      pagination.page = res.meta.pagination.page
+    } finally {
+      loading.value = false
+    }
   }
-}
+  
+  // 搜索处理函数，搜索时重置页面为1
+  const handleSearch = () => {
+    pagination.page = 1
+    fetchUserData()
+  }
 
 // 分页处理
 const handlePageChange = (page: number) => {

@@ -7,9 +7,9 @@
             <el-button type="primary" @click="openAddDialog" :icon="CirclePlus">添加项目</el-button>
           </el-col>
           <el-col :span="4">
-            <el-input v-model="name" placeholder="请输入项目名称" clearable @keyup.enter="fetchProjectData"  :icon="Search" />
+            <el-input v-model="name" placeholder="请输入项目名称" clearable @keyup.enter="handleSearch"  :icon="Search" />
           </el-col>
-          <el-button type="primary" @click="fetchProjectData" :icon="Search">搜索</el-button>
+          <el-button type="primary" @click="handleSearch" :icon="Search">搜索</el-button>
         </el-row>
       </div>
       <!-- 表格 -->
@@ -111,10 +111,10 @@
   </template>
   
   <script lang="ts" setup>
-  import { ref, reactive, onMounted } from 'vue'
+  import { ref, reactive, onMounted, watch } from 'vue'
   import BaseDialog from '@/components/BaseDialog.vue'
   import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox, ElInput } from 'element-plus'
   import { projectApi } from '@/api/'
   import { CirclePlus, Search } from '@element-plus/icons-vue'
   import { useProjectStore } from '@/stores/project'
@@ -196,19 +196,19 @@
       prop: 'port', 
       label: '端口',
       component: ElInput,
-      attrs: { placeholder: '请输入端口' } 
+      attrs: { placeholder: '请输入数据库端口' } 
     },
     { 
       prop: 'username', 
       label: '用户名',
       component: ElInput,
-      attrs: { placeholder: '请输入用户名' } 
+      attrs: { placeholder: '请输入数据库用户名' } 
     },
     { 
       prop: 'password', 
       label: '密码',
       component: ElInput,
-      attrs: { placeholder: '请输入密码' }
+      attrs: { placeholder: '请输入数据库密码' }
     },
     { 
       prop: 'name', 
@@ -220,7 +220,7 @@
       prop: 'description', 
       label: '描述',
       component: ElInput,
-      attrs: { placeholder: '请输入描述' }
+      attrs: { placeholder: '请输入数据库描述' }
     }
   ]
 
@@ -282,6 +282,9 @@
   
   const name = ref('')
 
+  // 搜索条件变化时，用户手动点击搜索按钮触发页码重置
+
+
     // 初始化数据
   onMounted(() => {
     fetchProjectData()
@@ -302,6 +305,12 @@
     } finally {
       loading.value = false
     }
+  }
+  
+  // 搜索处理函数，搜索时重置页面为1
+  const handleSearch = () => {
+    pagination.page = 1
+    fetchProjectData()
   }
   
   // 分页处理

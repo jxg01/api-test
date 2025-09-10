@@ -402,7 +402,7 @@ const moduleDialogFormFields = ref(
       prop: 'name', 
       label: '分组名称',
       component: 'el-input',
-      attrs: { options: undefined } 
+      attrs: { placeholder: '请输入分组名称' } 
     }
   ]
 )

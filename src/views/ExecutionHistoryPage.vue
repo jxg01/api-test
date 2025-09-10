@@ -26,7 +26,7 @@
           format="YYYY-MM-DD"
           value-format="YYYY-MM-DD" 
         />
-      <el-button type="primary" @click.stop="fetchList()" :icon="Search"> 搜索</el-button>
+      <el-button type="primary" @click.stop="handleSearch()" :icon="Search"> 搜索</el-button>
       <el-button type="primary" @click.stop="cancelSearchInput" :icon="RefreshLeft" plain> 重置</el-button>
     </div>
 
@@ -71,7 +71,7 @@
 
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
 import BasePagination from '@/components/BasePagination.vue';
 import { suiteApi } from '@/api';
@@ -108,6 +108,9 @@ const filterParams = ref({
 })
 const executionHistory = ref<SuiteHistory[]>([])
 const loading = ref(false)
+
+// 搜索条件变化时，用户手动点击搜索按钮触发页码重置
+// 移除了自动监听重置，避免过度重置影响用户体验
 
 const setCurrentPage = (page: number) => {
   currentPage.value = page
@@ -162,6 +165,12 @@ const cancelSearchInput = () => {
     status: '',
     type: ''
   }
+  fetchList()
+}
+
+// 搜索处理函数，搜索时重置页面为1
+const handleSearch = () => {
+  currentPage.value = 1
   fetchList()
 }
 

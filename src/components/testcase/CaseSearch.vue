@@ -30,7 +30,7 @@
     </el-select>
 
     <el-input v-model="store.searchInput" clearable placeholder="请输入用例名称" class="search-info" />
-    <el-button type="primary" @click.stop="store.fetchCaseList()">搜索</el-button>
+    <el-button type="primary" @click.stop="handleSearch">搜索</el-button>
   </div>
 </template>
 
@@ -47,7 +47,11 @@ onMounted(() => {
   store.handleProjectChange(projectStore.currentProjectId)
 })
 
-
+// 搜索处理函数，搜索时重置页面为1
+const handleSearch = () => {
+  store.currentPage = 1
+  store.fetchCaseList()
+}
 
 </script>
 

@@ -6,14 +6,14 @@
             v-model="filterParams.name"
             placeholder="请输入变量名称"
             clearable
-            @keyup.enter="fetchVariableData"
+            @keyup.enter="handleSearch"
             style="max-width: 200px;"
           >
           <template #prefix>
               <el-icon><Search /></el-icon>
             </template>
         </el-input>
-        <el-button type="primary" @click.stop="fetchVariableData" :icon="Search">搜索</el-button>
+        <el-button type="primary" @click.stop="handleSearch" :icon="Search">搜索</el-button>
       </div>
       <div>
         <el-button type="primary" @click="openAddDialog" :icon="Plus">添加变量</el-button>
@@ -87,24 +87,26 @@ const tableColumns: TableColumn[] = [
 ]
 
 // 表单配置 =================================================================
-const formFields = [
+const formFields = ref([
   { 
     prop: 'name', 
     label: '变量名称',
-    component: ElInput,
-    attrs: { placeholder: '请输入变量名称' } 
+    component: 'ElInput',
+    attrs: { placeholder: '请输入变量名称' }
   },
   { 
     prop: 'value', 
     label: '变量值',
-    component: ElInput,
-    attrs: { 
-      placeholder: '请输入变量值',
-      // type: 'textarea',
-      // rows: 3
-    }
-  }
-]
+    component: 'ElInput',
+    attrs: { placeholder: '请输入变量值' }
+  },
+  // { 
+  //   prop: 'description', 
+  //   label: '变量描述',
+  //   component: 'ElInput',
+  //   attrs: {}
+  // }
+])
 
 const formRules = {
   name: [
@@ -136,22 +138,28 @@ onMounted(() => {
 })
 
 // 数据获取
-const fetchVariableData = async () => {
-  try {
-    loading.value = true
-    const res = await variableApi.getVariableList({
-      ...filterParams,
-      page: pagination.page,
-      size: pagination.size
-    })
-    
-    tableData.value = res.data
-    pagination.total = res.meta.pagination.total
-    pagination.page = res.meta.pagination.page
-  } finally {
-    loading.value = false
+  const fetchVariableData = async () => {
+    try {
+      loading.value = true
+      const res = await variableApi.getVariableList({
+        ...filterParams,
+        page: pagination.page,
+        size: pagination.size
+      })
+      
+      tableData.value = res.data
+      pagination.total = res.meta.pagination.total
+      pagination.page = res.meta.pagination.page
+    } finally {
+      loading.value = false
+    }
   }
-}
+  
+  // 搜索处理函数，搜索时重置页面为1
+  const handleSearch = () => {
+    pagination.page = 1
+    fetchVariableData()
+  }
 
 // 分页处理
 const handlePageChange = (page: number) => {

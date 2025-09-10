@@ -8,7 +8,7 @@
       </el-select>
       <el-input v-model="filterParams.case_name" placeholder="搜索用例名称" clearable ></el-input>
       <el-input v-model="filterParams.executed_by" placeholder="搜索执行人" clearable ></el-input>
-      <el-button type="primary" @click.stop="fetchList()" :icon="Search"> 搜索</el-button>
+      <el-button type="primary" @click.stop="handleSearch()" :icon="Search"> 搜索</el-button>
       <el-button type="primary" @click.stop="cancelSearchInput" :icon="RefreshLeft" plain> 重置</el-button>
     </div>
 
@@ -135,6 +135,12 @@ const cancelSearchInput = () => {
     case_status: '',
     executed_by: ''
   }
+  fetchList()
+}
+
+// 搜索处理函数，搜索时重置页面为1
+const handleSearch = () => {
+  currentPage.value = 1
   fetchList()
 }
 

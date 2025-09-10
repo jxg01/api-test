@@ -81,13 +81,7 @@ interface DialogField {
   label: string
   component?: any // 支持字符串（'el-input'）或组件对象
   rules?: any[]
-  attrs?: {
-    options?: Array<{
-      label: string
-      value: any
-      disabled?: boolean
-    }>
-  }
+  attrs?: Record<string, any> // 使用更通用的类型，支持任意属性
   onSelectChange?: (value: any, fieldProp?: string) => void
 }
 

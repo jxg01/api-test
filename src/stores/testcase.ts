@@ -136,10 +136,8 @@ export const useCaseStore = defineStore('case', {
     // 编辑 添加 都使用这个方法
     editCase(caseData: TestCase) {
       console.log('caseData', caseData)
-      const tabName = caseData.id
-      // const tabName = caseData.id 
-      // ? `edit_${caseData.id}`
-      // : `edit_new_${Date.now()}`;
+      const tabName = caseData.id.toString()
+      // 使用ID的字符串形式作为标签名
       console.log('tabName', tabName)
       console.log('this.editTabs', this.editTabs)
       const existing = this.editTabs.find(tab => tab.name === tabName);

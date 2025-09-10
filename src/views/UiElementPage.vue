@@ -14,7 +14,7 @@
               :value="type.value"
             />
           </el-select>
-          <el-button type='primary' @click="store.fetchUiElementList()">搜索</el-button>
+          <el-button type='primary' @click="handleSearch">搜索</el-button>
         </div>
         
         <div>
@@ -224,7 +224,11 @@ const formRules: FormRules = {
 // 数据逻辑 =================================================================
 const loading = ref(false)
 
-
+// 搜索处理函数，搜索时重置页面为1
+const handleSearch = () => {
+  store.currentPage = 1
+  store.fetchUiElementList()
+}
 
 const getLocatorLabel = (type: string) => {
   const found = locatorTypes.find(t => t.value === type)
