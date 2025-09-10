@@ -122,7 +122,7 @@ useProjectChangeListener(async (newProjectId: number | string) => {
 
 // 初始化钩子 - 仅保留日志输出，所有初始化逻辑已整合到useProjectChangeListener中
 onMounted(() => {
-  console.log('TestCasePage: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
+  // console.log('TestCasePage: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
 })
 
 const handleDelete = async (row: any) => {

@@ -184,7 +184,7 @@ useProjectChangeListener(async (newProjectId: number | string) => {
 
 // 初始化钩子 - 仅保留日志输出，所有初始化逻辑已整合到useProjectChangeListener中
 onMounted(() => {
-  console.log('UiElementPage: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
+  // console.log('UiElementPage: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
 })
 
 
@@ -193,10 +193,10 @@ onMounted(() => {
 const locatorTypes = [
   { value: 'css', label: 'CSS' },
   { value: 'xpath', label: 'XPATH' },
-  { value: 'text', label: 'TEXT' },
-  { value: 'id', label: 'ID' },
-  { value: 'class', label: 'CLASS' },
-  { value: 'name', label: 'NAME' }
+  // { value: 'text', label: 'TEXT' },
+  // { value: 'id', label: 'ID' },
+  // { value: 'class', label: 'CLASS' },
+  // { value: 'name', label: 'NAME' }
 ]
 
 // 表格配置 =================================================================

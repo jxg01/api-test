@@ -118,17 +118,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, markRaw, reactive , watch, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, ElInput } from 'element-plus'
+import { ref, reactive , watch, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import CaseEditor from '@/components/UiTest/CaseEditor.vue'
 import { Plus, VideoPlay } from '@element-plus/icons-vue'
 import { useUiTestStore, CaseTreeNode, CaseData } from '@/stores/uiTestStore'
 import BaseDialog from '@/components/BaseDialog.vue'
-import { number } from 'echarts'
 import { uiTestApi } from '@/api'
 import { useProjectStore } from '@/stores/project'
 import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
-import { CopyDocument, Document, Folder, Delete } from '@element-plus/icons-vue'
 
 const store = useUiTestStore()
 const projectStore = useProjectStore()
@@ -573,7 +571,7 @@ const handleBatchRunTestCases = async () => {
 
 // 初始化钩子 - 仅保留日志输出，所有初始化逻辑已整合到useProjectChangeListener中
 onMounted(() => {
-  console.log('UiTestCasePage: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
+  // console.log('UiTestCasePage: 页面初始化完成，数据加载由useProjectChangeListener统一处理');
 })
 
 

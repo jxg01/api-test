@@ -106,7 +106,7 @@
                 </el-select>
 
                 <template v-if="row.assert_type === 'text'">
-                  <el-select v-model="row.selector" placeholder="选择或输入元素选择器(xpath=//*[@id='name'])" filterable allow-create  @change="emitChange">
+                  <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange">
                     <el-option
                       v-for="op in pageOptions"
                       :key="op.label"
@@ -138,7 +138,7 @@
                   />
                 </template>
                 <template v-if="row.assert_type === 'visible'">
-                  <el-select v-model="row.selector" placeholder="选择或输入元素选择器(xpath=//*[@id='name'])" filterable allow-create  @change="emitChange">
+                  <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange">
                     <el-option
                       v-for="op in pageOptions"
                       :key="op.label"
@@ -148,7 +148,7 @@
                   </el-select>
                 </template>
                 <template v-if="row.assert_type === 'exists'">
-                  <el-select v-model="row.selector" placeholder="选择或输入元素选择器(xpath=//*[@id='name'])" filterable allow-create  @change="emitChange">
+                  <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange">
                     <el-option
                       v-for="op in pageOptions"
                       :key="op.label"
@@ -160,7 +160,7 @@
               </template>
 
               <template v-if="row.action === 'click'">
-                <el-select v-model="row.selector" placeholder="选择或输入元素选择器" filterable allow-create  @change="emitChange">
+                <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange">
                   <el-option
                     v-for="op in pageOptions"
                     :key="op.label"
@@ -171,7 +171,7 @@
               </template>
               <!-- 输入 -->
         <template v-if="row.action === 'input'">
-          <el-select v-model="row.selector" placeholder="选择或输入元素选择器" filterable allow-create  @change="emitChange">
+          <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange">
             <el-option
               v-for="op in pageOptions"
               :key="op.label"
@@ -207,7 +207,7 @@
 
         <!-- 上传文件 -->
         <template v-if="row.action === 'upload'">
-          <el-select v-model="row.selector" placeholder="选择或输入元素选择器" filterable allow-create  @change="emitChange">
+          <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange">
             <el-option
               v-for="op in pageOptions"
               :key="op.label"
@@ -344,7 +344,7 @@ type PostStep = {
 type Step = {
   action: string;
   url?: string;
-  selector?: string;
+  element_id?: string;
   header?: string;
   expect?: string;
   assert_type?: string
@@ -549,15 +549,15 @@ const validateForm = async () => {
         break;
 
       case 'click':
-        if (!step.selector) {
-          ElMessage.error(`第${i + 1}个主流程步骤的选择器不能为空`);
+        if (!step.element_id) {
+          ElMessage.error(`第${i + 1}个主流程步骤的元素ID不能为空`);
           return false;
         }
         break;
 
       case 'input':
-        if (!step.selector) {
-          ElMessage.error(`第${i + 1}个主流程步骤的选择器不能为空`);
+        if (!step.element_id) {
+          ElMessage.error(`第${i + 1}个主流程步骤的元素ID不能为空`);
           return false;
         }
         if (!step.value) {
@@ -581,8 +581,8 @@ const validateForm = async () => {
         break;
 
       case 'upload':
-        if (!step.selector) {
-          ElMessage.error(`第${i + 1}个主流程步骤的选择器不能为空`);
+        if (!step.element_id) {
+          ElMessage.error(`第${i + 1}个主流程步骤的元素ID不能为空`);
           return false;
         }
         if (!step.filePath) {
@@ -719,7 +719,7 @@ async function fetchFileOptions() {
 
 
 // 关于元素选择
-const pageOptions = ref<{ label: string; value: string }[]>([]);
+const pageOptions = ref<{id: number, label: string; value: string }[]>([]);
 
 async function fetchPageOptions() {
   try {
@@ -733,7 +733,8 @@ async function fetchPageOptions() {
     // 将接口返回的数据映射到 pageOptions
     pageOptions.value = response.map((item: simpleElementType) => ({
       label: item.name, // 显示名称
-      value: item.locator_type + "=" + item.locator_value, // 元素定位值
+      // value: item.locator_type + "=" + item.locator_value, // 元素定位值
+      value: item.id, // 元素ID
     }));
   } catch (error) {
     console.error('获取页面选项失败:', error);
