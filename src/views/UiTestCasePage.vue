@@ -30,15 +30,17 @@
         >
           <template #default="{ node, data }">
             <div class="tree-node">
-              <el-icon :class="data.type" :data-type="data.type">
+              <el-icon
+                :class="data.type"
+                :data-type="data.type"
+                :style="{ color: data.type === 'case' ? (data.caseData?.enable === false ? '#f56c6c' : '#67c23a') : undefined }"
+              >
                 <component :is="data.type === 'case' ? 'Document' : 'Folder'" />
               </el-icon>
               <div class="tree-node-content">
                   <span class="tree-node-label">{{ data.label }}</span>
                 <span class="action-buttons">
                   <template v-if="data.type === 'case'">
-                    <!-- <el-button link type="primary" size="small" @click.stop="copyCase(data)" :icon="CopyDocument" class="icon-btn"></el-button>
-                    <el-button link type="danger" size="small" @click.stop="deleteCase(data)" :icon="Delete" class="icon-btn"></el-button> -->
                     <el-button link type="warning" size="small" @click.stop="copyCase(data)">复制</el-button>
                     <el-button link type="danger" size="small" @click.stop="deleteCase(data)">删除</el-button>
 
