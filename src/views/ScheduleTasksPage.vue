@@ -11,7 +11,7 @@
             />
           </div>
           <div class="top-col">
-            <!-- <TrendChart /> -->
+            <TrendChart :history="filteredHistory" />
           </div>
         </div>
         <ExecutionHistory 

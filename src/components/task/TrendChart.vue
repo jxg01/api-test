@@ -12,16 +12,15 @@
 <script setup lang="ts">
 import { use } from 'echarts/core';
 import { BarChart } from 'echarts/charts';
-import { 
+import {
   GridComponent,
   TooltipComponent,
   LegendComponent
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import VChart from 'vue-echarts';
-import { ref, computed, onMounted } from 'vue';
-import { useTaskStore } from '@/stores/tasksStore';
-import { storeToRefs } from 'pinia';
+import { ref, computed } from 'vue';
+import type { ExecutionLog } from '@/stores/tasksStore';
 
 // 注册必要的组件
 use([
@@ -32,22 +31,59 @@ use([
   CanvasRenderer
 ]);
 
-const taskStore = useTaskStore();
-const { selectedTask } = storeToRefs(taskStore);
+const props = defineProps<{
+  // 接收执行历史数据
+  history?: ExecutionLog[];
+}>();
 
-// 生成近7天日期
-const generateDates = () => {
-  const dates = [];
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    dates.push(`${date.getMonth()+1}-${date.getDate()}`);
+// 获取最近7次执行记录并处理成图表数据
+const chartData = computed(() => {
+  if (!props.history || props.history.length === 0) {
+    // 如果没有数据，返回模拟数据
+    return {
+      dates: ['', '', '', '', '', '', ''],
+      successData: [0, 0, 0, 0, 0, 0, 0],
+      failData: [0, 0, 0, 0, 0, 0, 0],
+      exitData: [0, 0, 0, 0, 0, 0, 0]
+    };
   }
-  return dates;
-};
+
+  // 取最近的7条记录，按时间倒序排列
+  const latest7Records = props.history.slice(0, 7).reverse();
+  
+  // 提取日期和状态数据
+  const dates = latest7Records.map(record => {
+    const date = new Date(record.created_at);
+    return `${date.getMonth() + 1}-${date.getDate()}`;
+  });
+
+  const successData = latest7Records.map(record => {
+    // 已完成状态且通过率为100%算成功
+    return record.passed;
+  });
+
+  const failData = latest7Records.map(record => {
+    // 失败状态或已完成但通过率不是100%算失败
+    return record.failed;
+  });
+
+  const exitData = latest7Records.map(record => {
+    // 运行中状态算退出
+    return record.status === 'running' ? 1 : 0;
+  });
+
+  return {
+    dates,
+    successData,
+    failData,
+    exitData
+  };
+});
 
 // 图表配置
 const chartOption = computed(() => {
+  const data = chartData.value;
+  
   return {
     tooltip: {
       trigger: 'axis',
@@ -56,7 +92,7 @@ const chartOption = computed(() => {
       }
     },
     legend: {
-      data: ['成功', '失败', '退出'],
+      data: ['成功', '失败'],
       bottom: 0
     },
     grid: {
@@ -68,7 +104,7 @@ const chartOption = computed(() => {
     },
     xAxis: {
       type: 'category',
-      data: generateDates(),
+      data: data.dates,
       axisLabel: {
         interval: 0,
         rotate: 0
@@ -85,7 +121,7 @@ const chartOption = computed(() => {
         type: 'bar',
         stack: 'total',
         emphasis: { focus: 'series' },
-        data: [5, 4, 7, 3, 6, 5, 4],
+        data: data.successData,
         itemStyle: { color: '#67C23A' },
         label: {
           show: true,
@@ -97,25 +133,25 @@ const chartOption = computed(() => {
         type: 'bar',
         stack: 'total',
         emphasis: { focus: 'series' },
-        data: [0, 1, 0, 0, 0, 0, 1],
+        data: data.failData,
         itemStyle: { color: '#F56C6C' },
         label: {
           show: true,
           position: 'inside'
         }
-      },
-      {
-        name: '退出',
-        type: 'bar',
-        stack: 'total',
-        emphasis: { focus: 'series' },
-        data: [0, 0, 0, 1, 0, 0, 0],
-        itemStyle: { color: '#E6A23C' },
-        label: {
-          show: true,
-          position: 'inside'
-        }
       }
+      // {
+      //   name: '退出',
+      //   type: 'bar',
+      //   stack: 'total',
+      //   emphasis: { focus: 'series' },
+      //   data: data.exitData,
+      //   itemStyle: { color: '#E6A23C' },
+      //   label: {
+      //     show: true,
+      //     position: 'inside'
+      //   }
+      // }
     ]
   };
 });

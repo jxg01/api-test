@@ -388,6 +388,7 @@ const handleCaseCancel = (tab: Tab) => {
   }
 }
 
+// ...existing code...
 const saveCase = async (tab: Tab) => {
   console.log('保存用例:', tab);
 
@@ -439,54 +440,84 @@ const saveCase = async (tab: Tab) => {
 
     // 刷新模块列表，确保获取最新数据
     await store.fetchModuleList();
-    
-    // 查找最新的用例数据（包含所有关联信息）
-    let updatedCaseData = null;
-    const findUpdatedCaseData = (modules: any[]): any => {
-      for (const module of modules) {
-        if (module.type === 'case' && module.id === (res.id || tab.id)) {
-          return module.caseData;
+
+    // 解析接口返回 id/name（兼容 res.data、res.id 等多种格式）
+    const returnedId = res?.data?.id ?? res?.id ?? res?.data?.pk ?? res?.pk ?? null;
+    const returnedName = res?.data?.name ?? res?.name ?? tab.caseData?.name ?? '';
+
+    // 在 moduleList 中按 id 查找最新用例，如果找不到再按 name 模糊匹配
+    let updatedCaseData: any = null;
+    const findCaseById = (modules: any[], id: any): any => {
+      for (const m of modules) {
+        if (m.children && Array.isArray(m.children)) {
+          for (const c of m.children) {
+            if (String(c.id) === String(id)) return c.caseData ?? c;
+          }
         }
-        if (module.children) {
-          const found = findUpdatedCaseData(module.children);
+        if (m.children) {
+          const found = findCaseById(m.children, id);
           if (found) return found;
         }
       }
       return null;
     };
-    
-    updatedCaseData = findUpdatedCaseData(store.moduleList);
+    if (returnedId) updatedCaseData = findCaseById(store.moduleList, returnedId);
+    // fallback 按名称查找（可能有重复名，按第一个匹配）
+    if (!updatedCaseData && returnedName) {
+      const findCaseByName = (modules: any[], name: string): any => {
+        for (const m of modules) {
+          if (m.children && Array.isArray(m.children)) {
+            for (const c of m.children) {
+              const candidateName = (c.caseData?.name ?? c.label ?? '') + '';
+              if (candidateName === name) return c.caseData ?? c;
+            }
+          }
+          if (m.children) {
+            const found = findCaseByName(m.children, name);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      updatedCaseData = findCaseByName(store.moduleList, returnedName);
+    }
 
     // 更新标签页数据
-    const index = openTabs.value.findIndex(t => t.id === (tab.id === 0 ? res.id : tab.id));
+    const newId = returnedId ?? (tab.id && tab.id !== 0 ? tab.id : null);
+    const index = openTabs.value.findIndex(t => String(t.id) === String(tab.id));
     if (index > -1) {
+      // 优先使用树上找到的完整数据
       if (updatedCaseData) {
-        // 使用完整的最新数据更新标签页
         openTabs.value[index].caseData = JSON.parse(JSON.stringify(updatedCaseData));
+        openTabs.value[index].name = updatedCaseData.name ?? (returnedName || openTabs.value[index].name);
       } else {
-        // 如果没有找到完整数据，使用接口返回的数据
-        openTabs.value[index].caseData = JSON.parse(JSON.stringify(res));
+        // 使用接口返回的数据或原有数据回填
+        const fallbackData = res?.data ?? res ?? tab.caseData;
+        openTabs.value[index].caseData = JSON.parse(JSON.stringify(fallbackData));
+        openTabs.value[index].name = returnedName || (fallbackData.name ?? openTabs.value[index].name);
       }
-      
-      // 更新标签页ID和名称
-      if (tab.id === 0) {
-        openTabs.value[index].id = res.id;
-        activeTab.value = res.id; // 确保新建用例后标签页保持选中状态
+      // 如果是新建（原 id 可能为 0），更新 id 并选中新 id
+      if ((tab.id === 0 || String(tab.id) === '0') && newId) {
+        openTabs.value[index].id = newId;
+        openTabs.value[index].editable = false;
+        // 等一轮 DOM 更新后切换 activeTab 到 newId，确保组件 key/name 更新
+        await nextTick();
+        activeTab.value = newId;
+      } else {
+        // 保持当前 activeTab（或更新名称）
+        openTabs.value[index].editable = false;
+        await nextTick();
       }
-      openTabs.value[index].name = res.name || tab.caseData.name;
-      openTabs.value[index].editable = false;
-      
-      // 强制更新组件，确保UI显示最新数据
-      await nextTick();
     }
 
     ElMessage.success('用例保存成功');
     
-    // 选中新创建的用例节点
-    if (treeRef.value && res.id) {
+    // 选中新创建的用例节点：用 newId 优先
+    const selectId = returnedId ?? (updatedCaseData?.id ?? null);
+    if (treeRef.value && selectId) {
       // 等待DOM更新后再设置选中状态
       setTimeout(() => {
-        treeRef.value.setCurrentKey(res.id);
+        treeRef.value.setCurrentKey(selectId);
       }, 100);
     }
   } catch (e) {
@@ -494,6 +525,115 @@ const saveCase = async (tab: Tab) => {
     ElMessage.error('保存失败，请稍后重试');
   }
 };
+ // ...existing code...
+
+
+// const saveCase = async (tab: Tab) => {
+//   console.log('保存用例:', tab);
+
+//   try {
+//     // 表单校验
+//     if (caseEditorRefs.value[tab.id] && caseEditorRefs.value[tab.id].validateForm) {
+//       const isValid = await caseEditorRefs.value[tab.id].validateForm();
+//       if (!isValid) {
+//         ElMessage.warning('用例数据校验失败，请检查输入');
+//         return;
+//       }
+//     }
+    
+//     // 找到所属模块的 ID
+//     let moduleId = null;
+//     const findModuleId = (modules: any[]): any => {
+//       for (const module of modules) {
+//         if (module.children && module.children.some((child: any) => child.id === tab.id)) {
+//           return module.id;
+//         }
+//         if (module.children) {
+//           const found = findModuleId(module.children);
+//           if (found) return found;
+//         }
+//       }
+//       return null;
+//     };
+    
+//     moduleId = findModuleId(store.moduleList);
+
+//     if (!moduleId) {
+//       ElMessage.error('未找到所属模块，保存失败');
+//       return;
+//     }
+
+//     // 构造接口参数
+//     const caseDataWithModule = {
+//       ...tab.caseData,
+//       module: moduleId // 添加所属模块 ID
+//     };
+
+//     // 调用接口
+//     const action = tab.id && tab.id !== 0
+//       ? store.editUiTestCase(caseDataWithModule) // 编辑用例
+//       : store.createUiTestCase(caseDataWithModule); // 新建用例
+
+//     const res = await action;
+//     console.log('保存结果:', res);
+
+//     // 刷新模块列表，确保获取最新数据
+//     await store.fetchModuleList();
+    
+//     // 查找最新的用例数据（包含所有关联信息）
+//     let updatedCaseData = null;
+//     const findUpdatedCaseData = (modules: any[]): any => {
+//       for (const module of modules) {
+//         if (module.type === 'case' && module.id === (res.id || tab.id)) {
+//           return module.caseData;
+//         }
+//         if (module.children) {
+//           const found = findUpdatedCaseData(module.children);
+//           if (found) return found;
+//         }
+//       }
+//       return null;
+//     };
+    
+//     updatedCaseData = findUpdatedCaseData(store.moduleList);
+
+//     // 更新标签页数据
+//     const index = openTabs.value.findIndex(t => t.id === (tab.id === 0 ? res.id : tab.id));
+//     if (index > -1) {
+//       if (updatedCaseData) {
+//         // 使用完整的最新数据更新标签页
+//         openTabs.value[index].caseData = JSON.parse(JSON.stringify(updatedCaseData));
+//       } else {
+//         // 如果没有找到完整数据，使用接口返回的数据
+//         openTabs.value[index].caseData = JSON.parse(JSON.stringify(res));
+//       }
+      
+//       // 更新标签页ID和名称
+//       if (tab.id === 0) {
+//         openTabs.value[index].id = res.id;
+//         activeTab.value = res.id; // 确保新建用例后标签页保持选中状态
+//       }
+//       openTabs.value[index].name = res.name || tab.caseData.name;
+//       openTabs.value[index].editable = false;
+      
+//       // 强制更新组件，确保UI显示最新数据
+//       await nextTick();
+//     }
+
+//     ElMessage.success('用例保存成功');
+    
+//     // 选中新创建的用例节点
+//     if (treeRef.value && res.id) {
+//       // 等待DOM更新后再设置选中状态
+//       setTimeout(() => {
+//         treeRef.value.setCurrentKey(res.id);
+//       }, 100);
+//     }
+//   } catch (e) {
+//     console.error('保存失败:', e);
+//     ElMessage.error('保存失败，请稍后重试');
+//   }
+// };
 
 
 

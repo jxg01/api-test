@@ -23,25 +23,25 @@
     >
       <el-row :gutter="24">
         <!-- 任务名称 -->
-        <el-col :span="10">
+        <el-col :span="spans">
           <el-form-item label="任务名称" prop="name">
              <el-input v-model="editingTask.name" :disabled="!isEditing" />
           </el-form-item>
         </el-col>
         <!-- cron表达式 -->
-        <el-col :span="10">
+        <el-col :span="spans">
           <el-form-item label="cron表达式" prop="cron">
             <el-input v-model="editingTask.cron" :disabled="!isEditing" />
           </el-form-item>
         </el-col>
         <!-- 状态 -->
-        <el-col :span="10">
+        <el-col :span="spans">
           <el-form-item label="状态" prop="enabled">
             <el-switch v-model="editingTask.enabled" :active-value="true" :inactive-value="false" :disabled="!isEditing" />
           </el-form-item>
         </el-col>
         <!-- 任务类型 -->
-        <el-col :span="10">
+        <el-col :span="spans">
           <el-form-item label="任务类型" prop="task_type">
             <el-select  v-model="editingTask.task_type" placeholder="请选择任务类型" :disabled="!isEditing">
               <el-option label="ui" value="ui" />
@@ -50,13 +50,13 @@
           </el-form-item>
         </el-col>
         <!-- 创建人 -->
-        <el-col :span="10">
+        <el-col :span="spans">
           <el-form-item label="创建人">
             <div class="form-value">{{ task.created_by }}</div>
           </el-form-item>
         </el-col>
         <!-- 编辑人 -->
-        <el-col :span="10">
+        <el-col :span="spans">
           <el-form-item label="编辑人">
             <div class="form-value">{{ task.updated_by }}</div>
           </el-form-item>
@@ -72,6 +72,8 @@ import type { FormInstance, FormRules } from 'element-plus'
 import type { Task } from '@/stores/tasksStore';
 import { useTaskStore } from '@/stores/tasksStore';
 import { on } from 'ace-builds-internal/config';
+
+const spans = 11
 
 const props = defineProps<{
   task: Task;
