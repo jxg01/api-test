@@ -26,6 +26,7 @@ export interface CaseData {
   post_steps: []
   enable: boolean
   module?: number
+  login_case?: string | null | undefined
 }
 
 
@@ -188,7 +189,8 @@ export const useUiTestStore = defineStore('uiTest', {
             pre_apis: caseItem.pre_apis || [],
             steps: caseItem.steps || [],
             post_steps: caseItem.post_steps || [],
-            enable: caseItem.enable
+            enable: caseItem.enable,
+            login_case: caseItem.login_case,
           }
         }))
       }))
@@ -211,7 +213,7 @@ export const useUiTestStore = defineStore('uiTest', {
     },
 
     async createUiTestCase(caseData: any) {
-      const res = uiTestApi.addUiTestCase(caseData)
+      const res = await uiTestApi.addUiTestCase(caseData)
       if (res) {
         return res
       }

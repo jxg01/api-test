@@ -62,25 +62,28 @@
           <el-button type="danger" size="small" @click="closeAllTabs" class="close-all-btn">关闭全部Tab</el-button>
         </div>
         <el-tabs
-          v-model="activeTab"
-          type="card"
-          closable
-          @tab-remove="closeTab"
-          class="case-tabs"
+        v-model="activeTab"
+        type="card"
+        closable
+        @tab-remove="closeTab"
+        class="case-tabs"
+      >
+        <el-tab-pane
+          v-for="tab in openTabs"
+          :key="tab.id"
+          :label="tab.name"
+          :name="tab.id"
         >
-          <el-tab-pane
-            v-for="tab in openTabs"
-            :key="tab.id"
-            :label="tab.name"
-            :name="tab.id"
-          >
-            <CaseEditor
-              v-model:caseData="tab.caseData"
-              @save="saveCase(tab)"
-              @run="runCase(tab)"
-            />
-          </el-tab-pane>
-        </el-tabs>
+          <CaseEditor
+            v-model:caseData="tab.caseData"
+            :default-edit-mode="tab.editable"
+            @save="saveCase(tab)"
+            @run="runCase(tab)"
+            @cancel="handleCaseCancel(tab)"
+            ref="caseEditorRefs"
+          />
+        </el-tab-pane>
+      </el-tabs>
         <div v-if="openTabs.length === 0" class="empty-state">← 点击左侧用例树节点编辑</div>
       </el-col>
     </el-row>
@@ -120,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive , watch, onMounted } from 'vue'
+import { ref, reactive , watch, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CaseEditor from '@/components/UiTest/CaseEditor.vue'
 import { Plus, VideoPlay } from '@element-plus/icons-vue'
@@ -132,12 +135,14 @@ import { useProjectChangeListener } from '@/composables/useProjectChangeListener
 
 const store = useUiTestStore()
 const projectStore = useProjectStore()
+const caseEditorRefs = ref<Record<string, any>>({})
 
 // 重置页面状态
 function resetViewStateOnProjectChange() {
   openTabs.value = []
   activeTab.value = ''
   searchText.value = ''
+  caseEditorRefs.value = {}
 }
 
 // 加载页面数据
@@ -223,6 +228,7 @@ function addCase(group: CaseTreeNode) {
       pre_apis: [],
       post_steps: [],
       enable: true,
+      login_case: null
     }
   };
 
@@ -232,7 +238,8 @@ function addCase(group: CaseTreeNode) {
   const tab: Tab = {
     id: node.id,
     name: node.label,
-    caseData: JSON.parse(JSON.stringify(node.caseData))
+    caseData: JSON.parse(JSON.stringify(node.caseData)),
+    editable: true // 新建用例默认可编辑
   };
 
   openTabs.value.push(tab);
@@ -273,7 +280,8 @@ const deleteCase = async(node: CaseTreeNode) => {
 type Tab = {
   id: string | number,
   name: string,
-  caseData: CaseData
+  caseData: CaseData,
+  editable?: boolean // 控制是否可编辑，默认为false
 }
 const openTabs = ref<Tab[]>([])
 const activeTab = ref<string | number>('')
@@ -285,11 +293,12 @@ function onTreeNodeClick(node: CaseTreeNode) {
 function openCase(node: CaseTreeNode) {
   let tab = openTabs.value.find(t => t.id === node.id)
   if (!tab) {
-    // 打开新tab
+    // 打开新tab，从树结构打开的默认为不可编辑状态
     tab = {
       id: node.id,
       name: node.label,
-      caseData: JSON.parse(JSON.stringify(node.caseData))
+      caseData: JSON.parse(JSON.stringify(node.caseData)),
+      editable: false
     }
     openTabs.value.push(tab)
   }
@@ -312,6 +321,8 @@ function closeTab(id: string) {
     }
 
     openTabs.value.splice(idx, 1);
+    // 删除对应的引用
+    delete caseEditorRefs.value[id];
   }
 
   // 更新 activeTab
@@ -322,20 +333,90 @@ function closeTab(id: string) {
   }
 }
 
+// 处理用例取消编辑
+const handleCaseCancel = (tab: Tab) => {
+  // 更新标签页的编辑状态
+  const tabIndex = openTabs.value.findIndex(t => t.id === tab.id)
+  if (tabIndex > -1) {
+    openTabs.value[tabIndex].editable = false
+    
+    // 判断是否为未保存的新建用例
+    const isUnsavedNewCase = tab.id === 0 || tab.name === '新建用例';
+    
+    if (isUnsavedNewCase) {
+      // 对于未保存的新建用例，清空数据
+      if (tab.caseData) {
+        tab.caseData.steps = [];
+        tab.caseData.pre_apis = [];
+        tab.caseData.post_steps = [];
+        // 深拷贝确保数据完全隔离
+        openTabs.value[tabIndex].caseData = JSON.parse(JSON.stringify(tab.caseData));
+      }
+    } else {
+      // 对于已保存的用例，从树结构中恢复原始数据
+      let originalCaseData = null;
+      // 使用递归查找确保能找到嵌套的用例数据
+      const findOriginalCaseData = (modules: any[]): any => {
+        for (const module of modules) {
+          if (module.type === 'case' && module.id === tab.id) {
+            return module.caseData;
+          }
+          if (module.children) {
+            const found = findOriginalCaseData(module.children);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      originalCaseData = findOriginalCaseData(store.moduleList);
+      
+      // 如果找到原始数据，则恢复
+      if (originalCaseData) {
+        openTabs.value[tabIndex].caseData = JSON.parse(JSON.stringify(originalCaseData));
+        openTabs.value[tabIndex].name = originalCaseData.name || tab.name;
+      }
+    }
+    
+    // 强制更新组件，确保UI显示最新数据
+    nextTick(() => {
+      // 如果有对应的编辑器引用，通知它更新
+      if (caseEditorRefs.value[tab.id]) {
+        caseEditorRefs.value[tab.id].setEditing(false);
+      }
+    });
+  }
+}
+
 const saveCase = async (tab: Tab) => {
   console.log('保存用例:', tab);
 
   try {
+    // 表单校验
+    if (caseEditorRefs.value[tab.id] && caseEditorRefs.value[tab.id].validateForm) {
+      const isValid = await caseEditorRefs.value[tab.id].validateForm();
+      if (!isValid) {
+        ElMessage.warning('用例数据校验失败，请检查输入');
+        return;
+      }
+    }
+    
     // 找到所属模块的 ID
     let moduleId = null;
-    store.moduleList.forEach(group => {
-      if (group.children) {
-        const caseNode = group.children.find(child => child.id === tab.id);
-        if (caseNode) {
-          moduleId = group.id; // 提取模块 ID
+    const findModuleId = (modules: any[]): any => {
+      for (const module of modules) {
+        if (module.children && module.children.some((child: any) => child.id === tab.id)) {
+          return module.id;
+        }
+        if (module.children) {
+          const found = findModuleId(module.children);
+          if (found) return found;
         }
       }
-    });
+      return null;
+    };
+    
+    moduleId = findModuleId(store.moduleList);
 
     if (!moduleId) {
       ElMessage.error('未找到所属模块，保存失败');
@@ -349,27 +430,68 @@ const saveCase = async (tab: Tab) => {
     };
 
     // 调用接口
-    const action = tab.id
+    const action = tab.id && tab.id !== 0
       ? store.editUiTestCase(caseDataWithModule) // 编辑用例
       : store.createUiTestCase(caseDataWithModule); // 新建用例
 
     const res = await action;
     console.log('保存结果:', res);
 
-    // 更新树结构中的用例数据
-    store.moduleList.forEach(group => {
-      group.children?.forEach(c => {
-        if (c.id === tab.id) {
-          c.caseData = JSON.parse(JSON.stringify(tab.caseData));
-          c.label = tab.caseData.name;
+    // 刷新模块列表，确保获取最新数据
+    await store.fetchModuleList();
+    
+    // 查找最新的用例数据（包含所有关联信息）
+    let updatedCaseData = null;
+    const findUpdatedCaseData = (modules: any[]): any => {
+      for (const module of modules) {
+        if (module.type === 'case' && module.id === (res.id || tab.id)) {
+          return module.caseData;
         }
-      });
-    });
+        if (module.children) {
+          const found = findUpdatedCaseData(module.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    updatedCaseData = findUpdatedCaseData(store.moduleList);
 
-    tab.name = tab.caseData.name;
+    // 更新标签页数据
+    const index = openTabs.value.findIndex(t => t.id === (tab.id === 0 ? res.id : tab.id));
+    if (index > -1) {
+      if (updatedCaseData) {
+        // 使用完整的最新数据更新标签页
+        openTabs.value[index].caseData = JSON.parse(JSON.stringify(updatedCaseData));
+      } else {
+        // 如果没有找到完整数据，使用接口返回的数据
+        openTabs.value[index].caseData = JSON.parse(JSON.stringify(res));
+      }
+      
+      // 更新标签页ID和名称
+      if (tab.id === 0) {
+        openTabs.value[index].id = res.id;
+        activeTab.value = res.id; // 确保新建用例后标签页保持选中状态
+      }
+      openTabs.value[index].name = res.name || tab.caseData.name;
+      openTabs.value[index].editable = false;
+      
+      // 强制更新组件，确保UI显示最新数据
+      await nextTick();
+    }
+
     ElMessage.success('用例保存成功');
+    
+    // 选中新创建的用例节点
+    if (treeRef.value && res.id) {
+      // 等待DOM更新后再设置选中状态
+      setTimeout(() => {
+        treeRef.value.setCurrentKey(res.id);
+      }, 100);
+    }
   } catch (e) {
     console.error('保存失败:', e);
+    ElMessage.error('保存失败，请稍后重试');
   }
 };
 
@@ -737,7 +859,7 @@ onMounted(() => {
 
 /* 批量执行按钮样式 */
 .batch-run-btn {
-  margin-right: 15px; /* 为按钮添加明显的右侧边距 */
+  margin-right: 15px; /* 为按钮添加明确的右侧边距 */
 }
 
 /* 按钮样式 */

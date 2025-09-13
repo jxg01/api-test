@@ -1,14 +1,25 @@
 <template>
   <div style="padding:24px 0 0 0">
-    <el-form :model="localCaseData" label-width="80px" ref="caseForm" :rules="formRules">
+    <el-form :model="localCaseData" label-width="80px" ref="caseForm" :rules="formRules" :disabled="!isEditing">
       <el-form-item label="用例名" prop="name">
-        <el-input v-model="localCaseData.name" @input="emitChange" />
+        <el-input v-model="localCaseData.name" @input="emitChange" :disabled="!isEditing"/>
       </el-form-item>
       <el-form-item label="描述">
-        <el-input v-model="localCaseData.description" @input="emitChange" />
+        <el-input v-model="localCaseData.description" @input="emitChange" :disabled="!isEditing"/>
+      </el-form-item>
+      <el-form-item label="前置登录">
+        <el-select v-model="localCaseData.login_case" placeholder="选择前置登录用例" clearable filterable @change="emitChange" :disabled="!isEditing">
+          <el-option
+            v-for="caseItem in loginCaseOptions"
+            :key="caseItem.id"
+            :label="caseItem.name"
+            :value="caseItem.id"
+          />
+        </el-select>
+        <div style="font-size: 12px; color: #606266; margin-top: 4px;"># 可选，将在当前用例执行前运行选中的登录用例</div>
       </el-form-item>
       <el-form-item label="状态">
-        <el-radio-group v-model="localCaseData.enable" @change="emitChange">
+        <el-radio-group v-model="localCaseData.enable" @change="emitChange" :disabled="!isEditing">
           <el-radio :value=true size="large">启用</el-radio>
           <el-radio :value=false size="large">禁用</el-radio>
         </el-radio-group>
@@ -23,12 +34,12 @@
             style="margin-bottom:12px;display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px dashed #eee"
           >
             <div style="display:flex;align-items:center;gap:8px;">
-              <el-select v-model="step.name" placeholder="前置接口类型" style="width:120px;" @change="emitChange">
+              <el-select v-model="step.name" placeholder="前置接口类型" style="width:120px;" @change="emitChange" :disabled="!isEditing">
                 <el-option label="API" value="api" />
                 <!-- <el-option label="其他" value="other" /> -->
               </el-select>
-              <el-input v-model="step.request.url" placeholder="接口URL" style="width:210px;" @input="emitChange" :status="!step.request.url ? 'error':undefined"/>
-              <el-select v-model="step.request.method" placeholder="方法" style="width:90px" @change="emitChange">
+              <el-input v-model="step.request.url" placeholder="接口URL" style="width:210px;" @input="emitChange" :status="!step.request.url ? 'error':undefined" :disabled="!isEditing"/>
+              <el-select v-model="step.request.method" placeholder="方法" style="width:90px" @change="emitChange" :disabled="!isEditing">
                 <el-option label="POST" value="POST" />
                 <el-option label="GET" value="GET" />
               </el-select>
@@ -41,33 +52,34 @@
                 @input="emitChange"
                 type="textarea"
                 autosize
+                :disabled="!isEditing"
               />
               <el-button
-                v-if="step.request.method === 'POST'"
+                v-if="step.request.method === 'POST' && isEditing"
                 size="small"
                 @click="openJsonEditor(i)"
                 style="padding:0 6px"
               >JSON可视化</el-button>
-              <el-button type="danger" size="small" @click="removePreApiStep(i)"><el-icon><Delete /></el-icon></el-button>
+              <el-button type="danger" size="small" @click="removePreApiStep(i)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
             </div>
             <!-- 多变量提取区 -->
             <div style="margin-left:12px;">
               <el-row v-for="(extract, k) in step.extracts" :key="k" style="margin-bottom:4px;align-items:center;">
                 <el-icon color="pink" :size="24"><SetUp /></el-icon>
                 <el-col :span="6">
-                  <el-input v-model="extract.varName" placeholder="变量名" @input="emitChange" :status="!extract.varName ? 'error':undefined"/>
+                  <el-input v-model="extract.varName" placeholder="变量名" @input="emitChange" :status="!extract.varName ? 'error':undefined" :disabled="!isEditing"/>
                 </el-col>
                 <el-col :span="14" style="margin-left:10px;">
-                  <el-input v-model="extract.jsonpath" placeholder="JsonPath如$.access_token" @input="emitChange" :status="!extract.jsonpath || !extract.jsonpath.startsWith('$') ? 'error':undefined"/>
+                  <el-input v-model="extract.jsonpath" placeholder="JsonPath如$.access_token" @input="emitChange" :status="!extract.jsonpath || !extract.jsonpath.startsWith('$') ? 'error':undefined" :disabled="!isEditing"/>
                 </el-col>
                 <el-col :span="1" style="margin-left:6px;">
-                  <el-button type="danger" size="small" @click="removeExtract(i, k)" ><el-icon><Delete /></el-icon></el-button>
+                  <el-button type="danger" size="small" @click="removeExtract(i, k)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
                 </el-col>
               </el-row>
-              <el-button type="success" size="small" @click="addExtract(i)">添加提取变量</el-button>
+              <el-button type="success" size="small" @click="addExtract(i)" v-if="isEditing">添加提取变量</el-button>
             </div>
           </div>
-          <el-button type="primary" size="small" @click="addPreApiStep">添加前置接口</el-button>
+          <el-button type="primary" size="small" @click="addPreApiStep" v-if="isEditing">添加前置接口</el-button>
         </el-card>
       </el-form-item>
 
@@ -84,8 +96,8 @@
           <template #item="{element: row, index: $index}">
             <div class="main-step">
               <div style="color: blueviolet;">{{ $index+1 }}</div>
-              <span class="drag-handle" style="cursor:move;font-size:30px;user-select:none;color:darkorchid;">⠿</span>
-              <el-select v-model="row.action" style="min-width: 80px;max-width: 120px;" @change="emitChange">
+              <span v-if="isEditing" class="drag-handle" style="cursor:move;font-size:30px;user-select:none;color:darkorchid;">⠿</span>
+              <el-select v-model="row.action" style="min-width: 80px;max-width: 120px;" @change="emitChange" :disabled="!isEditing">
                 <el-option v-for="a in stepActions" :key="a.value" :label="a.label" :value="a.value" />
               </el-select>
               <el-input
@@ -94,9 +106,10 @@
                 placeholder="URL"
                 style="width:100%"
                 @input="emitChange"
+                :disabled="!isEditing"
               />
               <template v-if="row.action === 'assert'">
-                <el-select style="min-width: 80px;max-width: 120px;" v-model="row.assert_type" placeholder="选择类型" @change="emitChange">
+                <el-select style="min-width: 80px;max-width: 120px;" v-model="row.assert_type" placeholder="选择类型" @change="emitChange" :disabled="!isEditing">
                   <el-option
                     v-for="op in assertType"
                     :key="op.label"
@@ -106,7 +119,7 @@
                 </el-select>
 
                 <template v-if="row.assert_type === 'text'">
-                  <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange">
+                  <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange" :disabled="!isEditing">
                     <el-option
                       v-for="op in pageOptions"
                       :key="op.label"
@@ -119,6 +132,7 @@
                     placeholder="期望文本"
                     style="width:100%"
                     @input="emitChange"
+                    :disabled="!isEditing"
                   />
                 </template>
                 <template v-if="row.assert_type === 'url'">
@@ -127,6 +141,7 @@
                     placeholder="期望文本"
                     style="width:100%"
                     @input="emitChange"
+                    :disabled="!isEditing"
                   />
                 </template>
                 <template v-if="row.assert_type === 'title'">
@@ -138,7 +153,7 @@
                   />
                 </template>
                 <template v-if="row.assert_type === 'visible'">
-                  <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange">
+                  <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange" :disabled="!isEditing">
                     <el-option
                       v-for="op in pageOptions"
                       :key="op.label"
@@ -189,40 +204,42 @@
 
         <!-- 等待时间 -->
         <el-input
-          v-if="row.action === 'sleep'"
-          v-model="row.seconds"
-          placeholder="等待时间(秒)"
-          style="width:100%"
-          @input="emitChange"
-        />
+                v-if="row.action === 'sleep'"
+                v-model="row.seconds"
+                placeholder="等待时间(秒)"
+                style="width:100%"
+                @input="emitChange"
+                :disabled="!isEditing"
+              />
 
         <!-- 执行JS -->
         <el-input
-          v-if="row.action === 'execute_script'"
-          v-model="row.script"
-          placeholder="JS代码"
-          style="width:100%"
-          @input="emitChange"
-        />
+                v-if="row.action === 'execute_script'"
+                v-model="row.script"
+                placeholder="JS代码"
+                style="width:100%"
+                @input="emitChange"
+                :disabled="!isEditing"
+              />
 
         <!-- 上传文件 -->
         <template v-if="row.action === 'upload'">
-          <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange">
-            <el-option
-              v-for="op in pageOptions"
-              :key="op.label"
-              :label="op.label"
-              :value="op.value"
-            />
-          </el-select>
-          <el-select v-model="row.filePath" placeholder="选择文件路径" filterable @change="emitChange">
-            <el-option
-              v-for="file in fileOptions"
-              :key="file.value"
-              :label="file.label"
-              :value="file.value"
-            />
-          </el-select>
+          <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange" :disabled="!isEditing">
+                    <el-option
+                      v-for="op in pageOptions"
+                      :key="op.label"
+                      :label="op.label"
+                      :value="op.value"
+                    />
+                  </el-select>
+                  <el-select v-model="row.filePath" placeholder="选择文件路径" filterable @change="emitChange" :disabled="!isEditing">
+                    <el-option
+                      v-for="file in fileOptions"
+                      :key="file.value"
+                      :label="file.label"
+                      :value="file.value"
+                    />
+                  </el-select>
           <!-- <el-input
             v-model="row.filePath"
             placeholder="文件路径"
@@ -230,33 +247,32 @@
             @input="emitChange"
           /> -->
         </template>
-              <el-button type="danger" size="small" @click="removeStep($index)" ><el-icon><Delete /></el-icon></el-button>
+              <el-button type="danger" size="small" @click="removeStep($index)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
             </div>
           </template>
         </draggable>
         
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" size="small" style="" @click="addStep">添加步骤</el-button>
+        <el-button type="primary" size="small" style="" @click="addStep" v-if="isEditing">添加步骤</el-button>
       </el-form-item>
       <!-- 后置处理步骤区 -->
       <el-form-item label="后置处理">
-        <el-card shadow="never" style="width: 100%" >
+        <el-card shadow="never" style="width: 100%">
           <div
             v-for="(step, i) in localCaseData.post_steps"
             :key="i"
             style="margin-bottom:12px;display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px dashed #eee"
           >
-            <el-select v-model="step.type" style="width: 190px" @change="emitChange">
+            <el-select v-model="step.type" style="width: 190px" @change="emitChange" :disabled="!isEditing">
               <el-option label="SQL" value="sql" />
-              <!-- <el-option label="接口" value="api" />
-              <el-option label="Shell" value="shell" /> -->
+              <!-- <el-option label="接口" value="api" /> -->
+              <!-- <el-option label="Shell" value="shell" /> -->
             </el-select>
             <!-- SQL类型 -->
             <template v-if="step.type === 'sql'">
               <!-- <el-input v-model="step.dbEnv" placeholder="数据库环境/别名" style="width:120px" @input="emitChange" /> -->
-
-              <el-select v-model="step.dbEnv" style="width: 300px;" placeholder="数据库环境/别名" @change="emitChange">
+              <el-select v-model="step.dbEnv" style="width: 300px;" placeholder="数据库环境/别名" @change="emitChange" :disabled="!isEditing">
                 <el-option
                   v-for="env in projectStore.current?.envs"
                   :key="env.id"
@@ -264,13 +280,12 @@
                   :value="env.id"
                 />
               </el-select>
-
-              <el-input type="textarea" v-model="step.sql" placeholder="SQL语句" style="width: 100%;" @input="emitChange" />
+              <el-input type="textarea" v-model="step.sql" placeholder="SQL语句" style="width: 100%;" @input="emitChange" :disabled="!isEditing" />
             </template>
             <!-- API类型 -->
             <template v-if="step.type === 'api'">
-              <el-input v-model="step.apiUrl" placeholder="接口URL" style="width:180px" @input="emitChange" />
-              <el-select v-model="step.apiMethod" placeholder="方法" style="width:70px" @change="emitChange">
+              <el-input v-model="step.apiUrl" placeholder="接口URL" style="width:180px" @input="emitChange" :disabled="!isEditing" />
+              <el-select v-model="step.apiMethod" placeholder="方法" style="width:70px" @change="emitChange" :disabled="!isEditing">
                 <el-option label="POST" value="POST" />
                 <el-option label="GET" value="GET" />
               </el-select>
@@ -281,21 +296,30 @@
                 type="textarea"
                 autosize
                 @input="emitChange"
+                :disabled="!isEditing"
               />
             </template>
             <!-- Shell类型 -->
             <template v-if="step.type === 'shell'">
-              <el-input v-model="step.shellCmd" placeholder="Shell命令" style="width:220px" @input="emitChange" />
+              <el-input v-model="step.shellCmd" placeholder="Shell命令" style="width:220px" @input="emitChange" :disabled="!isEditing" />
             </template>
-            <el-button type="danger" size="small" @click="removePostStep(i)" ><el-icon><Delete /></el-icon></el-button>
+            <el-button type="danger" size="small" @click="removePostStep(i)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
           </div>
-          <el-button type="primary" size="small" @click="addPostStep">添加后置步骤</el-button>
+          <el-button type="primary" size="small" @click="addPostStep" v-if="isEditing">添加后置步骤</el-button>
         </el-card>
       </el-form-item>
     </el-form>
     <div style="margin:18px 0">
-      <el-button type="primary" @click="onSave">保存</el-button>
-      <el-button type="success" @click="onRun">调试运行</el-button>
+      <!-- 查看模式 -->
+      <template v-if="!isEditing">
+        <el-button type="primary" @click="enterEditMode">编辑</el-button>
+        <el-button type="success" @click="onRun">调试运行</el-button>
+      </template>
+      <!-- 编辑模式 -->
+      <template v-else>
+        <el-button type="primary" @click="onSave">保存</el-button>
+        <el-button @click="cancelEdit">取消</el-button>
+      </template>
     </div>
 
     <!-- JSON编辑弹窗 -->
@@ -362,19 +386,53 @@ type CaseData = {
   steps: Step[]
   post_steps: PostStep[]
   enable: boolean
+  login_case?: string | null
 }
 
 const props = defineProps<{
   caseData: CaseData
+  defaultEditMode?: boolean
 }>()
-const emit = defineEmits(['update:caseData', 'save', 'run'])
+const emit = defineEmits(['update:caseData', 'save', 'run', 'cancel'])
 const caseForm = ref<FormInstance>()
+const isEditing = ref(props.defaultEditMode || false)
+const originalData = ref<CaseData>(JSON.parse(JSON.stringify(props.caseData)))
 const formRules = reactive<FormRules>({
   name: [
-    { required: true, message: '用例名称不能为空', trigger: 'blur' },
-    { min: 2, max: 30, message: '长度在2-30个字符', trigger: ['blur', 'change'] }
+    {
+      required: true,
+      message: '请输入用例名',
+      trigger: 'blur'
+    }
   ]
 })
+
+// 进入编辑模式
+const enterEditMode = () => {
+  isEditing.value = true;
+  // 编辑模式不需要重新设置originalData，因为它应该已经在组件初始化和props变化时被正确设置
+};
+
+// 取消编辑
+const cancelEdit = () => {
+  isEditing.value = false;
+  // 恢复原始数据
+  localCaseData.value = JSON.parse(JSON.stringify(originalData.value));
+  emit('cancel');
+};
+
+
+
+// 获取当前用例数据
+const getCaseData = () => {
+  return JSON.parse(JSON.stringify(localCaseData.value));
+};
+
+// 设置编辑状态（供父组件调用）
+const setEditing = (editing: boolean) => {
+  isEditing.value = editing;
+};
+
 const stepActions = [
   // { label: '设置Header', value: 'set_header' },
   { label: '跳转页面', value: 'goto' },
@@ -400,19 +458,59 @@ function randomId() {
 function fillUuid(list: Step[]) {
   list.forEach(s => { if (!s.__uuid) s.__uuid = randomId() })
 }
-const localCaseData = ref<CaseData>(JSON.parse(JSON.stringify(props.caseData || { id: '', name: '', description: '', pre_apis: [], steps: [],  })))
+const localCaseData = ref<CaseData>(JSON.parse(JSON.stringify(props.caseData || { id: '', name: '', description: '', pre_apis: [], steps: [], login_case: null })))
 if (localCaseData.value.steps) fillUuid(localCaseData.value.steps)
 if (!localCaseData.value.pre_apis) localCaseData.value.pre_apis = []
 if (!localCaseData.value.post_steps) localCaseData.value.post_steps = []
 localCaseData.value.pre_apis.forEach(p => { if (!p.extracts) p.extracts = [] })
 
+// 监听props.caseData变化，只在非编辑模式下更新localCaseData和originalData
 watch(
   () => props.caseData,
   (val) => {
-    localCaseData.value = JSON.parse(JSON.stringify(val || { id: '', name: '', description: '', pre_apis: [], steps: [] }))
-    fillUuid(localCaseData.value.steps)
-    if (!localCaseData.value.pre_apis) localCaseData.value.pre_apis = []
-    localCaseData.value.pre_apis.forEach(p => { if (!p.extracts) p.extracts = [] })
+    // 只在非编辑模式下更新数据，避免覆盖用户正在编辑的内容
+    if (!isEditing.value && val) {
+      // 深拷贝确保数据隔离
+      localCaseData.value = JSON.parse(JSON.stringify(val))
+      // 确保steps有UUID
+      if (localCaseData.value.steps) fillUuid(localCaseData.value.steps)
+      // 确保必要字段存在
+      if (!localCaseData.value.pre_apis) localCaseData.value.pre_apis = []
+      if (!localCaseData.value.post_steps) localCaseData.value.post_steps = []
+      localCaseData.value.pre_apis.forEach(p => { if (!p.extracts) p.extracts = [] })
+      // 确保originalData也同步更新
+      originalData.value = JSON.parse(JSON.stringify(localCaseData.value))
+    }
+  },
+  { deep: true, immediate: true }
+)
+
+// 监听store中的moduleList变化，确保用例详情与tree数据实时同步
+watch(
+  () => store.moduleList,
+  (newModuleList) => {
+    if (!isEditing.value && props.caseData.id) {
+      // 从最新的moduleList中查找当前用例的数据
+      const findCaseInModules = (modules: any[]): CaseData | null => {
+        for (const module of modules) {
+          if (module.type === 'case' && module.id === props.caseData.id) {
+            return module.caseData;
+          }
+          if (module.children) {
+            const found: CaseData | null = findCaseInModules(module.children);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      const updatedCaseData: CaseData | null = findCaseInModules(newModuleList);
+      if (updatedCaseData && JSON.stringify(updatedCaseData) !== JSON.stringify(props.caseData)) {
+        // 如果发现数据不一致，更新localCaseData和originalData
+        localCaseData.value = JSON.parse(JSON.stringify(updatedCaseData));
+        originalData.value = JSON.parse(JSON.stringify(updatedCaseData));
+      }
+    }
   },
   { deep: true }
 )
@@ -525,9 +623,11 @@ const validateForm = async () => {
     // JSON格式校验
     if (api.request.method === 'POST' && api.request.body) {
       try {
-        JSON.parse(api.request.body);
+        if (api.request.body.trim() !== '') {
+          JSON.parse(api.request.body);
+        }
       } catch (e) {
-        ElMessage.error(`第${i + 1}个前置接口Body不是合法JSON`);
+        ElMessage.error(`第${i + 1}个前置接口的请求体JSON格式不合法`);
         return false;
       }
     }
@@ -549,26 +649,16 @@ const validateForm = async () => {
         break;
 
       case 'click':
-        if (!step.element_id) {
-          ElMessage.error(`第${i + 1}个主流程步骤的元素ID不能为空`);
-          return false;
-        }
-        break;
-
       case 'input':
         if (!step.element_id) {
           ElMessage.error(`第${i + 1}个主流程步骤的元素ID不能为空`);
           return false;
         }
-        if (!step.value) {
-          ElMessage.error(`第${i + 1}个主流程步骤的输入值不能为空`);
-          return false;
-        }
         break;
 
       case 'sleep':
-        if (!step.seconds || step.seconds <= 0) {
-          ElMessage.error(`第${i + 1}个主流程步骤的等待时间必须大于0`);
+        if (!step.seconds || isNaN(Number(step.seconds))) {
+          ElMessage.error(`第${i + 1}个主流程步骤的等待时间必须为数字`);
           return false;
         }
         break;
@@ -592,27 +682,10 @@ const validateForm = async () => {
         break;
 
       case 'assert':
-        // console.error('assert === ', step)
         if (!step.assert_type) {
           ElMessage.error(`第${i + 1}个主流程步骤的断言类型不能为空`);
           return false;
         }
-
-        // if (step.selector) {
-        //   if (step.selector === '') {
-        //     ElMessage.error(`第${i + 1}个主流程步骤的选择器不能为空`);
-        //     return false;
-        //   }
-          
-        // }
-        // if (step.expect === '') {
-        //   console.error('assert expect === ', step.expect)
-
-        //   ElMessage.error(`第${i + 1}个主流程步骤的期望文本不能为空`);
-        //   return false;
-
-          
-        // }
         break;
 
       default:
@@ -630,6 +703,10 @@ const validateForm = async () => {
 
     switch (step.type) {
       case 'sql':
+        if (!step.dbEnv) {
+          ElMessage.error(`第${i + 1}个后置处理步骤的数据库环境不能为空`);
+          return false;
+        }
         if (!step.sql) {
           ElMessage.error(`第${i + 1}个后置处理步骤的SQL语句不能为空`);
           return false;
@@ -645,11 +722,14 @@ const validateForm = async () => {
           ElMessage.error(`第${i + 1}个后置处理步骤的请求方法不能为空`);
           return false;
         }
-        if (step.apiBody) {
+        // JSON格式校验
+        if (step.apiMethod === 'POST' && step.apiBody) {
           try {
-            JSON.parse(step.apiBody);
+            if (step.apiBody.trim() !== '') {
+              JSON.parse(step.apiBody);
+            }
           } catch (e) {
-            ElMessage.error(`第${i + 1}个后置处理步骤的请求体不是合法JSON`);
+            ElMessage.error(`第${i + 1}个后置处理步骤的请求体JSON格式不合法`);
             return false;
           }
         }
@@ -671,13 +751,14 @@ const validateForm = async () => {
   return true;
 };
 
-
-
 async function onSave() {
   try {
     const isValid = await validateForm(); // 等待校验结果
     if (!isValid) return; // 如果校验失败，直接返回
     emit('save'); // 触发父组件的 save 方法
+    setEditing(false); // 保存成功后切换回非编辑模式
+    // 保存成功后刷新tree数据，确保显示最新的用例数据
+    // await store.fetchModuleList();
   } catch (error) {
     console.error('保存失败:', error);
   }
@@ -695,6 +776,7 @@ async function onRun() {
 
 
 const fileOptions = ref<{ label: string; value: string }[]>([]);
+const loginCaseOptions = ref<{ id: string; name: string }[]>([]);
 
 async function fetchFileOptions() {
   try {
@@ -742,12 +824,82 @@ async function fetchPageOptions() {
   }
 }
 
+// 从store.moduleList中提取并过滤用例数据
+function fetchLoginCaseOptions() {
+  try {
+    // 确保moduleList已加载
+    if (!store.moduleList || !store.moduleList.length) {
+      ElMessage.warning('模块列表为空，无法获取登录用例选项');
+      return;
+    }
+
+    // 从模块列表中提取所有用例并过滤当前用例
+    const allCases: { id: string; name: string }[] = [];
+    
+    // 递归遍历模块列表，提取所有用例
+    function extractCasesFromModules(modules: any[]) {
+
+      modules.forEach(module => {
+        // 添加当前模块下的用例
+        if (module.children && module.children.length) {
+          module.children.forEach((testCase: any) => {
+            // 排除当前用例
+            if (testCase.id !== localCaseData.value.id) {
+              allCases.push({
+                id: testCase.id,
+                name: testCase.label
+              });
+            }
+          });
+        }
+      });
+    }
+    extractCasesFromModules(store.moduleList);
+    
+    // 排序用例（可选）
+    allCases.sort((a, b) => a.name.localeCompare(b.name));
+    
+    // 更新loginCaseOptions
+    loginCaseOptions.value = allCases;
+  } catch (error) {
+    console.error('获取登录用例选项失败:', error);
+    ElMessage.error('获取登录用例选项失败，请稍后重试');
+  }
+}
+
 onMounted(async () => {
   fetchPageOptions(); // 页面加载时调用
-  await fetchFileOptions()
+  await fetchFileOptions();
+  
+  // 如果模块列表已加载，直接初始化登录用例选项
+  if (store.moduleList && store.moduleList.length) {
+    fetchLoginCaseOptions();
+  }
 });
 
+// 监听项目ID变化，重新加载模块和登录用例选项
+watch(
+  () => projectStore.currentProjectId,
+  async (newProjectId, oldProjectId) => {
+    if (newProjectId !== oldProjectId && newProjectId) {
+      try {
+        // 等待模块列表重新加载
+        await store.fetchModuleList();
+        // 重新加载登录用例选项
+        fetchLoginCaseOptions();
+      } catch (error) {
+        console.error('切换项目后重新加载模块列表失败:', error);
+      }
+    }
+  }
+);
 
+// 导出方法供父组件使用
+defineExpose({
+  validateForm,
+  getCaseData,
+  setEditing
+});
 
 
 
