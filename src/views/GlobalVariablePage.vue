@@ -7,7 +7,7 @@
             placeholder="请输入变量名称"
             clearable
             @keyup.enter="handleSearch"
-            style="max-width: 200px;"
+            style="min-width: 250px; max-width: 400px; width: 100%;"
           >
           <template #prefix>
               <el-icon><Search /></el-icon>
@@ -223,18 +223,21 @@ const handleSubmit = async (data: GlobalVariable, mode: 'add' | 'edit', done: (s
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* margin-bottom: 14px; */
   padding: 10px;
-  /* gap: 10px; */
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .search-tool {
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: 300px;
-  min-width: 160px;
+  flex: 1;
+  min-width: 250px;
 }
 
+.search-tool :deep(.el-input) {
+  flex: 1;
+}
 
 </style>

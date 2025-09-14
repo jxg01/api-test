@@ -230,7 +230,7 @@ onMounted(() => {
   align-items: center;
   /* margin-bottom: 12px; */
   padding: 10px;
-  max-width: 600px;
+  max-width: 800px;
   min-width: 200px;
   gap: 10px;
 }
