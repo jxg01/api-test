@@ -32,8 +32,8 @@ export const scheduleTasksApi = {
   /** 获取任务结果详情 */
   getScheduleTaskLogDetail: (id: number) => 
     http.get(`/scheduled-tasks/logs/${id}/`),
-  /** 立即执行任务 */
-  runScheduleTaskNow: (id: number) => 
-    http.post<BaseResponse>(`/scheduled-tasks/${id}/run/`),
+  /** 手动运行 */
+  runTaskManually: (id: number) => 
+    http.post<BaseResponse>(`/scheduled-tasks/${id}/run-manually/`),
 
 }

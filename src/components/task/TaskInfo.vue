@@ -4,6 +4,7 @@
       <div class="detail-title">任务详情</div>
       <div class="edit-buttons">
         <template v-if="!isEditing">
+          <el-button type="danger" @click="runTaskManually">手动执行</el-button>
           <el-button type="primary" @click="startEditing">编辑</el-button>
         </template>
         <template v-else>
@@ -71,6 +72,8 @@ import { ref, computed, watch, onMounted } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Task } from '@/stores/tasksStore';
 import { useTaskStore } from '@/stores/tasksStore';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { scheduleTasksApi } from '@/api/scheduleTasks.api';
 import { on } from 'ace-builds-internal/config';
 
 const spans = 11
@@ -124,6 +127,31 @@ const saveEdit = () => {
       emit('update-task', editingTask.value);
     }
   });
+};
+
+// 手动执行任务
+const runTaskManually = async () => {
+  try {
+    // 添加确认弹窗
+    await ElMessageBox.confirm(
+      `确定要手动执行任务 "${props.task.name}" 吗？`,
+      '确认执行',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+    
+    await scheduleTasksApi.runTaskManually(props.task.id);
+    ElMessage.success('API测试任务已手动触发，正在执行中');
+  } catch (error) {
+    // 如果用户取消，不显示错误消息
+    if (error !== 'cancel') {
+      ElMessage.error('任务执行失败');
+      console.error('手动执行任务失败:', error);
+    }
+  }
 };
 
 // 在cancelEdit方法中清除校验提示
