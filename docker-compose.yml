@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  api-test:
+    build: .
+    container_name: api-test-container
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    # 环境变量配置 - 可以在这里覆盖.env文件中的值
+    # environment:
+    #   - VITE_API_BASE_URL=http://your-backend-server/api
+    #   - VITE_FILE_BASE_URL=http://your-file-server/media/
+    #   - VITE_LOGO_URL=https://your-logo-url.com/logo.png
+
+# 如果需要持久化数据，可以定义卷
+# volumes:
+#   api-test-data:
+#     driver: local
