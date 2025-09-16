@@ -33,53 +33,98 @@
             :key="i"
             style="margin-bottom:12px;display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px dashed #eee"
           >
-            <div style="display:flex;align-items:center;gap:8px;">
-              <el-select v-model="step.name" placeholder="前置接口类型" style="width:120px;" @change="emitChange" :disabled="!isEditing">
-                <el-option label="API" value="api" />
-                <!-- <el-option label="其他" value="other" /> -->
-              </el-select>
-              <el-input v-model="step.request.url" placeholder="接口URL" style="width:210px;" @input="emitChange" :status="!step.request.url ? 'error':undefined" :disabled="!isEditing"/>
-              <el-select v-model="step.request.method" placeholder="方法" style="width:90px" @change="emitChange" :disabled="!isEditing">
-                <el-option label="POST" value="POST" />
-                <el-option label="GET" value="GET" />
-              </el-select>
-              <!-- body编辑按钮与文本域 -->
-              <el-input
-                v-if="step.request.method === 'POST'"
-                v-model="step.request.body"
-                placeholder="请求体(原始JSON)"
-                style="width:180px;"
-                @input="emitChange"
-                type="textarea"
-                autosize
-                :disabled="!isEditing"
-              />
-              <el-button
-                v-if="step.request.method === 'POST' && isEditing"
-                size="small"
-                @click="openJsonEditor(i)"
-                style="padding:0 6px"
-              >JSON可视化</el-button>
-              <el-button type="danger" size="small" @click="removePreApiStep(i)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
-            </div>
-            <!-- 多变量提取区 -->
-            <div style="margin-left:12px;">
-              <el-row v-for="(extract, k) in step.extracts" :key="k" style="margin-bottom:4px;align-items:center;">
-                <el-icon color="pink" :size="24"><SetUp /></el-icon>
-                <el-col :span="6">
-                  <el-input v-model="extract.varName" placeholder="变量名" @input="emitChange" :status="!extract.varName ? 'error':undefined" :disabled="!isEditing"/>
-                </el-col>
-                <el-col :span="14" style="margin-left:10px;">
-                  <el-input v-model="extract.jsonpath" placeholder="JsonPath如$.access_token" @input="emitChange" :status="!extract.jsonpath || !extract.jsonpath.startsWith('$') ? 'error':undefined" :disabled="!isEditing"/>
-                </el-col>
-                <el-col :span="1" style="margin-left:6px;">
-                  <el-button type="danger" size="small" @click="removeExtract(i, k)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
-                </el-col>
-              </el-row>
-              <el-button type="success" size="small" @click="addExtract(i)" v-if="isEditing">添加提取变量</el-button>
-            </div>
+            <!-- API类型前置条件 -->
+            <template v-if="!step.type || step.type === 'api'">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <el-select v-model="step.name" placeholder="前置接口类型" style="width:120px;" @change="emitChange" :disabled="!isEditing">
+                  <el-option label="API" value="api" />
+                </el-select>
+                <template v-if="step.request">
+                  <el-input v-model="step.request.url" placeholder="接口URL" style="width:210px;" @input="emitChange" :status="!step.request.url ? 'error':undefined" :disabled="!isEditing"/>
+                  <el-select v-model="step.request.method" placeholder="方法" style="width:90px" @change="emitChange" :disabled="!isEditing">
+                    <el-option label="POST" value="POST" />
+                    <el-option label="GET" value="GET" />
+                  </el-select>
+                  <!-- body编辑按钮与文本域 -->
+                  <el-input
+                    v-if="step.request.method === 'POST'"
+                    v-model="step.request.body"
+                    placeholder="请求体(原始JSON)"
+                    style="width:180px;"
+                    @input="emitChange"
+                    type="textarea"
+                    autosize
+                    :disabled="!isEditing"
+                  />
+                  <el-button
+                    v-if="step.request.method === 'POST' && isEditing"
+                    size="small"
+                    @click="openJsonEditor(i)"
+                    style="padding:0 6px"
+                  >JSON可视化</el-button>
+                </template>
+                <el-button type="danger" size="small" @click="removePreApiStep(i)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
+              </div>
+              <!-- 多变量提取区 -->
+              <div style="margin-left:12px;">
+                <el-row v-for="(extract, k) in step.extracts" :key="k" style="margin-bottom:4px;align-items:center;">
+                  <el-icon color="pink" :size="24"><SetUp /></el-icon>
+                  <el-col :span="6">
+                    <el-input v-model="extract.varName" placeholder="变量名" @input="emitChange" :status="!extract.varName ? 'error':undefined" :disabled="!isEditing"/>
+                  </el-col>
+                  <el-col :span="14" style="margin-left:10px;">
+                    <el-input v-model="extract.jsonpath" placeholder="JsonPath如$.access_token" @input="emitChange" :status="!extract.jsonpath || !extract.jsonpath.startsWith('$') ? 'error':undefined" :disabled="!isEditing"/>
+                  </el-col>
+                  <el-col :span="1" style="margin-left:6px;">
+                    <el-button type="danger" size="small" @click="removeExtract(i, k)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
+                  </el-col>
+                </el-row>
+                <el-button type="success" size="small" @click="addExtract(i)" v-if="isEditing">添加提取变量</el-button>
+              </div>
+            </template>
+            
+            <!-- SQL类型前置条件 -->
+            <template v-else-if="step.type === 'sql'">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <el-input v-model="step.name" placeholder="步骤名称" style="width:120px;" @input="emitChange" :disabled="!isEditing" />
+                <el-select v-model="step.dbEnv" style="width: 300px;" placeholder="数据库环境" @change="emitChange" :disabled="!isEditing">
+                  <el-option
+                    v-for="env in projectStore.current?.envs"
+                    :key="env.id"
+                    :label="env.name"
+                    :value="env.id"
+                  />
+                </el-select>
+                <el-button type="danger" size="small" @click="removePreApiStep(i)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
+              </div>
+              
+              <!-- SQL语句和变量提取 -->
+              <div class="sql-section">
+                <el-input type="textarea" v-model="step.sql" placeholder="SQL语句" style="width: 100%;" @input="emitChange" :disabled="!isEditing" />
+                
+                <!-- SQL变量提取 -->
+                <div style="margin-left:12px;">
+                  <el-row v-for="(extract, k) in step.sqlExtracts" :key="k" style="margin-bottom:4px;align-items:center;">
+                    <el-icon color="pink" :size="24"><SetUp /></el-icon>
+                    <el-col :span="6">
+                      <el-input v-model="extract.varName" placeholder="变量名" @input="emitChange" :disabled="!isEditing"/>
+                    </el-col>
+                    <el-col :span="14" style="margin-left:10px;">
+                      <el-input v-model="extract.column" placeholder="列名" @input="emitChange" :disabled="!isEditing"/>
+                    </el-col>
+                    <el-col :span="1" style="margin-left:6px;">
+                      <el-button type="danger" size="small" @click="removeSQLExtract(i, k)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
+                    </el-col>
+                  </el-row>
+                  <!-- <el-button type="success" size="small" @click="addSQLExtract(i)" v-if="isEditing">添加SQL提取变量</el-button> -->
+                </div>
+              </div>
+            </template>
           </div>
-          <el-button type="primary" size="small" @click="addPreApiStep" v-if="isEditing">添加前置接口</el-button>
+          <div v-if="isEditing">
+            <el-button type="primary" size="small" @click="addPreApiStep('api')">添加接口</el-button>
+            <el-button type="primary" size="small" @click="addPreApiStep('sql')">添加SQL</el-button>
+          </div>
         </el-card>
       </el-form-item>
 
@@ -172,6 +217,46 @@
                     />
                   </el-select>
                 </template>
+              </template>
+
+              <!-- SQL执行 -->
+              <template v-if="row.action === 'sql'">
+                <el-select v-model="row.dbEnv" placeholder="数据库环境" @change="emitChange" style="width: 120px;">
+                  <el-option
+                    v-for="env in projectStore.current?.envs || []"
+                    :key="env.id"
+                    :label="env.name"
+                    :value="env.id"
+                  />
+                </el-select>
+                <el-input
+                  v-model="row.sql"
+                  placeholder="SQL语句"
+                  style="width: 100%"
+                  type="textarea"
+                  :rows="3"
+                  @input="emitChange"
+                />
+                <!-- <div v-if="row.sqlExtracts && row.sqlExtracts.length > 0" style="margin-top: 8px;">
+                  <el-divider content-position="left">变量提取</el-divider>
+                  <div v-for="(extract, idx) in row.sqlExtracts" :key="idx" style="margin-bottom: 8px; display: flex; align-items: center;">
+                    <el-input
+                      v-model="extract.varName"
+                      placeholder="变量名"
+                      style="width: 120px; margin-right: 8px;"
+                      @input="emitChange"
+                    />
+                    <span style="margin: 0 4px;">←</span>
+                    <el-input
+                      v-model="extract.column"
+                      placeholder="列名"
+                      style="width: 120px; margin-right: 8px;"
+                      @input="emitChange"
+                    />
+                    <el-button type="danger" size="small" @click="removeStepSQLExtract($index, idx)">删除</el-button>
+                  </div>
+                </div>
+                <el-button type="primary" size="small" @click="addStepSQLExtract($index)">添加变量提取</el-button> -->
               </template>
 
               <template v-if="row.action === 'click'">
@@ -351,10 +436,22 @@ const store = useUiTestStore()
 
 type ExtractVar = { varName: string, jsonpath: string }
 
+// SQL变量提取类型
+type SQLExtractVar = {
+  varName: string,
+  column: string
+}
+
+// 前置条件步骤类型
 type PreApiStep = {
   name: string
-  request: {url: string, method: string, body?: string}
-  extracts: ExtractVar[]
+  type?: 'api' | 'sql' // 新增SQL类型
+  request?: {url: string, method: string, body?: string}
+  extracts?: ExtractVar[] // API变量提取
+  // SQL相关字段
+  sql?: string
+  dbEnv?: string
+  sqlExtracts?: SQLExtractVar[]
 }
 type PostStep = {
   type: 'sql' | 'api' | 'shell',
@@ -364,6 +461,7 @@ type PostStep = {
   apiMethod?: string,
   apiBody?: string
   shellCmd?: string
+  sqlExtracts?: SQLExtractVar[] // SQL变量提取
 }
 type Step = {
   action: string;
@@ -377,6 +475,10 @@ type Step = {
   script?: string;
   filePath?: string;
   __uuid?: string;
+  // SQL相关字段
+  sql?: string;
+  dbEnv?: string;
+  sqlExtracts?: SQLExtractVar[];
 };
 type CaseData = {
   id: string,
@@ -442,6 +544,7 @@ const stepActions = [
   { label: '执行js', value: 'execute_script' },
   { label: '上传文件', value: 'upload' },
   { label: '断言', value: 'assert' },
+  { label: '执行SQL', value: 'sql' },
 ]
 
 const assertType = [
@@ -526,15 +629,23 @@ function removeStep(idx: number) {
   localCaseData.value.steps.splice(idx, 1)
   emitChange()
 }
-function addPreApiStep() {
-  localCaseData.value.pre_apis.push({
-    name: 'api',
-    request: {url: '', method: 'POST', body: ''},
-    // url: '',
-    // method: 'POST',
-    // body: '',
-    extracts: []
-  })
+function addPreApiStep(type: 'api' | 'sql' = 'api') {
+  if (type === 'api') {
+    localCaseData.value.pre_apis.push({
+      name: 'api',
+      type: 'api',
+      request: {url: '', method: 'POST', body: ''},
+      extracts: []
+    })
+  } else {
+    localCaseData.value.pre_apis.push({
+      name: 'sql',
+      type: 'sql',
+      sql: '',
+      dbEnv: '',
+      sqlExtracts: [{ varName: '', column: '' }]
+    })
+  }
   emitChange()
 }
 function removePreApiStep(idx: number) {
@@ -555,11 +666,48 @@ emitChange()
 }
 
 function addExtract(preIdx: number) {
+  if (!localCaseData.value.pre_apis[preIdx].extracts) {
+    localCaseData.value.pre_apis[preIdx].extracts = []
+  }
   localCaseData.value.pre_apis[preIdx].extracts.push({ varName: '', jsonpath: '' })
   emitChange()
 }
 function removeExtract(preIdx: number, idx: number) {
-  localCaseData.value.pre_apis[preIdx].extracts.splice(idx, 1)
+  if (localCaseData.value.pre_apis[preIdx].extracts) {
+    localCaseData.value.pre_apis[preIdx].extracts.splice(idx, 1)
+  }
+  emitChange()
+}
+
+// SQL变量提取相关函数
+function addSQLExtract(preIdx: number) {
+  if (!localCaseData.value.pre_apis[preIdx].sqlExtracts) {
+    localCaseData.value.pre_apis[preIdx].sqlExtracts = []
+  }
+  localCaseData.value.pre_apis[preIdx].sqlExtracts.push({ varName: '', column: '' })
+  emitChange()
+}
+function removeSQLExtract(preIdx: number, idx: number) {
+  if (localCaseData.value.pre_apis[preIdx].sqlExtracts) {
+    localCaseData.value.pre_apis[preIdx].sqlExtracts.splice(idx, 1)
+  }
+  emitChange()
+}
+
+// 添加测试步骤中的SQL变量提取
+function addStepSQLExtract(stepIdx: number) {
+  if (!localCaseData.value.steps[stepIdx].sqlExtracts) {
+    localCaseData.value.steps[stepIdx].sqlExtracts = []
+  }
+  localCaseData.value.steps[stepIdx].sqlExtracts.push({ varName: '', column: '' })
+  emitChange()
+}
+
+// 删除测试步骤中的SQL变量提取
+function removeStepSQLExtract(stepIdx: number, idx: number) {
+  if (localCaseData.value.steps[stepIdx].sqlExtracts) {
+    localCaseData.value.steps[stepIdx].sqlExtracts.splice(idx, 1)
+  }
   emitChange()
 }
 
@@ -571,7 +719,7 @@ const jsonEditor = ref({
 })
 function openJsonEditor(idx: number) {
   jsonEditor.value.preIdx = idx
-  jsonEditor.value.value = localCaseData.value.pre_apis[idx].request.body || ''
+  jsonEditor.value.value = localCaseData.value.pre_apis[idx].request?.body || ''
   jsonEditor.value.visible = true
 }
 function confirmJsonEdit() {
@@ -584,7 +732,13 @@ function confirmJsonEdit() {
     ElMessage.error('请输入合法JSON')
     return
   }
-  localCaseData.value.pre_apis[jsonEditor.value.preIdx].request.body = jsonEditor.value.value
+  const preApi = localCaseData.value.pre_apis[jsonEditor.value.preIdx]
+  if (!preApi.request) {
+    preApi.request = { url: '', method: 'GET' }
+  }
+  if (preApi.request) {
+    preApi.request.body = jsonEditor.value.value
+  }
   jsonEditor.value.visible = false
   emitChange()
 }
@@ -602,11 +756,14 @@ const validateForm = async () => {
 
   // 前置接口校验
   for (const [i, api] of localCaseData.value.pre_apis.entries()) {
-    if (!api.request.url) {
+    if (!api.request) {
+      api.request = { url: '', method: 'GET' }
+    }
+    if (api.request && !api.request.url) {
       ElMessage.error(`第${i + 1}个前置接口URL不能为空`);
       return false;
     }
-    if (!api.request.method) {
+    if (api.request && !api.request.method) {
       ElMessage.error(`第${i + 1}个前置接口请求方法不能为空`);
       return false;
     }
@@ -621,7 +778,7 @@ const validateForm = async () => {
       }
     }
     // JSON格式校验
-    if (api.request.method === 'POST' && api.request.body) {
+    if (api.request && api.request.method === 'POST' && api.request.body) {
       try {
         if (api.request.body.trim() !== '') {
           JSON.parse(api.request.body);
@@ -685,6 +842,30 @@ const validateForm = async () => {
         if (!step.assert_type) {
           ElMessage.error(`第${i + 1}个主流程步骤的断言类型不能为空`);
           return false;
+        }
+        break;
+
+      case 'sql':
+        if (!step.dbEnv) {
+          ElMessage.error(`第${i + 1}个主流程步骤的数据库环境不能为空`);
+          return false;
+        }
+        if (!step.sql) {
+          ElMessage.error(`第${i + 1}个主流程步骤的SQL语句不能为空`);
+          return false;
+        }
+        // 验证SQL变量提取
+        if (step.sqlExtracts) {
+          for (const [k, ext] of step.sqlExtracts.entries()) {
+            if (!ext.varName) {
+              ElMessage.error(`第${i + 1}个主流程步骤的第${k + 1}个SQL变量名不能为空`);
+              return false;
+            }
+            if (!ext.column) {
+              ElMessage.error(`第${i + 1}个主流程步骤的第${k + 1}个SQL列名不能为空`);
+              return false;
+            }
+          }
         }
         break;
 
