@@ -27,6 +27,9 @@
           @tab-remove="closeTab"
           show-checkbox
           @check-change="onCheckChange"
+          draggable
+          :allow-drop="allowDrop"
+          @node-drop="handleNodeDrop"
         >
           <template #default="{ node, data }">
             <div class="tree-node">
@@ -185,6 +188,52 @@ const treeRef = ref()
 // 节点过滤方法
 const filterNode = (value: string, data: any) => {
   return data.label.includes(value)
+}
+
+// 控制拖拽行为
+const allowDrop = (draggingNode: any, dropNode: any, type: string) => {
+  // 只允许用例节点（case）被拖拽到模块节点（group）下
+  return draggingNode.data.type === 'case' && dropNode.data.type === 'group' && type === 'inner'
+}
+
+// 处理拖拽完成事件
+const handleNodeDrop = async (draggingNode: any, dropNode: any, dropType: string, ev: any) => {
+  try {
+    // 检查是否为有效拖拽（用例拖拽到模块下）
+    if (draggingNode.data.type !== 'case' || dropNode.data.type !== 'group' || dropType !== 'inner') {
+      return
+    }
+
+    const caseId = draggingNode.data.id
+    const targetModuleId = dropNode.data.id
+    const caseName = draggingNode.data.label
+    
+    // 构造用例数据，只更新module字段
+    const caseDataWithNewModule = {
+      id: caseId,
+      module: targetModuleId
+    }
+
+    // 调用API更新用例的模块信息
+    await store.editUiTestCaseSimple(caseDataWithNewModule)
+    
+    // 刷新模块列表，确保树结构正确显示
+    await store.fetchModuleList()
+    
+    // 显示成功消息
+    ElMessage.success(`${caseName} 已成功移动到 ${dropNode.data.label}`)
+    
+    // 如果该用例在tab中打开，更新tab中的module信息
+    const openTab = openTabs.value.find(tab => tab.id === caseId)
+    if (openTab && openTab.caseData) {
+      openTab.caseData.module = targetModuleId
+    }
+  } catch (error) {
+    console.error('移动用例失败:', error)
+    ElMessage.error('移动用例失败，请重试')
+    // 失败时刷新列表恢复原状
+    await store.fetchModuleList()
+  }
 }
 watch(searchText, (val) => {
   treeRef.value!.filter(val)
@@ -525,117 +574,6 @@ const saveCase = async (tab: Tab) => {
     ElMessage.error('保存失败，请稍后重试');
   }
 };
- // ...existing code...
-
-
-// const saveCase = async (tab: Tab) => {
-//   console.log('保存用例:', tab);
-
-//   try {
-//     // 表单校验
-//     if (caseEditorRefs.value[tab.id] && caseEditorRefs.value[tab.id].validateForm) {
-//       const isValid = await caseEditorRefs.value[tab.id].validateForm();
-//       if (!isValid) {
-//         ElMessage.warning('用例数据校验失败，请检查输入');
-//         return;
-//       }
-//     }
-    
-//     // 找到所属模块的 ID
-//     let moduleId = null;
-//     const findModuleId = (modules: any[]): any => {
-//       for (const module of modules) {
-//         if (module.children && module.children.some((child: any) => child.id === tab.id)) {
-//           return module.id;
-//         }
-//         if (module.children) {
-//           const found = findModuleId(module.children);
-//           if (found) return found;
-//         }
-//       }
-//       return null;
-//     };
-    
-//     moduleId = findModuleId(store.moduleList);
-
-//     if (!moduleId) {
-//       ElMessage.error('未找到所属模块，保存失败');
-//       return;
-//     }
-
-//     // 构造接口参数
-//     const caseDataWithModule = {
-//       ...tab.caseData,
-//       module: moduleId // 添加所属模块 ID
-//     };
-
-//     // 调用接口
-//     const action = tab.id && tab.id !== 0
-//       ? store.editUiTestCase(caseDataWithModule) // 编辑用例
-//       : store.createUiTestCase(caseDataWithModule); // 新建用例
-
-//     const res = await action;
-//     console.log('保存结果:', res);
-
-//     // 刷新模块列表，确保获取最新数据
-//     await store.fetchModuleList();
-    
-//     // 查找最新的用例数据（包含所有关联信息）
-//     let updatedCaseData = null;
-//     const findUpdatedCaseData = (modules: any[]): any => {
-//       for (const module of modules) {
-//         if (module.type === 'case' && module.id === (res.id || tab.id)) {
-//           return module.caseData;
-//         }
-//         if (module.children) {
-//           const found = findUpdatedCaseData(module.children);
-//           if (found) return found;
-//         }
-//       }
-//       return null;
-//     };
-    
-//     updatedCaseData = findUpdatedCaseData(store.moduleList);
-
-//     // 更新标签页数据
-//     const index = openTabs.value.findIndex(t => t.id === (tab.id === 0 ? res.id : tab.id));
-//     if (index > -1) {
-//       if (updatedCaseData) {
-//         // 使用完整的最新数据更新标签页
-//         openTabs.value[index].caseData = JSON.parse(JSON.stringify(updatedCaseData));
-//       } else {
-//         // 如果没有找到完整数据，使用接口返回的数据
-//         openTabs.value[index].caseData = JSON.parse(JSON.stringify(res));
-//       }
-      
-//       // 更新标签页ID和名称
-//       if (tab.id === 0) {
-//         openTabs.value[index].id = res.id;
-//         activeTab.value = res.id; // 确保新建用例后标签页保持选中状态
-//       }
-//       openTabs.value[index].name = res.name || tab.caseData.name;
-//       openTabs.value[index].editable = false;
-      
-//       // 强制更新组件，确保UI显示最新数据
-//       await nextTick();
-//     }
-
-//     ElMessage.success('用例保存成功');
-    
-//     // 选中新创建的用例节点
-//     if (treeRef.value && res.id) {
-//       // 等待DOM更新后再设置选中状态
-//       setTimeout(() => {
-//         treeRef.value.setCurrentKey(res.id);
-//       }, 100);
-//     }
-//   } catch (e) {
-//     console.error('保存失败:', e);
-//     ElMessage.error('保存失败，请稍后重试');
-//   }
-// };
-
-
 
 
 

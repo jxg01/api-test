@@ -42,6 +42,10 @@ export const uiTestApi = {
   /** 编辑用例 */
   updateUiTestCase: (id: number | string, data: any) => 
     http.put(`/ui-testcases/${id}/`, data),
+
+  /** 编辑用例 */
+  updateUiTestCaseSimple: (id: number | string, data: any) => 
+    http.patch(`/ui-testcases/${id}/`, data),
     
   /** 删除用例 */
   deleteUiTestCase: (id: number | string) => 

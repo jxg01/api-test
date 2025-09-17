@@ -226,6 +226,13 @@ export const useUiTestStore = defineStore('uiTest', {
       }
     },
 
+    async editUiTestCaseSimple(caseData: any) {
+      const res = await uiTestApi.updateUiTestCaseSimple(caseData.id, caseData)
+      if (res) {
+        return res
+      }
+    },
+
     async deleteUiTestCase(caseId: number | string) {
       await uiTestApi.deleteUiTestCase(caseId)
       await this.fetchModuleList()
