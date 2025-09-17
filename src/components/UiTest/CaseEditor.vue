@@ -86,7 +86,8 @@
             <!-- SQL类型前置条件 -->
             <template v-else-if="step.type === 'sql'">
               <div style="display:flex;align-items:center;gap:8px;">
-                <el-input v-model="step.name" placeholder="步骤名称" style="width:120px;" @input="emitChange" :disabled="!isEditing" />
+                <!-- <el-input v-model="step.name" placeholder="步骤名称" style="width:120px;" @input="emitChange" :disabled="!isEditing" /> -->
+                <el-input v-model="step.name" placeholder="步骤名称" style="width:120px;" @input="emitChange" :disabled="true" />
                 <el-select v-model="step.dbEnv" style="width: 300px;" placeholder="数据库环境" @change="emitChange" :disabled="!isEditing">
                   <el-option
                     v-for="env in projectStore.current?.envs"
@@ -98,26 +99,9 @@
                 <el-button type="danger" size="small" @click="removePreApiStep(i)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
               </div>
               
-              <!-- SQL语句和变量提取 -->
+              <!-- SQL语句 -->
               <div class="sql-section">
                 <el-input type="textarea" v-model="step.sql" placeholder="SQL语句" style="width: 100%;" @input="emitChange" :disabled="!isEditing" />
-                
-                <!-- SQL变量提取 -->
-                <div style="margin-left:12px;">
-                  <el-row v-for="(extract, k) in step.sqlExtracts" :key="k" style="margin-bottom:4px;align-items:center;">
-                    <el-icon color="pink" :size="24"><SetUp /></el-icon>
-                    <el-col :span="6">
-                      <el-input v-model="extract.varName" placeholder="变量名" @input="emitChange" :disabled="!isEditing"/>
-                    </el-col>
-                    <el-col :span="14" style="margin-left:10px;">
-                      <el-input v-model="extract.column" placeholder="列名" @input="emitChange" :disabled="!isEditing"/>
-                    </el-col>
-                    <el-col :span="1" style="margin-left:6px;">
-                      <el-button type="danger" size="small" @click="removeSQLExtract(i, k)" v-if="isEditing"><el-icon><Delete /></el-icon></el-button>
-                    </el-col>
-                  </el-row>
-                  <!-- <el-button type="success" size="small" @click="addSQLExtract(i)" v-if="isEditing">添加SQL提取变量</el-button> -->
-                </div>
               </div>
             </template>
           </div>
@@ -237,26 +221,7 @@
                   :rows="3"
                   @input="emitChange"
                 />
-                <!-- <div v-if="row.sqlExtracts && row.sqlExtracts.length > 0" style="margin-top: 8px;">
-                  <el-divider content-position="left">变量提取</el-divider>
-                  <div v-for="(extract, idx) in row.sqlExtracts" :key="idx" style="margin-bottom: 8px; display: flex; align-items: center;">
-                    <el-input
-                      v-model="extract.varName"
-                      placeholder="变量名"
-                      style="width: 120px; margin-right: 8px;"
-                      @input="emitChange"
-                    />
-                    <span style="margin: 0 4px;">←</span>
-                    <el-input
-                      v-model="extract.column"
-                      placeholder="列名"
-                      style="width: 120px; margin-right: 8px;"
-                      @input="emitChange"
-                    />
-                    <el-button type="danger" size="small" @click="removeStepSQLExtract($index, idx)">删除</el-button>
-                  </div>
-                </div>
-                <el-button type="primary" size="small" @click="addStepSQLExtract($index)">添加变量提取</el-button> -->
+
               </template>
 
               <template v-if="row.action === 'click'">
@@ -679,37 +644,7 @@ function removeExtract(preIdx: number, idx: number) {
   emitChange()
 }
 
-// SQL变量提取相关函数
-function addSQLExtract(preIdx: number) {
-  if (!localCaseData.value.pre_apis[preIdx].sqlExtracts) {
-    localCaseData.value.pre_apis[preIdx].sqlExtracts = []
-  }
-  localCaseData.value.pre_apis[preIdx].sqlExtracts.push({ varName: '', column: '' })
-  emitChange()
-}
-function removeSQLExtract(preIdx: number, idx: number) {
-  if (localCaseData.value.pre_apis[preIdx].sqlExtracts) {
-    localCaseData.value.pre_apis[preIdx].sqlExtracts.splice(idx, 1)
-  }
-  emitChange()
-}
 
-// 添加测试步骤中的SQL变量提取
-function addStepSQLExtract(stepIdx: number) {
-  if (!localCaseData.value.steps[stepIdx].sqlExtracts) {
-    localCaseData.value.steps[stepIdx].sqlExtracts = []
-  }
-  localCaseData.value.steps[stepIdx].sqlExtracts.push({ varName: '', column: '' })
-  emitChange()
-}
-
-// 删除测试步骤中的SQL变量提取
-function removeStepSQLExtract(stepIdx: number, idx: number) {
-  if (localCaseData.value.steps[stepIdx].sqlExtracts) {
-    localCaseData.value.steps[stepIdx].sqlExtracts.splice(idx, 1)
-  }
-  emitChange()
-}
 
 // ========== JSON编辑相关 ==========
 const jsonEditor = ref({
@@ -754,20 +689,34 @@ const validateForm = async () => {
     return false;
   }
 
-  // 前置接口校验
-  for (const [i, api] of localCaseData.value.pre_apis.entries()) {
-    if (!api.request) {
-      api.request = { url: '', method: 'GET' }
+  // 前置步骤校验
+  for (const [i, step] of localCaseData.value.pre_apis.entries()) {
+    // 只对API类型的前置步骤进行URL和method验证
+    if (step.type === 'api') {
+      if (!step.request) {
+        step.request = { url: '', method: 'GET' }
+      }
+      if (step.request && !step.request.url) {
+        ElMessage.error(`第${i + 1}个前置接口URL不能为空`);
+        return false;
+      }
+      if (step.request && !step.request.method) {
+        ElMessage.error(`第${i + 1}个前置接口请求方法不能为空`);
+        return false;
+      }
     }
-    if (api.request && !api.request.url) {
-      ElMessage.error(`第${i + 1}个前置接口URL不能为空`);
-      return false;
+    // 对SQL类型的前置步骤进行必填校验
+    if (step.type === 'sql') {
+      if (!step.dbEnv) {
+        ElMessage.error(`第${i + 1}个前置SQL的数据库环境不能为空`);
+        return false;
+      }
+      if (!step.sql || step.sql.trim() === '') {
+        ElMessage.error(`第${i + 1}个前置SQL的SQL语句不能为空`);
+        return false;
+      }
     }
-    if (api.request && !api.request.method) {
-      ElMessage.error(`第${i + 1}个前置接口请求方法不能为空`);
-      return false;
-    }
-    for (const [k, ext] of (api.extracts || []).entries()) {
+    for (const [k, ext] of (step.extracts || []).entries()) {
       if (!ext.varName) {
         ElMessage.error(`第${i + 1}个前置接口的第${k + 1}个变量名不能为空`);
         return false;
@@ -777,11 +726,11 @@ const validateForm = async () => {
         return false;
       }
     }
-    // JSON格式校验
-    if (api.request && api.request.method === 'POST' && api.request.body) {
+    // 只对API类型的前置步骤进行JSON格式校验
+    if (step.type === 'api' && step.request && step.request.method === 'POST' && step.request.body) {
       try {
-        if (api.request.body.trim() !== '') {
-          JSON.parse(api.request.body);
+        if (step.request.body.trim() !== '') {
+          JSON.parse(step.request.body);
         }
       } catch (e) {
         ElMessage.error(`第${i + 1}个前置接口的请求体JSON格式不合法`);
@@ -853,19 +802,6 @@ const validateForm = async () => {
         if (!step.sql) {
           ElMessage.error(`第${i + 1}个主流程步骤的SQL语句不能为空`);
           return false;
-        }
-        // 验证SQL变量提取
-        if (step.sqlExtracts) {
-          for (const [k, ext] of step.sqlExtracts.entries()) {
-            if (!ext.varName) {
-              ElMessage.error(`第${i + 1}个主流程步骤的第${k + 1}个SQL变量名不能为空`);
-              return false;
-            }
-            if (!ext.column) {
-              ElMessage.error(`第${i + 1}个主流程步骤的第${k + 1}个SQL列名不能为空`);
-              return false;
-            }
-          }
         }
         break;
 
@@ -1005,7 +941,7 @@ async function fetchPageOptions() {
   }
 }
 
-// 从store.moduleList中提取并过滤用例数据
+// 从模块列表中提取所有用例并过滤当前用例
 function fetchLoginCaseOptions() {
   try {
     // 确保moduleList已加载
@@ -1024,8 +960,8 @@ function fetchLoginCaseOptions() {
         // 添加当前模块下的用例
         if (module.children && module.children.length) {
           module.children.forEach((testCase: any) => {
-            // 排除当前用例
-            if (testCase.id !== localCaseData.value.id) {
+            // 排除当前用例 - 修复类型不匹配问题
+            if (String(testCase.id) !== String(localCaseData.value.id) && testCase.label !== '新建用例') {
               allCases.push({
                 id: testCase.id,
                 name: testCase.label

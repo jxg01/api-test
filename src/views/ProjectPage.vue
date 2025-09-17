@@ -118,6 +118,7 @@
   import { projectApi } from '@/api/'
   import { CirclePlus, Search } from '@element-plus/icons-vue'
   import { useProjectStore } from '@/stores/project'
+import { de } from 'element-plus/es/locale'
 
   const projectStore = useProjectStore()
   
@@ -243,6 +244,9 @@
     url: [
       { required: true, message: '请输入环境地址', trigger: 'blur' },
       { type: 'url', message: '请输入有效的URL地址', trigger: 'blur' }
+    ],
+    description: [
+      { required: true, message: '请输入描述', trigger: 'blur' },
     ]
   }
 
