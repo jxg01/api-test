@@ -1,19 +1,77 @@
-version: '3'
+version: '3.8'
 
 services:
+  # API测试前端服务
   api-test:
     build: .
     container_name: api-test-container
     ports:
       - "80:80"
     restart: unless-stopped
+    depends_on:
+      - mysql
     # 环境变量配置 - 可以在这里覆盖.env文件中的值
     # environment:
     #   - VITE_API_BASE_URL=http://your-backend-server/api
     #   - VITE_FILE_BASE_URL=http://your-file-server/media/
     #   - VITE_LOGO_URL=https://your-logo-url.com/logo.png
+    #   # 如果前端需要直接连接MySQL（不推荐，但如果需要的话）
+    #   - DB_HOST=mysql
+    #   - DB_PORT=3306
+    #   - DB_USER=api_test_user
+    #   - DB_PASSWORD=your_mysql_password
+    #   - DB_NAME=api_test_db
+    networks:
+      - app-network
 
-# 如果需要持久化数据，可以定义卷
-# volumes:
-#   api-test-data:
-#     driver: local
+  # MySQL数据库服务
+  mysql:
+    image: mysql:8.0
+    container_name: mysql8-container
+    # 针对Mac M1/M2芯片的兼容性设置
+    platform: linux/amd64
+    restart: always
+    environment:
+      # MySQL 8默认使用caching_sha2_password认证插件
+      MYSQL_ROOT_PASSWORD: 12345678
+      MYSQL_DATABASE: easy_api
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: 123456
+      # 字符集设置
+      MYSQL_INITDB_ARGS: "--character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci"
+    ports:
+      # 端口映射，允许宿主机访问
+      - "33061:3306"
+      - "33060:33060"  # MySQL 8的X协议端口
+    volumes:
+      # 数据持久化挂载
+      - ./mysql-data:/var/lib/mysql
+      # 配置文件挂载
+      - ./mysql-conf:/etc/mysql/conf.d
+      # 初始化脚本目录
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    # 资源限制，防止过度占用Mac资源
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    # Mac上的性能优化
+    command: --default-authentication-plugin=caching_sha2_password
+             --max_allowed_packet=64M
+             --innodb_buffer_pool_size=256M
+    networks:
+      - app-network
+
+# 网络配置
+networks:
+  app-network:
+    driver: bridge
+
+# 卷配置（持久化存储）
+volumes:
+  mysql-data:
+    driver: local
+  # 如果前端需要持久化数据，可以取消注释下面的行
+  # api-test-data:
+  #   driver: local

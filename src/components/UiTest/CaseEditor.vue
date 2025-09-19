@@ -5,7 +5,7 @@
         <el-input v-model="localCaseData.name" @input="emitChange" :disabled="!isEditing"/>
       </el-form-item>
       <el-form-item label="描述">
-        <el-input v-model="localCaseData.description" @input="emitChange" :disabled="!isEditing"/>
+        <el-input v-model="localCaseData.description" @input="emitChange" type="textarea" :rows="3" :disabled="!isEditing"/>
       </el-form-item>
       <el-form-item label="前置登录">
         <el-select v-model="localCaseData.login_case" placeholder="选择前置登录用例" clearable filterable @change="emitChange" :disabled="!isEditing">
@@ -205,7 +205,7 @@
 
               <!-- SQL执行 -->
               <template v-if="row.action === 'sql'">
-                <el-select v-model="row.dbEnv" placeholder="数据库环境" @change="emitChange" style="width: 120px;">
+                <el-select v-model="row.dbEnv" placeholder="数据库环境" @change="emitChange" style="min-width: 150px; max-width: 300px;">
                   <el-option
                     v-for="env in projectStore.current?.envs || []"
                     :key="env.id"
@@ -271,6 +271,25 @@
                 @input="emitChange"
                 :disabled="!isEditing"
               />
+
+        <!-- 等待元素 -->
+        <template v-if="row.action === 'wait_element'">
+          <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create @change="emitChange" :disabled="!isEditing">
+            <el-option
+              v-for="op in pageOptions"
+              :key="op.label"
+              :label="op.label"
+              :value="op.value"
+            />
+          </el-select>
+          <el-input
+            v-model="row.wait_time"
+            placeholder="等待时间(秒)"
+            style="width: 100%"
+            @input="emitChange"
+            :disabled="!isEditing"
+          />
+        </template>
 
         <!-- 上传文件 -->
         <template v-if="row.action === 'upload'">
@@ -437,6 +456,7 @@ type Step = {
   assert_type?: string
   value?: string;
   seconds?: number;
+  wait_time?: number;
   script?: string;
   filePath?: string;
   __uuid?: string;
@@ -505,6 +525,7 @@ const stepActions = [
   { label: '跳转页面', value: 'goto' },
   { label: '点击', value: 'click' },
   { label: '等待时间', value: 'sleep' },
+  { label: '等待元素', value: 'wait_element' },
   { label: '输入', value: 'input' },
   { label: '执行js', value: 'execute_script' },
   { label: '上传文件', value: 'upload' },
@@ -801,6 +822,17 @@ const validateForm = async () => {
         }
         if (!step.sql) {
           ElMessage.error(`第${i + 1}个主流程步骤的SQL语句不能为空`);
+          return false;
+        }
+        break;
+
+      case 'wait_element':
+        if (!step.element_id) {
+          ElMessage.error(`第${i + 1}个主流程步骤的元素ID不能为空`);
+          return false;
+        }
+        if (!step.wait_time || isNaN(Number(step.wait_time))) {
+          ElMessage.error(`第${i + 1}个主流程步骤的等待时间必须为数字`);
           return false;
         }
         break;

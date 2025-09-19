@@ -6,7 +6,7 @@ export interface PageElement {
   id: number
   name: string
   locator_value: string
-  locator_type: 'css' | 'xpath' | 'text' | 'id' | 'class' | 'test-id' // 定位方式
+  locator_type: 'css' | 'xpath' | 'text' | 'id' | 'class' | 'data-testid' // 定位方式
   description: string
   page: string  // 所属页面路径
   created_by?: string

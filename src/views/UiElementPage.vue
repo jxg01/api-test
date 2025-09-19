@@ -47,12 +47,21 @@
             type="primary"
             :icon="Edit" 
             @click="openEditDialog(scope.row)"
+            title="编辑"
           />
           <el-button 
             link
+            type="success"
+            :icon="CopyDocument" 
+            @click="confirmCopy(scope.row)"
+            title="复制"
+          />
+          <el-button 
+            link
+            type="danger"
             :icon="Delete" 
-            type="danger" 
             @click="confirmDelete(scope.row.id)"
+            title="删除"
           />
         </template>
       </BaseTable>
@@ -130,7 +139,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive, shallowRef } from 'vue'
-import { Search, Plus, Edit, Delete, View, Check } from '@element-plus/icons-vue'
+import { Search, Plus, Edit, Delete, View, Check, CopyDocument } from '@element-plus/icons-vue'
 import type { FormRules, FormInstance } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
@@ -191,6 +200,7 @@ onMounted(() => {
 
 // 定位类型选项
 const locatorTypes = [
+  { value: 'data-testid', label: 'DATA-TESTID' },
   { value: 'css', label: 'CSS' },
   { value: 'xpath', label: 'XPATH' },
   // { value: 'text', label: 'TEXT' },
@@ -203,7 +213,7 @@ const locatorTypes = [
 const tableColumns: TableColumn[] = [
   { prop: 'id', label: '#', width: 60 },
   { prop: 'name', label: '元素名称' },
-  { prop: 'locator_type', label: '定位方式', slot: 'locatorTypeTag' },
+  { prop: 'locator_type', label: '定位方式', slot: 'locatorTypeTag', width: 140 },
   { prop: 'locator_value', label: '定位值' },
   { prop: 'page', label: '所属页面' },
   { prop: 'description', label: '描述' },
@@ -242,7 +252,7 @@ const isEditing = ref(false)
 const currentElement = ref<PageElement>({
   id: 0,
   name: '',
-  locator_type: 'css',
+  locator_type: 'data-testid',
   locator_value: '',
   description: '',
   page: '',
@@ -258,7 +268,7 @@ const openAddDialog = () => {
   currentElement.value = {
     id: 0,
     name: '',
-    locator_type: 'css',
+    locator_type: 'data-testid',
     locator_value: '',
     description: '',
     page: '',
@@ -309,6 +319,39 @@ const confirmDelete = async (id: number) => {
   store.fetchUiElementList()
   ElMessage.success('元素已删除')
   
+}
+
+const confirmCopy = async (element: PageElement) => {
+  try {
+    await ElMessageBox.confirm('确定复制此元素吗？', '确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'info'
+    })
+    
+    // 创建复制的元素，名称和定位值增加 _copy后缀
+    const copiedElement = {
+      ...element,
+      id: 0, // 新元素ID为0
+      name: `${element.name}_copy`,
+      locator_value: `${element.locator_value}_copy`,
+      project: projectStore.currentProjectId
+    }
+    
+    // 调用添加元素接口
+    const res = await store.addUiElement(copiedElement)
+    if (res) {
+      ElMessage.success('元素复制成功')
+      // 刷新元素列表
+      await store.fetchUiElementList()
+    }
+  } catch (error) {
+    // 只有当不是用户取消的情况下才显示错误信息
+    if (error !== 'cancel') {
+      console.error('元素复制失败:', error)
+      ElMessage.error('元素复制失败')
+    }
+  }
 }
 
 
