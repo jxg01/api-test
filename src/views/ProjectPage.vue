@@ -42,8 +42,8 @@
               </template>
             </el-table-column>
             <el-table-column label="备注信息" prop="description" />
-            <el-table-column label="更新人" prop="updated_at" />
-            <el-table-column label="更新时间" prop="updated_by" />
+            <el-table-column label="更新人" prop="updated_by" />
+            <el-table-column label="更新时间" prop="updated_at" />
             <!-- <el-table-column label="创建人" prop="created_at" />
             <el-table-column label="创建时间" prop="created_by" /> -->
             

@@ -2,13 +2,16 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# 设置npm镜像源，加速依赖安装
+RUN npm config set registry https://registry.npmmirror.com
+
 # 复制package.json和package-lock.json
 COPY package*.json ./
 
-# 安装依赖
-RUN npm install
+# 安装依赖（包括开发依赖）
+RUN npm install --include=dev
 
-# 复制项目文件
+# 复制项目文件（不包括node_modules和其他被忽略的文件）
 COPY . .
 
 # 构建生产版本
