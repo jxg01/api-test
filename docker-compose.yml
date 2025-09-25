@@ -1,20 +1,22 @@
 services:
-
 # API测试前端服务
   api-test:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
     container_name: api-test-container
     restart: always
     ports:
       - "80:80"
     networks:
       - appnet
-    # 加载环境变量文件
+    # 加载环境变量文件（主要用于运行时，虽然在构建时也会用到）
     env_file:
       - .env
 
-    # 显式传递环境变量到容器
-    environment:
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
-      - VITE_LOGO_URL=${VITE_LOGO_URL}
-      - VITE_FILE_BASE_URL=${VITE_FILE_BASE_URL}
+networks:
+  appnet:
+    # driver: bridge
+    external: true

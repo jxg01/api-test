@@ -34,6 +34,9 @@ export const uiTestApi = {
 
   deleteUiModule: (id: number) => 
     http.delete(`/ui-modules/${id}/`),
+  
+  updateUiModule: (id: number, data: any) => 
+    http.patch(`/ui-modules/${id}/`, data),
 
   /** 新增用例 */
   addUiTestCase: (data: any) => 

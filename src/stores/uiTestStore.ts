@@ -171,29 +171,48 @@ export const useUiTestStore = defineStore('uiTest', {
 
     // 转换接口数据为tree结构
     transformModuleDataToTree(data: any[]): CaseTreeNode[] {
-      return data.map(module => ({
-        // id: `group-${module.id}`,
-        id: module.id,
-        label: module.name,
-        type: 'group',
-        children: module.cases.map((caseItem: any) => ({
-          // id: `case-${caseItem.id}`,
-          id: caseItem.id,
-          label: caseItem.name,
-          type: 'case',
-          caseData: {
-            // id: `case-${caseItem.id}`,
-            id: caseItem.id,
-            name: caseItem.name,
-            description: caseItem.description,
-            pre_apis: caseItem.pre_apis || [],
-            steps: caseItem.steps || [],
-            post_steps: caseItem.post_steps || [],
-            enable: caseItem.enable,
-            login_case: caseItem.login_case,
-          }
-        }))
-      }))
+      if (!Array.isArray(data)) return [];
+      
+      return data.map(module => {
+        // 创建当前模块节点
+        const moduleNode: CaseTreeNode = {
+          id: module.id,
+          label: module.name,
+          type: 'group',
+          children: []
+        };
+        
+        // 添加当前模块下的用例
+        if (Array.isArray(module.cases) && module.cases.length > 0 && moduleNode.children) {
+          moduleNode.children = moduleNode.children.concat(
+            module.cases.map((caseItem: any) => ({
+              id: caseItem.id,
+              label: caseItem.name,
+              type: 'case',
+              caseData: {
+                id: caseItem.id,
+                name: caseItem.name,
+                description: caseItem.description,
+                pre_apis: caseItem.pre_apis || [],
+                steps: caseItem.steps || [],
+                post_steps: caseItem.post_steps || [],
+                enable: caseItem.enable,
+                login_case: caseItem.login_case,
+                module: caseItem.module || module.id
+              }
+            }))
+          );
+        }
+        
+        // 递归处理子模块
+        if (Array.isArray(module.children) && module.children.length > 0 && moduleNode.children) {
+          moduleNode.children = moduleNode.children.concat(
+            this.transformModuleDataToTree(module.children)
+          );
+        }
+        
+        return moduleNode;
+      });
     },
 
     async createUiModule(moduleName: {name: string}) {
@@ -210,6 +229,14 @@ export const useUiTestStore = defineStore('uiTest', {
       console.log('idididid',  moduleId)
       await uiTestApi.deleteUiModule(moduleId)
       await this.fetchModuleList()
+    },
+
+    async updateUiModule(moduleId: number, data: any) {
+      const res = await uiTestApi.updateUiModule(moduleId, data)
+      if (res) {
+        await this.fetchModuleList()
+        return res
+      }
     },
 
     async createUiTestCase(caseData: any) {

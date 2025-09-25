@@ -50,6 +50,7 @@
                   </template>
                   <template v-else>
                     <el-button link type="warning" size="small" @click.stop="addCase(data)">新建用例</el-button>
+                    <el-button link type="warning" size="small" @click.stop="addSubModule(data)">新建子模块</el-button>
                     <el-button link type="warning" size="small" @click.stop="deleteModule(data)">删除</el-button>
                   </template>
                 </span>
@@ -192,41 +193,84 @@ const filterNode = (value: string, data: any) => {
 
 // 控制拖拽行为
 const allowDrop = (draggingNode: any, dropNode: any, type: string) => {
-  // 只允许用例节点（case）被拖拽到模块节点（group）下
-  return draggingNode.data.type === 'case' && dropNode.data.type === 'group' && type === 'inner'
+  // 允许用例节点（case）被拖拽到模块节点（group）下
+  // 允许模块节点（group）被拖拽到其他模块节点（group）下
+  // 但不允许模块拖拽到其子模块下（防止循环引用）
+  if (type !== 'inner') return false;
+  
+  if (draggingNode.data.type === 'case' && dropNode.data.type === 'group') {
+    return true;
+  }
+  
+  if (draggingNode.data.type === 'group' && dropNode.data.type === 'group') {
+    // 检查是否有循环引用（不允许将父模块拖拽到子模块下）
+    let parentNode = dropNode;
+    while (parentNode) {
+      if (parentNode.data.id === draggingNode.data.id) {
+        return false;
+      }
+      parentNode = parentNode.parent;
+    }
+    return true;
+  }
+  
+  return false;
 }
 
 // 处理拖拽完成事件
 const handleNodeDrop = async (draggingNode: any, dropNode: any, dropType: string, ev: any) => {
   try {
-    // 检查是否为有效拖拽（用例拖拽到模块下）
-    if (draggingNode.data.type !== 'case' || dropNode.data.type !== 'group' || dropType !== 'inner') {
+    // 检查是否为有效拖拽
+    if (dropType !== 'inner' || dropNode.data.type !== 'group') {
       return
     }
 
-    const caseId = draggingNode.data.id
-    const targetModuleId = dropNode.data.id
-    const caseName = draggingNode.data.label
-    
-    // 构造用例数据，只更新module字段
-    const caseDataWithNewModule = {
-      id: caseId,
-      module: targetModuleId
-    }
+    // 处理用例拖拽
+    if (draggingNode.data.type === 'case') {
+      const caseId = draggingNode.data.id
+      const targetModuleId = dropNode.data.id
+      const caseName = draggingNode.data.label
+      
+      // 构造用例数据，只更新module字段
+      const caseDataWithNewModule = {
+        id: caseId,
+        module: targetModuleId
+      }
 
-    // 调用API更新用例的模块信息
-    await store.editUiTestCaseSimple(caseDataWithNewModule)
-    
-    // 刷新模块列表，确保树结构正确显示
-    await store.fetchModuleList()
-    
-    // 显示成功消息
-    ElMessage.success(`${caseName} 已成功移动到 ${dropNode.data.label}`)
-    
-    // 如果该用例在tab中打开，更新tab中的module信息
-    const openTab = openTabs.value.find(tab => tab.id === caseId)
-    if (openTab && openTab.caseData) {
-      openTab.caseData.module = targetModuleId
+      // 调用API更新用例的模块信息
+      await store.editUiTestCaseSimple(caseDataWithNewModule)
+      
+      // 显示成功消息
+      ElMessage.success(`${caseName} 已成功移动到 ${dropNode.data.label}`)
+      
+      // 刷新模块列表，确保树结构正确显示
+      await store.fetchModuleList()
+      
+      // 如果该用例在tab中打开，更新tab中的module信息
+      const openTab = openTabs.value.find(tab => tab.id === caseId)
+      if (openTab && openTab.caseData) {
+        openTab.caseData.module = targetModuleId
+      }
+    }
+    // 处理模块拖拽
+    else if (draggingNode.data.type === 'group') {
+      const moduleId = draggingNode.data.id
+      const targetModuleId = dropNode.data.id
+      const moduleName = draggingNode.data.label
+      
+      // 构造模块数据，更新parent字段
+      const moduleDataWithNewParent = {
+        parent: targetModuleId
+      }
+
+      // 调用API更新模块的上级信息
+      await store.updateUiModule(moduleId, moduleDataWithNewParent)
+      
+      // 显示成功消息
+      ElMessage.success(`${moduleName} 已成功移动到 ${dropNode.data.label}`)
+      
+      // 刷新模块列表，确保树结构正确显示
+      await store.fetchModuleList()
     }
   } catch (error) {
     console.error('移动用例失败:', error)
@@ -616,8 +660,21 @@ const formRules = {
 // 表单提交
 const handleSubmit = async (data: any, mode: 'add', done: (success?: boolean) => void) => {
   try {
-    console.log(data)
-    await store.createUiModule(data)
+    console.log('parent == ', data.parent)
+    // 如果有parent参数，添加到data中
+    if (data.parent !== undefined && data.parent !== null) {
+      const parentId = data.parent;
+      // 移除parent参数，因为BaseDialog会把所有参数都包含在data中
+      delete data.parent;
+      // 调用接口创建子模块
+      await store.createUiModule({
+        ...data,
+        parent: parentId
+      })
+    } else {
+      // 创建顶级模块
+      await store.createUiModule(data)
+    }
     store.fetchModuleList()
     ElMessage.success('分组添加成功')
     done(true)
@@ -626,7 +683,23 @@ const handleSubmit = async (data: any, mode: 'add', done: (success?: boolean) =>
   }
 }
 // 添加dialog open
-const openAddDialog = () => dialogRef.value?.open('add', {})
+// const openAddDialog = (parentId: number | null = null) => dialogRef.value?.open('add', { parent: parentId })
+
+const openAddDialog = (parentId?: any) => {
+  // 当作为 @click 直接绑定时，浏览器会把 MouseEvent 作为第一个参数传入，
+  // 导致 parentId 不是我们期望的数值。这里做防护处理：
+  // - 如果传入的是事件对象（含 target），则视为无 parent，传 null。
+  // - 否则按传入值（数字或 null）使用。
+  if (parentId && typeof parentId === 'object' && ('target' in parentId || parentId instanceof Event)) {
+    parentId = null;
+  }
+  dialogRef.value?.open('add', { parent: parentId ?? null })
+}
+
+// 新建子模块
+const addSubModule = (parentModule: any) => {
+  openAddDialog(parentModule.id)
+}
 
 // 删除模块相关 ================================================================
 const deleteModule = async (row: any) => {
@@ -662,14 +735,25 @@ const copyCase = async (node: CaseTreeNode) => {
       cancelButtonText: '取消'
     })
     
-    // 查找所属模块
+    // 递归查找所属模块
     let parentModuleId = null;
-    for (const module of store.moduleList) {
-      if (module.children?.some(child => child.id === node.id)) {
-        parentModuleId = module.id;
-        break;
+    const findParentModuleId = (modules: any[], targetId: any): number | null => {
+      for (const module of modules) {
+        if (module.children && Array.isArray(module.children)) {
+          // 检查当前模块的直接子节点
+          if (module.children.some((child: any) => child.id === targetId)) {
+            return module.id;
+          }
+          // 递归检查子模块
+          const found = findParentModuleId(module.children.filter((c: any) => c.type === 'group'), targetId);
+          if (found) {
+            return found;
+          }
+        }
       }
-    }
+      return null;
+    };
+    parentModuleId = findParentModuleId(store.moduleList, node.id);
     
     if (!parentModuleId) {
       ElMessage.error('未找到所属模块');
