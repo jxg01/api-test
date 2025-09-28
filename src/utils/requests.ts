@@ -3,9 +3,12 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { DEFAULT_ERROR_MESSAGE } from '@/constants/errorMessages'
 
+const apiBase = (window as any).APP_CONFIG.API_BASE;
+
 // 创建axios实例
 const service: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL, // 从环境变量获取基础URL
+  // baseURL: import.meta.env.VITE_API_BASE_URL, // 从环境变量获取基础URL
+  baseURL: apiBase || import.meta.env.VITE_API_BASE_URL, // 从环境变量获取基础URL
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'

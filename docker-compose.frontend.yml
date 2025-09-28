@@ -1,0 +1,14 @@
+services:
+  frontend:
+    build: ./api-test
+    container_name: frontend
+    restart: always
+    ports:
+      - "8080:80"
+    networks:
+      - appnet
+# 网络配置
+networks:
+  appnet:
+#    driver: bridge
+    external: true
