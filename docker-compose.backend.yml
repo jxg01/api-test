@@ -1,10 +1,10 @@
 services:
   backend:
-    build: ./qy-backend
+    build: ./qy_backend
     container_name: backend
     restart: always
     env_file:
-      - .env
+      - ./qy_backend/.env
     ports:
       - "8000:80"   # 后端暴露接口
     depends_on:
@@ -15,7 +15,7 @@ services:
 
   mysql:
     image: mysql:8.0
-    container_name: mysql8-container
+    container_name: mysql8
     # 针对Mac M1/M2芯片的兼容性设置
     platform: linux/amd64
     restart: always
@@ -53,6 +53,7 @@ services:
 
   redis:
     image: redis:6
+    container_name: redis
     volumes:
       - ./docker-data/redis-data:/data
     ports:
@@ -61,8 +62,15 @@ services:
       - appnet
 
   celery:
-    build: ./qy-backend
-    command: celery -A qy-backend worker --loglevel=info
+    build: ./qy_backend
+    container_name: celery
+    restart: always
+    working_dir: /app/qy_backend
+    env_file:
+      - ./qy_backend/.env
+    entrypoint: [ "sh", "-lc" ]
+    # command: celery -A qy_backend worker --loglevel=info
+    command: [ "celery", "-A", "qy_backend", "worker", "--loglevel=info" ]
     volumes:
       - .:/app
       - ./logs/celery:/app/logs/celery
@@ -71,6 +79,28 @@ services:
       - mysql
     networks:
       - appnet
+
+  celery_beat:
+    build: ./qy_backend
+    container_name: celery-beat
+    restart: always
+    working_dir: /app/qy_backend
+    env_file:
+      - ./qy_backend/.env
+    entrypoint: [ "sh", "-lc" ] # ★ 覆盖 ENTRYPOINT，确保执行 command
+    # command: celery -A qy_backend beat --loglevel=info --logfile=/app/logs/celery/celery-beat.log
+    command: [ "celery", "-A", "qy_backend", "beat", "--loglevel=info", "--logfile=/app/logs/celery/celery-beat.log" ]
+    volumes:
+      - .:/app
+      - ./logs/celery:/app/logs/celery
+    depends_on:
+      - redis
+      - mysql
+      - celery
+    networks:
+      - appnet
+
+
 # 网络配置
 networks:
   appnet:
