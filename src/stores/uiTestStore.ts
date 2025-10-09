@@ -231,6 +231,19 @@ export const useUiTestStore = defineStore('uiTest', {
       await this.fetchModuleList()
     },
 
+    // 重命名模块
+    async renameModule(moduleId: number | string, newName: string) {
+      try {
+        const res = await this.updateUiModule(Number(moduleId), { name: newName })
+        if (res) {
+          return res
+        }
+      } catch (error) {
+        console.error('重命名模块失败:', error)
+        throw error
+      }
+    },
+
     async updateUiModule(moduleId: number, data: any) {
       const res = await uiTestApi.updateUiModule(moduleId, data)
       if (res) {

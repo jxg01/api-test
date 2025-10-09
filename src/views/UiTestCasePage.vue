@@ -41,19 +41,39 @@
                 <component :is="data.type === 'case' ? 'Document' : 'Folder'" />
               </el-icon>
               <div class="tree-node-content">
+                <template v-if="isEditing && editingNodeId === data.id">
+                  <el-input 
+                    ref="nameInput"
+                    v-model="newLabel"
+                    size="small"
+                    @blur="handleSave"
+                    @keyup.enter="handleSave"
+                    @keydown.esc="cancelEdit"
+                    :maxlength="50"
+                    @click.stop
+                    style="width: 150px; margin-right: 10px;"
+                  />
+                </template>
+                <template v-else>
                   <span class="tree-node-label">{{ data.label }}</span>
-                <span class="action-buttons">
-                  <template v-if="data.type === 'case'">
-                    <el-button link type="warning" size="small" @click.stop="copyCase(data)">复制</el-button>
-                    <el-button link type="danger" size="small" @click.stop="deleteCase(data)">删除</el-button>
-
-                  </template>
-                  <template v-else>
-                    <el-button link type="warning" size="small" @click.stop="addCase(data)">新建用例</el-button>
-                    <el-button link type="warning" size="small" @click.stop="addSubModule(data)">新建子模块</el-button>
-                    <el-button link type="warning" size="small" @click.stop="deleteModule(data)">删除</el-button>
-                  </template>
-                </span>
+                  <el-dropdown trigger="click">
+                    <el-icon class="more-btn" @click.stop><MoreFilled /></el-icon>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <template v-if="data.type === 'case'">
+                          <el-dropdown-item @click.stop="copyCase(data)">复制</el-dropdown-item>
+                          <el-dropdown-item @click.stop="deleteCase(data)" danger>删除</el-dropdown-item>
+                        </template>
+                        <template v-else>
+                          <el-dropdown-item @click.stop="addCase(data)">新建用例</el-dropdown-item>
+                          <el-dropdown-item @click.stop="addSubModule(data)">新建子模块</el-dropdown-item>
+                          <el-dropdown-item @click.stop="renameModule(data)">重命名</el-dropdown-item>
+                          <el-dropdown-item @click.stop="deleteModule(data)" danger>删除</el-dropdown-item>
+                        </template>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </template>
               </div>
             </div>
           </template>
@@ -171,9 +191,9 @@
 
 <script setup lang="ts">
 import { ref, reactive , watch, onMounted, nextTick } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElDropdown, ElDropdownMenu, ElDropdownItem } from 'element-plus'
 import CaseEditor from '@/components/UiTest/CaseEditor.vue'
-import { Plus, VideoPlay } from '@element-plus/icons-vue'
+import { Plus, VideoPlay, MoreFilled } from '@element-plus/icons-vue'
 import { useUiTestStore, CaseTreeNode, CaseData } from '@/stores/uiTestStore'
 import BaseDialog from '@/components/BaseDialog.vue'
 import { uiTestApi } from '@/api'
@@ -184,6 +204,11 @@ import { useRunLive } from '@/composables/useRunLive'
 const store = useUiTestStore()
 const projectStore = useProjectStore()
 const caseEditorRefs = ref<Record<string, any>>({})
+// 编辑状态变量
+const isEditing = ref(false)
+const editingNodeId = ref('')
+const newLabel = ref('')
+const nameInput = ref()
 
 
 
@@ -800,6 +825,55 @@ const addSubModule = (parentModule: any) => {
   openAddDialog(parentModule.id)
 }
 
+// 开始重命名
+const renameModule = (module: any) => {
+  if (module.type !== 'group') return
+  
+  // 退出其他节点的编辑状态
+  if (isEditing.value) {
+    cancelEdit()
+  }
+  
+  // 开始当前节点的编辑
+  newLabel.value = module.label
+  editingNodeId.value = module.id
+  isEditing.value = true
+  
+  nextTick(() => {
+    if (nameInput.value) {
+      nameInput.value.focus()
+      nameInput.value.select()
+    }
+  })
+}
+
+// 保存重命名
+const handleSave = async () => {
+  if (!newLabel.value.trim()) {
+    ElMessage.warning('名称不能为空')
+    return
+  }
+  
+  try {
+    // 调用store的方法重命名模块
+    await store.renameModule(editingNodeId.value, newLabel.value)
+    isEditing.value = false
+    editingNodeId.value = ''
+    newLabel.value = ''
+  } catch (error) {
+    ElMessage.error('重命名失败')
+    cancelEdit()
+    console.error('重命名失败:', error)
+  }
+}
+
+// 取消重命名
+const cancelEdit = () => {
+  isEditing.value = false
+  editingNodeId.value = ''
+  newLabel.value = ''
+}
+
 // 删除模块相关 ================================================================
 const deleteModule = async (row: any) => {
   try {
@@ -1123,14 +1197,17 @@ onMounted(() => {
   margin-right: 15px; /* 为按钮添加明确的右侧边距 */
 }
 
-/* 按钮样式 */
-.action-buttons {
-  display: none; /* 默认隐藏按钮 */
-  gap: 4px;
+/* 三点按钮样式 */
+.more-btn {
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-right: 10px;
+  flex-shrink: 0;
 }
 
-.tree-node:hover .action-buttons {
-  display: inline-flex; /* 鼠标悬浮时显示按钮 */
+.tree-node:hover .more-btn {
+  opacity: 1;
 }
 
 .icon-btn {
