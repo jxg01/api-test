@@ -1,12 +1,16 @@
 services:
   backend:
     build: ./qy_backend
+    image: backend:latest
     container_name: backend
     restart: always
+    volumes:
+      # 数据持久化挂载
+      - screenshots_volume:/app/qy_backend/media/screenshots
     env_file:
       - ./qy_backend/.env
     ports:
-      - "8000:80"   # 后端暴露接口
+      - "8000:8000"   # 后端暴露接口
     depends_on:
       - mysql
       - redis
@@ -62,18 +66,22 @@ services:
       - appnet
 
   celery:
-    build: ./qy_backend
+    #build: ./qy_backend
+    image: backend:latest
     container_name: celery
     restart: always
+    # 解决webkit 2 png截图报错问题
+    shm_size: '1gb'
     working_dir: /app/qy_backend
     env_file:
       - ./qy_backend/.env
-    entrypoint: [ "sh", "-lc" ]
-    # command: celery -A qy_backend worker --loglevel=info
-    command: [ "celery", "-A", "qy_backend", "worker", "--loglevel=info" ]
+    entrypoint: []
+    command: ["celery","-A","qy_backend.celery:app","worker","--loglevel=info"]
     volumes:
       - .:/app
       - ./logs/celery:/app/logs/celery
+      # 数据持久化挂载
+      - screenshots_volume:/app/qy_backend/media/screenshots
     depends_on:
       - redis
       - mysql
@@ -81,18 +89,20 @@ services:
       - appnet
 
   celery_beat:
-    build: ./qy_backend
+    #build: ./qy_backend
+    image: backend:latest
     container_name: celery-beat
     restart: always
     working_dir: /app/qy_backend
     env_file:
       - ./qy_backend/.env
-    entrypoint: [ "sh", "-lc" ] # ★ 覆盖 ENTRYPOINT，确保执行 command
-    # command: celery -A qy_backend beat --loglevel=info --logfile=/app/logs/celery/celery-beat.log
-    command: [ "celery", "-A", "qy_backend", "beat", "--loglevel=info", "--logfile=/app/logs/celery/celery-beat.log" ]
+    entrypoint: []
+    command: ["celery","-A","qy_backend.celery:app","beat","--loglevel=info","--logfile=/app/logs/celery/celery-beat.log"]
     volumes:
       - .:/app
       - ./logs/celery:/app/logs/celery
+      # 数据持久化挂载
+      - screenshots_volume:/app/qy_backend/media/screenshots
     depends_on:
       - redis
       - mysql
@@ -100,6 +110,10 @@ services:
     networks:
       - appnet
 
+# 定义共享卷
+volumes:
+  screenshots_volume:
+    driver: local
 
 # 网络配置
 networks:

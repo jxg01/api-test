@@ -123,6 +123,49 @@
           <el-button type="primary" @click="handleBatchRunTestCases">确认</el-button>
         </template>
       </el-dialog>
+
+      <!-- 执行过程弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="`执行进度：${status} ${progress.finished}/${progress.total}`"
+      width="80%"
+      top="5vh"
+      @close="onDialogClose"
+    >
+      <div style="display:flex; gap:16px; align-items:flex-start;">
+        <!-- 左侧：截图流 -->
+        <div style="flex:2; max-height:70vh; overflow:auto;">
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+            <img
+              v-for="(src, i) in images"
+              :key="i + src"
+              :src="src"
+              style="width:100%; border-radius:8px; border:1px solid #eee;"
+              loading="lazy"
+            />
+          </div>
+          <div v-if="images.length === 0" style="color:#999; padding:12px;">
+            等待首帧截图...
+          </div>
+        </div>
+
+        <!-- 右侧：简易日志 -->
+        <!-- <div style="flex:1; max-height:70vh; overflow:auto; background:#fafafa; border:1px solid #eee; border-radius:8px;">
+          <div v-for="(l, idx) in logs" :key="idx" style="padding:8px 10px; border-bottom:1px dashed #eee;">
+            <div style="font-weight:600;">{{ l.type }} <span v-if="l.idx">#{{ l.idx }}</span></div>
+            <div v-if="l.name" style="color:#555;">{{ l.name }}</div>
+            <div v-if="(l as any).status" :style="{color: (l as any).status==='fail' ? '#c00' : '#2f8'}">
+              {{ (l as any).status }}
+            </div>
+            <div v-if="(l as any).error" style="color:#c00; white-space:pre-wrap;">{{ (l as any).error }}</div>
+          </div>
+        </div> -->
+      </div>
+
+      <template #footer>
+        <el-button @click="dialogVisible=false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -136,10 +179,66 @@ import BaseDialog from '@/components/BaseDialog.vue'
 import { uiTestApi } from '@/api'
 import { useProjectStore } from '@/stores/project'
 import { useProjectChangeListener } from '@/composables/useProjectChangeListener'
+import { useRunLive } from '@/composables/useRunLive'
 
 const store = useUiTestStore()
 const projectStore = useProjectStore()
 const caseEditorRefs = ref<Record<string, any>>({})
+
+
+
+
+// 弹窗控制
+const dialogVisible = ref(false)
+const currentRunId = ref<string | null>(null)
+
+// 订阅器
+const { connect, disconnect, images, logs, status, progress } = useRunLive()
+
+// 你的原方法包装一下
+async function runCase(tab: Tab) {
+  try {
+    // const tab = getCurrentTab() // 如果你有当前 tab 的方法；否则按你的上下文拿 tab
+    if (!tab?.id) {
+      ElMessage.error('用例未保存')
+      return
+    }
+    // 调后端提交运行 —— 期望返回 { run_id: '...' }
+    const r = await store.runUiTestCase(Number(tab.id))
+    // 兼容后端返回结构：若 r 直接是 run_id 或在 r.data.run_id
+    const runId = r?.run_id ?? r?.data?.run_id ?? r?.data?.id ?? r?.id
+    if (!runId) {
+      ElMessage.error('未获取到 run_id')
+      return
+    }
+
+    currentRunId.value = String(runId)
+    ElMessage.success('用例已提交运行')
+
+    // 打开弹窗并连接 WebSocket
+    dialogVisible.value = true
+    // 等弹窗挂载后再连接，避免首帧无法渲染
+    await nextTick()
+    connect(currentRunId.value!)
+  } catch (e: any) {
+    ElMessage.error(e?.message || '提交运行失败')
+  }
+}
+
+// 弹窗关闭时断开 WS
+function onDialogClose() {
+  disconnect()
+  currentRunId.value = null
+}
+
+
+
+
+
+
+
+
+
 
 // 重置页面状态
 function resetViewStateOnProjectChange() {
@@ -624,19 +723,19 @@ const saveCase = async (tab: Tab) => {
 
 
 
-async function runCase(tab: Tab) {
-  // 可调后端接口
-  if (!tab.id) {
-    ElMessage.error('用例未保存')
-    return  
-  }
+// async function runCase(tab: Tab) {
+//   // 可调后端接口
+//   if (!tab.id) {
+//     ElMessage.error('用例未保存')
+//     return  
+//   }
   
-  const r = await store.runUiTestCase(Number(tab.id))
-  console.log('r', r)
-  if (r) {
-    ElMessage.success('用例已提交运行')
-  }
-}
+//   const r = await store.runUiTestCase(Number(tab.id))
+//   console.log('r', r)
+//   if (r) {
+//     ElMessage.success('用例已提交运行')
+//   }
+// }
 
 // 添加模块相关 ================================================================
 const dialogRef = ref()
