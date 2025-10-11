@@ -247,7 +247,8 @@ export const useUiTestStore = defineStore('uiTest', {
     async updateUiModule(moduleId: number, data: any) {
       const res = await uiTestApi.updateUiModule(moduleId, data)
       if (res) {
-        await this.fetchModuleList()
+        // 不直接刷新整个模块列表，由前端手动更新树节点，保持展开状态
+        // await this.fetchModuleList()
         return res
       }
     },

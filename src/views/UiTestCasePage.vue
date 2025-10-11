@@ -848,22 +848,63 @@ const renameModule = (module: any) => {
 }
 
 // 保存重命名
+// 递归查找并更新树节点名称
+const updateTreeNodeName = (nodes: any[], nodeId: string | number, newName: string): boolean => {
+  for (let i = 0; i < nodes.length; i++) {
+    if (String(nodes[i].id) === String(nodeId)) {
+      nodes[i].label = newName
+      return true
+    }
+    if (nodes[i].children && nodes[i].children.length > 0) {
+      const found = updateTreeNodeName(nodes[i].children, nodeId, newName)
+      if (found) return true
+    }
+  }
+  return false
+}
+
+// 防抖标记，防止短时间内重复调用handleSave
+let isSaving = false
+
 const handleSave = async () => {
+  // 如果正在保存中，直接返回
+  if (isSaving) {
+    return
+  }
+  
   if (!newLabel.value.trim()) {
     ElMessage.warning('名称不能为空')
     return
   }
   
   try {
+    // 设置保存中标记
+    isSaving = true
+    
     // 调用store的方法重命名模块
     await store.renameModule(editingNodeId.value, newLabel.value)
+    
+    // 手动更新本地树节点名称，保持展开状态
+    updateTreeNodeName(store.moduleList, editingNodeId.value, newLabel.value)
+    
+    // 不需要重新加载整个树结构
+    // await store.fetchModuleList()
+    
     isEditing.value = false
     editingNodeId.value = ''
     newLabel.value = ''
+    
+    ElMessage.success('重命名成功')
   } catch (error) {
     ElMessage.error('重命名失败')
     cancelEdit()
     console.error('重命名失败:', error)
+  } finally {
+    // 无论成功失败，都要清除保存中标记
+    // 使用setTimeout确保在事件循环的下一个tick执行，避免快速连续的保存操作
+    setTimeout(() => {
+      isSaving = false
+    }, 300)
   }
 }
 
