@@ -20,15 +20,8 @@ export function useRunLive() {
     status.value = 'pending'
     progress.value = { finished: 0, total: 0 }
 
-    // const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-    // const url = `${proto}://${location.host}/ws/run/${runId}/`
-    // const url = `ws://192.168.41.52:8000/ws/run/${runId}/`
-    // const url = `ws://127.0.0.1:8001/ws/run/${runId}/`
-    // const wsBase = import.meta.env.VITE_WS_BASE
-    // const url = `${wsBase}/ws/run/${runId}/`
-
     const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-    const wsBase = import.meta.env.VITE_WS_BASE || `${proto}://${location.host}`
+    const wsBase = import.meta.env.VITE_API_BASE_URL || `${proto}://${location.host}`
     const url = `${wsBase}/ws/run/${runId}/`
     
     const ws = new WebSocket(url)

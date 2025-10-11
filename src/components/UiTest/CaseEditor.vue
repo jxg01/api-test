@@ -985,27 +985,51 @@ function fetchLoginCaseOptions() {
     // 从模块列表中提取所有用例并过滤当前用例
     const allCases: { id: string; name: string }[] = [];
     
-    // 递归遍历模块列表，提取所有用例
-    function extractCasesFromModules(modules: any[]) {
-
+    // 递归遍历模块列表，提取所有用例，支持多层级模块结构
+    function extractCasesFromModules(modules: any[], parentPath: string = '') {
       modules.forEach(module => {
-        // 添加当前模块下的用例
-        if (module.children && module.children.length) {
-          module.children.forEach((testCase: any) => {
-            // 排除当前用例 - 修复类型不匹配问题
-            if (String(testCase.id) !== String(localCaseData.value.id) && testCase.label !== '新建用例') {
-              allCases.push({
-                id: testCase.id,
-                name: testCase.label
-              });
+        // 如果是模块类型，需要递归处理其子模块
+        if (module.type === 'group') {
+          // 构建当前模块路径
+          const currentPath = parentPath ? `${parentPath}/${module.label}` : module.label;
+          
+          // 处理当前模块下的用例
+          if (module.children && module.children.length) {
+            // 首先处理子模块中的用例
+            const subCases = module.children.filter((child: any) => child.type === 'case');
+            subCases.forEach((testCase: any) => {
+              // 排除当前用例
+              if (String(testCase.id) !== String(localCaseData.value.id) && testCase.label !== '新建用例') {
+                allCases.push({
+                  id: testCase.id,
+                  name: testCase.label
+                });
+              }
+            });
+            
+            // 然后递归处理子模块
+            const subModules = module.children.filter((child: any) => child.type === 'group');
+            if (subModules.length) {
+              extractCasesFromModules(subModules, currentPath);
             }
-          });
+          }
+        }
+        // 如果是用例类型（根级用例）
+        else if (module.type === 'case') {
+          // 排除当前用例
+          if (String(module.id) !== String(localCaseData.value.id) && module.label !== '新建用例') {
+            allCases.push({
+              id: module.id,
+              name: module.label
+            });
+          }
         }
       });
     }
+    
     extractCasesFromModules(store.moduleList);
     
-    // 排序用例（可选）
+    // 排序用例
     allCases.sort((a, b) => a.name.localeCompare(b.name));
     
     // 更新loginCaseOptions

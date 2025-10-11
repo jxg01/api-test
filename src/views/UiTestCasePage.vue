@@ -41,7 +41,7 @@
                 <component :is="data.type === 'case' ? 'Document' : 'Folder'" />
               </el-icon>
               <div class="tree-node-content">
-                <template v-if="isEditing && editingNodeId === data.id">
+                <template v-if="data.type === 'group' && isEditing && editingNodeId === data.id">
                   <el-input 
                     ref="nameInput"
                     v-model="newLabel"
