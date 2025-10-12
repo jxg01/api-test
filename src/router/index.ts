@@ -3,13 +3,11 @@ import Index from '@/views/Index.vue';
 import ProjectPageVue from '@/views/ProjectPage.vue';
 import UserPageVue from '@/views/UserPage.vue'
 import InterfacePageVue from '@/views/InterfacePage.vue';
-import MtTool from '@/views/MtTool.vue';
 import GlobalVariablePage from '@/views/GlobalVariablePage.vue';
 import TestCasePage from '@/views/TestCasePage.vue';
 import DashboardPageVue from '@/views/DashboardPage.vue';
 import SettingsPageVue from '@/views/SettingsPage.vue';
 import SuitePageVue from '@/views/SuitePage.vue';
-import TraderToolsPageVue from '@/views/TraderToolsPage.vue';
 import SuiteEditorVue from '@/components/suite/SuiteEditor.vue';
 import SuggestionPageVue from '@/views/SuggestionPage.vue';
 import ExecutionHistoryPageVue from '@/views/ExecutionHistoryPage.vue';
@@ -232,12 +230,12 @@ const routes: Array<RouteRecordRaw> = [
 
             },
             {
-                path: '/mt_tool',
-                name: 'mt_tool',
-                component: TraderToolsPageVue,
+                path: '/test-files',
+                name: 'test-files',
+                component: () => import('@/views/FileManagePage.vue'),
                 meta: {
-                    title: '交易工具',
-                    isShow: false,
+                    title: '文件管理',
+                    isShow: true,
                     icon: 'Opportunity'
                 },
             },
