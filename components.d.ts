@@ -25,6 +25,7 @@ declare module '@vue/runtime-core' {
     CaseTabs: typeof import('./src/components/testcase/CaseTabs.vue')['default']
     CurrentProjectSelector: typeof import('./src/components/CurrentProjectSelector.vue')['default']
     ElAside: typeof import('element-plus/es')['ElAside']
+    ElBadge: typeof import('element-plus/es')['ElBadge']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
     ElCol: typeof import('element-plus/es')['ElCol']

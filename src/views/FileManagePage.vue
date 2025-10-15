@@ -126,7 +126,7 @@ const fetchFileList = async () => {
     const response = await testFileApi.getFileList(params);
     fileList.value = response.data || [];
     console.log('文件列表:', fileList.value);
-    total.value = response.data.count || 0;
+    total.value = response.meta.pagination.total || 0;
   } catch (error) {
     ElMessage.error('获取文件列表失败');
     console.error('获取文件列表失败:', error);

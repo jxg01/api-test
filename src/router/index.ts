@@ -236,7 +236,7 @@ const routes: Array<RouteRecordRaw> = [
                 meta: {
                     title: '文件管理',
                     isShow: true,
-                    icon: 'Opportunity'
+                    icon: 'Files'
                 },
             },
             {
@@ -256,7 +256,17 @@ const routes: Array<RouteRecordRaw> = [
                 meta: {
                     title: 'Python函数',   
                     isShow: true,
-                    icon: 'Opportunity'
+                    icon: 'SwitchFilled'
+                },
+            },
+            {
+                path: '/trading-tool',
+                name: 'trading-tool',
+                component: () => import('@/views/TradingToolPage.vue'),
+                meta: {
+                    title: '交易工具',   
+                    isShow: true,
+                    icon: 'SwitchFilled'
                 },
             },
         ]
