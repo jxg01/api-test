@@ -1,0 +1,16 @@
+services:
+  redis:
+    image: redis:6
+    container_name: redis
+    volumes:
+      - ./docker-data/redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - appnet
+
+# 网络配置
+networks:
+  appnet:
+#    driver: bridge
+    external: true
