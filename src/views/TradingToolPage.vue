@@ -246,7 +246,7 @@ const formData = reactive({
   serverName: 'CRM_dev_1',
   ta: '153735',
   cmd: 'buy',
-  volume: '',
+  volume: '' as number | string,
   comment: 'test',
   price: '0.66',
   openNum: 1,
@@ -262,14 +262,22 @@ const defaultSymbols = ['AUDUSD', 'EURUSD', 'GBPUSD', 'AUDCAD', 'GBPJPY']
 const logs = ref<string[]>([])
 
 // 输出日志函数
-function addLog(logText: string) {
-  const info = `[${new Date().toLocaleString()}] ${logText}`
+function addLog(logText: string, isFromWebSocket = false) {
+  const info = isFromWebSocket ? logText : `[${new Date().toLocaleString()}] ${logText}`
   logs.value.push(info)
   
   // 限制日志行数
   if (logs.value.length > 500) {
     logs.value.shift()
   }
+  
+  // 滚动到最新日志
+  setTimeout(() => {
+    const logContainer = document.querySelector('.log-scrollbar .el-scrollbar__wrap')
+    if (logContainer) {
+      logContainer.scrollTop = logContainer.scrollHeight
+    }
+  }, 0)
 }
 
 // 状态变量
@@ -413,23 +421,23 @@ function handleWebSocketMessage(event: MessageEvent) {
     
     switch (data.type) {
       case 'log':
-        addLog(data.message)
+        addLog(data.message, true)
         break
       case 'status':
-        addLog(`状态更新: ${data.status} - ${data.message}`)
+        addLog(`状态更新: ${data.status} - ${data.message}`, true)
         // 如果任务完成或停止，更新状态
         if (data.status === 'completed' || data.status === 'stopping') {
           isRunning.value = false
         }
         break
       case 'config':
-        addLog(`配置信息: ${JSON.stringify(data.config)}`)
+        addLog(`配置信息: ${JSON.stringify(data.config)}`, true)
         break
       default:
-        addLog(`[WebSocket] ${JSON.stringify(data)}`)
+        addLog(`[WebSocket] ${JSON.stringify(data)}`, true)
     }
   } catch (error) {
-    addLog(`[WebSocket] ${event.data}`)
+    addLog(`[WebSocket] ${event.data}`, true)
   }
 }
 

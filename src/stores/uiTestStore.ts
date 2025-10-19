@@ -76,6 +76,8 @@ export const useUiTestStore = defineStore('uiTest', {
     filterParams: {
       locator_type: '',
       name: '',
+      page: '',
+      locator_value: ''
     },
     moduleList: [] as CaseTreeNode[],
     simpleElementList: [] as simpleElementType[],
@@ -105,7 +107,10 @@ export const useUiTestStore = defineStore('uiTest', {
         project_id: projectId || useProjectStore().currentProjectId,
         page: this.currentPage,
         size: this.pageSize,
-        ...this.filterParams
+        element_page: this.filterParams.page,
+        locator_type: this.filterParams.locator_type,
+        name: this.filterParams.name,
+        locator_value: this.filterParams.locator_value
       })
       if (res) {
         this.uiElementList = res.data

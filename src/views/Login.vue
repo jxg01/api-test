@@ -134,7 +134,7 @@
 <script lang="ts" setup>
 import { ref, reactive, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import bgImageUrl from '@/assets/login-bg2.png'
+// import bgImageUrl from '@/assets/login-bg.png'
 
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
@@ -260,7 +260,8 @@ onMounted(() => {
   let h = (canvas.height = window.innerHeight)
 
   const bgImg = new Image()
-  bgImg.src = bgImageUrl
+  // bgImg.src = bgImageUrl
+  bgImg.src = import .meta.env.VITE_LOGO_URL
 
   type Flake = { x: number; y: number; r: number; d: number }
   const flakes: Flake[] = []

@@ -126,7 +126,7 @@
             <div class="main-step">
               <div style="color: blueviolet;">{{ $index+1 }}</div>
               <span v-if="isEditing" class="drag-handle" style="cursor:move;font-size:30px;user-select:none;color:darkorchid;">⠿</span>
-              <el-select v-model="row.action" style="min-width: 80px;max-width: 120px;" @change="emitChange" :disabled="!isEditing">
+              <el-select v-model="row.action" style="min-width: 80px;max-width: 160px;" @change="emitChange" :disabled="!isEditing">
                 <el-option v-for="a in stepActions" :key="a.value" :label="a.label" :value="a.value" />
               </el-select>
               <el-input
@@ -138,7 +138,7 @@
                 :disabled="!isEditing"
               />
               <template v-if="row.action === 'assert'">
-                <el-select style="min-width: 80px;max-width: 120px;" v-model="row.assert_type" placeholder="选择类型" @change="emitChange" :disabled="!isEditing">
+                <el-select style="min-width: 80px;max-width: 160px;" v-model="row.assert_type" placeholder="选择类型" @change="emitChange" :disabled="!isEditing">
                   <el-option
                     v-for="op in assertType"
                     :key="op.label"
@@ -158,12 +158,68 @@
                   </el-select>
                   <el-input
                     v-model="row.expect"
-                    placeholder="期望文本"
+                    placeholder="期望文本相等"
                     style="width:100%"
                     @input="emitChange"
                     :disabled="!isEditing"
                   />
                 </template>
+
+                <template v-if="row.assert_type === 'text_not'">
+                  <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange" :disabled="!isEditing">
+                    <el-option
+                      v-for="op in pageOptions"
+                      :key="op.label"
+                      :label="op.label"
+                      :value="op.value"
+                    />
+                  </el-select>
+                  <el-input
+                    v-model="row.expect"
+                    placeholder="期望文本不相等"
+                    style="width:100%"
+                    @input="emitChange"
+                    :disabled="!isEditing"
+                  />
+                </template>
+
+                <template v-if="row.assert_type === 'text_contains'">
+                  <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange" :disabled="!isEditing">
+                    <el-option
+                      v-for="op in pageOptions"
+                      :key="op.label"
+                      :label="op.label"
+                      :value="op.value"
+                    />
+                  </el-select>
+                  <el-input
+                    v-model="row.expect"
+                    placeholder="期望包含文本"
+                    style="width:100%"
+                    @input="emitChange"
+                    :disabled="!isEditing"
+                  />
+                </template>
+
+                <template v-if="row.assert_type === 'text_not_contains'">
+                  <el-select v-model="row.element_id" placeholder="选择或输入元素ID" filterable allow-create  @change="emitChange" :disabled="!isEditing">
+                    <el-option
+                      v-for="op in pageOptions"
+                      :key="op.label"
+                      :label="op.label"
+                      :value="op.value"
+                    />
+                  </el-select>
+                  <el-input
+                    v-model="row.expect"
+                    placeholder="期望不包含文本"
+                    style="width:100%"
+                    @input="emitChange"
+                    :disabled="!isEditing"
+                  />
+                </template>
+
+
                 <template v-if="row.assert_type === 'url'">
                   <el-input
                     v-model="row.expect"
@@ -524,7 +580,7 @@ const stepActions = [
   // { label: '设置Header', value: 'set_header' },
   { label: '跳转页面', value: 'goto' },
   { label: '点击', value: 'click' },
-  { label: '等待时间', value: 'sleep' },
+  { label: '等待时间(sleep)', value: 'sleep' },
   { label: '等待元素', value: 'wait_element' },
   { label: '输入', value: 'input' },
   { label: '执行js', value: 'execute_script' },
@@ -534,12 +590,16 @@ const stepActions = [
 ]
 
 const assertType = [
-{ label: '元素文本', value: 'text' },
+{ label: '元素文本相等', value: 'text' },
+{ label: '元素文本不相等', value: 'text_not' },
+{ label: '元素文本包含', value: 'text_contains' },
+{ label: '元素文本不包含', value: 'text_not_contains' },
 { label: '元素可见', value: 'visible' },
 { label: '元素存在', value: 'exists' },
 { label: 'URL包含', value: 'url' },
 { label: '页面标题', value: 'title' },
 ]
+
 
 function randomId() {
   return Math.random().toString(36).slice(2, 10)

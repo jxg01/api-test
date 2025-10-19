@@ -4,9 +4,9 @@
     <el-card shadow="never" class="toolbar-card">
       <div class="search-tools">
         <div class="left-search">
-          <el-input v-model="store.filterParams.name" placeholder="搜索元素名称/页面" clearable />
-          
-          <el-select v-model="store.filterParams.locator_type" placeholder="定位方式" clearable>
+          <el-input v-model="store.filterParams.name" placeholder="元素名称" clearable />
+          <el-input v-model="store.filterParams.page" placeholder="所属页面" clearable />
+          <el-select v-model="store.filterParams.locator_type" placeholder="定位类型" clearable>
             <el-option
               v-for="type in locatorTypes"
               :key="type.value"
@@ -14,10 +14,9 @@
               :value="type.value"
             />
           </el-select>
-          <el-button type='primary' @click="handleSearch">搜索</el-button>
-        </div>
-        
-        <div>
+          <el-input v-model="store.filterParams.locator_value" placeholder="定位值" clearable />
+          <el-button type='primary' @click.stop="handleSearch" :icon="Search">搜索</el-button>
+          <el-button type="primary" @click.stop="handleReset" :icon="RefreshLeft" plain>重置</el-button>
           <el-button type="primary" :icon="Plus" @click="openAddDialog"> 新建元素 </el-button>
         </div>
       </div>
@@ -139,7 +138,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive, shallowRef } from 'vue'
-import { Search, Plus, Edit, Delete, View, Check, CopyDocument } from '@element-plus/icons-vue'
+import { Search, Plus, Edit, Delete, View, Check, CopyDocument, RefreshLeft } from '@element-plus/icons-vue'
 import type { FormRules, FormInstance } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import BaseTable, { type TableColumn } from '@/components/BaseTable.vue'
@@ -236,6 +235,16 @@ const loading = ref(false)
 
 // 搜索处理函数，搜索时重置页面为1
 const handleSearch = () => {
+  store.currentPage = 1
+  store.fetchUiElementList()
+}
+
+// 重置搜索条件
+const handleReset = () => {
+  store.filterParams.name = ''
+  store.filterParams.page = ''
+  store.filterParams.locator_type = ''
+  store.filterParams.locator_value = ''
   store.currentPage = 1
   store.fetchUiElementList()
 }
@@ -453,12 +462,19 @@ const getLocatorTagType = (type: string) => {
 
 .search-tools {
   display: flex;
-  justify-content: space-between;
   align-items: center;
 }
 .left-search {
   display: flex;
   gap: 10px;
   min-width: 400px;
+}
+.left-search :deep(.el-input) {
+  min-width: 200px;
+  max-width: 360px;
+}
+.left-search :deep(.el-select) {
+  min-width: 200px;
+  max-width: 360px;
 }
 </style>

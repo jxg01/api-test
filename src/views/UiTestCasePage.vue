@@ -61,6 +61,9 @@
                     <template #dropdown>
                       <el-dropdown-menu>
                         <template v-if="data.type === 'case'">
+                          <el-dropdown-item @click.stop="toggleCaseStatus(data)">
+                            {{ data.caseData?.enable ? '禁用' : '启用' }}
+                          </el-dropdown-item>
                           <el-dropdown-item @click.stop="copyCase(data)">复制</el-dropdown-item>
                           <el-dropdown-item @click.stop="deleteCase(data)" danger>删除</el-dropdown-item>
                         </template>
@@ -435,7 +438,7 @@ function addCase(group: CaseTreeNode) {
     type: 'case',
     caseData: {
       id: '0',
-      name: '新建用例',
+      name: '',
       description: '',
       steps: [],
       pre_apis: [],
@@ -457,6 +460,26 @@ function addCase(group: CaseTreeNode) {
 
   openTabs.value.push(tab);
   activeTab.value = tab.id;
+}
+
+// 切换用例启用/禁用状态
+const toggleCaseStatus = async(node: CaseTreeNode) => {
+  try {
+    const newStatus = !(node.caseData?.enable || false)
+    // 使用修改用例的接口更新状态
+    await store.editUiTestCaseSimple({
+      id: node.id,
+      enable: newStatus
+    })
+    // 更新本地数据
+    if (node.caseData) {
+      node.caseData.enable = newStatus
+    }
+    ElMessage.success(`用例${newStatus ? '启用' : '禁用'}成功`)
+  } catch (error) {
+    console.log('切换用例状态失败', error)
+    ElMessage.error('操作失败，请重试')
+  }
 }
 
 const deleteCase = async(node: CaseTreeNode) => {
