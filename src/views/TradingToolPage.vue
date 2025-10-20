@@ -3,30 +3,48 @@
     <el-card class="main-card shadow-card">
       <template #header>
         <div class="card-header">
-          <h2 class="page-title">交易工具 V2.0</h2>
+          <h2 class="page-title">交易工具</h2>
           <div class="header-actions">
-            <el-upload
-              class="upload-btn"
-              :show-file-list="false"
-              accept=".json"
-              :before-upload="handleFileUpload"
-            >
-              <el-button type="primary" size="small" :icon="DocumentCopy" :title="'打开配置文件'">
-                打开文件
-              </el-button>
-            </el-upload>
-            <el-button type="success" size="small" :icon="Document" :title="'保存当前配置'" @click="saveBasicInfo">
-                保存基本信息
-              </el-button>
+            <el-button type="success" size="small" :icon="Document" :title="'保存当前配置'" @click.stop="saveBasicInfo">
+              {{ currentConfigId ? '修改基本信息' : '保存基本信息' }}
+            </el-button>
           </div>
         </div>
       </template>
+
+      <!-- 已保存的配置卡片 -->
+      <div v-if="configList.length > 0" class="saved-configs">
+        <el-row :gutter="15">
+          <!-- <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="config in configList" :key="config.id"> -->
+          <el-col :xs="24" :sm="12" :md="6" :lg="4" v-for="config in configList" :key="config.id">
+            <el-card 
+              class="config-item" 
+              :class="{ 'active-config': currentConfigId === config.id }"
+              @click="handleConfigClick(config)"
+            >
+              <div class="config-header-with-delete">
+                <h4 class="config-name">{{ config.name }}</h4>
+                <el-button 
+                  link 
+                  type="danger" 
+                  size="small" 
+                  @click.stop="confirmDeleteConfig(config)"
+                  class="delete-button"
+                >
+                  删除
+                </el-button>
+              </div>
+              <span class="config-time">{{ formatTime(config.created_at) }}</span>
+            </el-card>
+          </el-col>
+        </el-row>
+      </div>
 
       <!-- 基本信息组 -->
       <el-form :model="formData" label-width="100px" class="form-container">
         <!-- 链接信息区域 -->
         <div class="form-section">
-          <h3 class="section-title">链接信息</h3>
+          <h3 class="section-title">基础信息</h3>
           <el-row :gutter="20">
             <!-- IP和端口 -->
             <el-col :xs="24" :sm="24" :md="24" :lg="12">
@@ -38,7 +56,7 @@
               <el-form-item label="端口:" prop="port">
                 <el-input v-model="formData.port" placeholder="请输入端口" class="form-input">
                   <template #append>
-                    <el-button type="primary" @click="testConnect" size="small">测试连接</el-button>
+                    <el-button type="info" @click="testConnect" size="small" :loading="testLoading">测试连接</el-button>
                   </template>
                 </el-input>
               </el-form-item>
@@ -109,7 +127,7 @@
             </el-col>
             <el-col :xs="24" :sm="24" :md="12" :lg="8">
               <el-form-item label="下单次数:" prop="openNum">
-                <el-input v-model.number="formData.openNum" type="number" placeholder="请输入下单次数" class="form-input"></el-input>
+                <el-input :min="0" v-model.number="formData.openNum" type="number" placeholder="请输入下单次数" class="form-input"></el-input>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="24" :md="24" :lg="8">
@@ -124,9 +142,14 @@
             </el-col>
           </el-row>
           <el-row :gutter="20">
-            <el-col :xs="24" :sm="24" :md="24" :lg="24">
+            <el-col :xs="24" :sm="24" :md="24" :lg="8">
               <el-form-item label="备注:" prop="comment">
                 <el-input v-model="formData.comment" placeholder="请输入备注" class="form-input"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="24" :md="24" :lg="8">
+              <el-form-item label="持仓时间:" prop="holderTime">
+                <el-input :min="0" v-model.number="formData.holderTime" type="number" placeholder="请输入持仓时间" class="form-input"></el-input>
               </el-form-item>
             </el-col>
           </el-row>
@@ -154,13 +177,6 @@
           >
             中断任务
           </el-button>
-          <el-button 
-            @click="clearLog" 
-            size="large"
-            :icon="Delete"
-          >
-            清除日志
-          </el-button>
           <div v-if="isRunning" class="status-indicator">
             <el-tag type="success" effect="dark" class="status-tag">
               <Loading />
@@ -177,7 +193,15 @@
           <div class="card-header">
             <h3 class="section-title">运行日志</h3>
             <el-badge :value="logs.length" type="primary" class="log-badge">
-              <el-button size="small" type="info" @click="exportLogs" title="导出日志">
+              <el-button 
+                size="small" type="warning" 
+                :icon="Delete" 
+                title="清除日志"
+                @click="clearLog" 
+              >
+                清除日志
+              </el-button>
+              <el-button size="small" type="info" @click="exportLogs" title="导出日志" :icon="Download" >
                 导出日志
               </el-button>
             </el-badge>
@@ -201,6 +225,8 @@
         </el-scrollbar>
       </el-card>
 
+
+
       <!-- 作者信息 -->
       <div class="author-info">
         <el-divider>作者信息</el-divider>
@@ -209,21 +235,34 @@
     </el-card>
 
     <!-- 确认对话框 -->
-    <el-dialog v-model="confirmDialog.visible" :title="confirmDialog.title" width="40%" center>
-      <div class="dialog-content">
-        <!-- <Warning class="dialog-icon" /> -->
-        <span>{{ confirmDialog.content }}</span>
-      </div>
-      <template #footer>
-        <el-button @click="confirmDialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="handleConfirm">确定</el-button>
-      </template>
-    </el-dialog>
+      <el-dialog v-model="confirmDialog.visible" :title="confirmDialog.title" width="40%" >
+        <div class="dialog-content">
+          <!-- <Warning class="dialog-icon" /> -->
+          <span>{{ confirmDialog.content }}</span>
+        </div>
+        <template #footer>
+          <el-button @click="confirmDialog.visible = false">取消</el-button>
+          <el-button type="primary" @click="handleConfirm">确定</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 保存配置对话框 -->
+      <el-dialog v-model="saveDialog.visible" title="保存配置" width="40%">
+        <el-form :model="saveDialog.form" label-width="80px">
+          <el-form-item label="配置名称" prop="name">
+            <el-input v-model="saveDialog.form.name" placeholder="请输入配置名称"></el-input>
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="saveDialog.visible = false">取消</el-button>
+          <el-button type="primary" @click="confirmSaveConfig">确定</el-button>
+        </template>
+      </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onUnmounted } from 'vue'
+import { ref, reactive, watch, onUnmounted, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { tradingToolApi } from '@/api/tradingTool.api'
 import {
@@ -234,24 +273,43 @@ import {
   DocumentCopy,
   Document,
   Loading,
-  Warning
+  Warning,
+  Download
 } from '@element-plus/icons-vue'
 
 // 表单数据
+// const formData = reactive({
+//   ip: 'tcp.internal.lifebyte.dev',
+//   port: '28080',
+//   serverType: 'MT4',
+//   function: '1',
+//   serverName: 'CRM_dev_1',
+//   ta: '153735',
+//   cmd: 'buy',
+//   volume: '' as number | string,
+//   comment: 'test',
+//   price: '0.66',
+//   openNum: 1,
+//   symbol: 'AUDUSD',
+//   threadNum: 1,
+//   holderTime: 0
+// })
+
 const formData = reactive({
-  ip: 'tcp.internal.lifebyte.dev',
-  port: '28080',
+  ip: '',
+  port: '',
   serverType: 'MT4',
   function: '1',
-  serverName: 'CRM_dev_1',
-  ta: '153735',
+  serverName: '',
+  ta: '',
   cmd: 'buy',
   volume: '' as number | string,
-  comment: 'test',
-  price: '0.66',
-  openNum: 1,
-  symbol: 'AUDUSD',
-  threadNum: 1
+  comment: '',
+  price: '',
+  openNum: '' as number | string,
+  symbol: '',
+  threadNum: 1,
+  holderTime: '' as number | string,
 })
 
 // 常量配置
@@ -284,13 +342,47 @@ function addLog(logText: string, isFromWebSocket = false) {
 const isRunning = ref(false)
 const wsConnections = ref<WebSocket[]>([]) // 保留此引用用于跟踪连接
 
-// 确认对话框
+// 确认对话框配置
 const confirmDialog = reactive({
   visible: false,
   title: '',
   content: '',
   callback: () => {}
 })
+
+// 保存配置对话框
+const saveDialog = reactive({
+  visible: false,
+  form: {
+    name: ''
+  }
+})
+
+// 配置列表
+const configList = ref<any[]>([])
+
+// 当前选中的配置ID
+const currentConfigId = ref<number | null>(null)
+
+// 点击配置卡片
+function handleConfigClick(config: any) {
+  // 如果任务正在运行，不允许切换配置
+  if (isRunning.value) {
+    ElMessage.warning('当前任务正在运行，无法切换配置')
+    return
+  }
+  
+  // 如果点击的是当前选中的配置，不做任何操作
+  if (currentConfigId.value === config.id) {
+    return
+  }
+  
+  // 加载选中的配置
+  loadConfig(config)
+}
+
+// 加载中状态
+const isLoading = ref(false)
 
 // 监听服务器类型变化
 watch(() => formData.serverType, (newVal) => {
@@ -300,6 +392,8 @@ watch(() => formData.serverType, (newVal) => {
   }
 })
 
+const testLoading = ref(false)
+
 // 测试连接 - 调用API接口
 async function testConnect() {
   const { ip, port } = formData
@@ -308,7 +402,7 @@ async function testConnect() {
     addLog('检查ip端口是否正确...')
     return
   }
-
+  testLoading.value = true
   addLog(`测试中...正在连接${ip}:${port}`)
   
   try {
@@ -328,7 +422,9 @@ async function testConnect() {
       addLog('地址链接失败，请检查地址是否正确或网络是否正常')
       ElMessage.error(response.message || '地址链接失败')
     }
+    testLoading.value = false
   } catch (error: any) {
+    testLoading.value = false
     const errorMsg = error.response?.data?.message || String(error)
     addLog(`测试连接失败: ${errorMsg}`)
     ElMessage.error(errorMsg)
@@ -342,6 +438,7 @@ const currentRunId = ref('')
 
 // 提交任务 - 调用API接口
 async function submit() {
+  console.log('提交的表单数据:', formData)
   const { ip, port } = formData
   
   if (!ip || !port) {
@@ -364,7 +461,8 @@ async function submit() {
     price: formData.price,
     open_num: formData.openNum || 1,
     symbol: formData.symbol?.toUpperCase() || '',
-    thread_num: formData.threadNum
+    thread_num: formData.threadNum || 1,
+    holder_time: formData.holderTime || 0,
   }
 
   // 验证必要字段
@@ -406,6 +504,9 @@ async function submit() {
       }
       
       ElMessage.success(response.message)
+    } else {
+      addLog(`交易请求失败: ${response.message}`)
+      ElMessage.error(response.message)
     }
   } catch (error: any) {
     const errorMsg = error.response?.data?.message || String(error)
@@ -558,61 +659,175 @@ function handleConfirm() {
   confirmDialog.visible = false
 }
 
-// 保存基本信息
-function saveBasicInfo() {
-  const infos = {
-    ip: formData.ip,
-    port: formData.port,
-    serverName: formData.serverName,
-    trading_account: formData.ta,
-    volume: formData.volume,
-    comment: formData.comment,
-    function: formData.function,
-    serverType: formData.serverType,
-    price: formData.price
+// 加载配置列表
+async function loadConfigList() {
+  try {
+    isLoading.value = true
+    const response = await tradingToolApi.getConfigList()
+    configList.value = response.data || []
+  } catch (error) {
+    ElMessage.error('加载配置列表失败')
+    console.error('加载配置列表失败:', error)
+  } finally {
+    isLoading.value = false
   }
-  
-  // 创建下载链接
-  const blob = new Blob([JSON.stringify(infos, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `trading_info_${new Date().getTime()}.json`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-  
-  addLog('基本信息已保存')
 }
 
-// 处理文件上传
-function handleFileUpload(file: File) {
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    try {
-      const content = e.target?.result as string
-      const data = JSON.parse(content)
-      
-      // 更新表单数据
-      formData.ip = data.ip || formData.ip
-      formData.port = data.port || formData.port
-      formData.serverName = data.server_name || ''
-      formData.ta = data.trading_account || ''
-      formData.volume = data.volume || ''
-      formData.comment = data.comment || ''
-      formData.price = data.price || ''
-      formData.function = data.function || '1'
-      formData.serverType = data.server_type || 'MT4'
-      
-      addLog('基本信息已从文件加载')
-    } catch (error) {
-      ElMessage.error('打开文件失败: 文件格式不正确')
-    }
+// 保存基本信息
+function saveBasicInfo() {
+  if (currentConfigId.value) {
+    // 修改模式
+    saveDialog.form.name = configList.value.find(c => c.id === currentConfigId.value)?.name || ''
+    saveDialog.visible = true
+  } else {
+    // 新增模式
+    saveDialog.form.name = ''
+    saveDialog.visible = true
   }
-  reader.readAsText(file)
-  return false // 阻止默认上传
 }
+
+// 确认保存配置
+async function confirmSaveConfig() {
+  if (!saveDialog.form.name.trim()) {
+    ElMessage.warning('请输入配置名称')
+    return
+  }
+
+  try {
+    isLoading.value = true
+    const tradeData = {
+      ip: formData.ip,
+      port: formData.port,
+      serverName: formData.serverName,
+      trading_account: formData.ta,
+      volume: formData.volume,
+      comment: formData.comment,
+      function: formData.function,
+      serverType: formData.serverType,
+      price: formData.price,
+      cmd: formData.cmd,
+      openNum: formData.openNum,
+      symbol: formData.symbol,
+      threadNum: formData.threadNum || 1,
+      holderTime: formData.holderTime || 0,
+    }
+
+    let response
+    if (currentConfigId.value) {
+      // 更新配置
+      response = await tradingToolApi.updateConfig(currentConfigId.value, {
+        name: saveDialog.form.name.trim(),
+        trade_data: tradeData
+      })
+      addLog(`配置已更新: ${saveDialog.form.name}`)
+    } else {
+      // 新增配置
+      response = await tradingToolApi.saveConfig({
+        name: saveDialog.form.name.trim(),
+        trade_data: tradeData
+      })
+      addLog(`配置已保存: ${saveDialog.form.name}`)
+    }
+
+    // 操作成功后关闭弹窗
+    ElMessage.success(currentConfigId.value ? '配置更新成功' : '配置保存成功')
+    saveDialog.visible = false
+    await loadConfigList()
+  } catch (error) {
+    ElMessage.error(currentConfigId.value ? '配置更新失败' : '配置保存失败')
+    console.error('保存配置失败:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 加载配置
+async function loadConfig(config: any) {
+  try {
+    isLoading.value = true
+    const response = await tradingToolApi.getConfigById(config.id)
+    const tradeData = response?.trade_data
+    console.log('tradeData:', tradeData)
+    
+    if (tradeData) {
+      // 更新表单数据
+      formData.ip = tradeData.ip || formData.ip
+      formData.port = tradeData.port || formData.port
+      formData.serverName = tradeData.serverName || ''
+      formData.ta = tradeData.trading_account || ''
+      formData.volume = tradeData.volume || ''
+      formData.comment = tradeData.comment || ''
+      formData.function = tradeData.function || '1'
+      formData.serverType = tradeData.serverType || 'MT4'
+      formData.price = tradeData.price || ''
+      formData.cmd = tradeData.cmd || 'buy'
+      formData.openNum = tradeData.openNum || 1
+      formData.symbol = tradeData.symbol || 'AUDUSD'
+      formData.threadNum = tradeData.threadNum || 1
+      formData.holderTime = tradeData.holderTime || 0
+      
+      currentConfigId.value = config.id
+      addLog(`已加载配置: ${config.name}`)
+      ElMessage.success(`已加载配置: ${config.name}`)
+    }
+  } catch (error) {
+    ElMessage.error('加载配置失败')
+    console.error('加载配置失败:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 确认删除配置
+function confirmDeleteConfig(config: any) {
+  confirmDialog.title = '确认删除'
+  confirmDialog.content = `确定要删除配置"${config.name}"吗？此操作不可恢复。`
+  confirmDialog.callback = () => deleteConfig(config.id)
+  confirmDialog.visible = true
+}
+
+// 删除配置
+async function deleteConfig(id: number) {
+  try {
+    isLoading.value = true
+    await tradingToolApi.deleteConfig(id)
+    
+    // 如果删除的是当前加载的配置，清除当前配置ID
+    if (currentConfigId.value === id) {
+      currentConfigId.value = null
+    }
+    
+    await loadConfigList()
+    addLog('配置已删除')
+    ElMessage.success('配置删除成功')
+  } catch (error) {
+    ElMessage.error('配置删除失败')
+    console.error('删除配置失败:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 格式化时间
+function formatTime(timeString: string) {
+  try {
+    const date = new Date(timeString)
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return timeString
+  }
+}
+
+// 组件挂载时加载配置列表
+onMounted(() => {
+  loadConfigList()
+})
 
 // 组件卸载时清理WebSocket连接
 onUnmounted(() => {
@@ -653,7 +868,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
+  /* padding: 16px 24px; */
   background-color: #fafafa;
   border-bottom: 1px solid #ebeef5;
 }
@@ -670,12 +885,8 @@ onUnmounted(() => {
   gap: 12px;
 }
 
-.form-container {
-  padding: 24px;
-}
-
 .form-section {
-  margin-bottom: 30px;
+  /* margin-bottom: 30px; */
   padding: 20px;
   background-color: #ffffff;
   border-radius: 8px;
@@ -684,7 +895,7 @@ onUnmounted(() => {
 }
 
 .form-section:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .section-title {
@@ -694,6 +905,7 @@ onUnmounted(() => {
   color: #606266;
   border-bottom: 1px solid #ebeef5;
   padding-bottom: 10px;
+  text-align: left;
 }
 
 .form-input {
@@ -813,12 +1025,79 @@ onUnmounted(() => {
   opacity: 0;
   transform: translateX(30px);
 }
-
 .author-info {
-  padding: 20px;
+  margin-top: 20px;
   text-align: center;
   color: #909399;
   font-size: 14px;
+}
+
+.saved-configs {
+  margin-bottom: 20px;
+}
+
+.saved-configs .el-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: -15px; /* 负边距抵消行内元素的下边距 */
+}
+
+.saved-configs .el-row > .el-col {
+  margin-bottom: 15px; /* 为每列添加垂直间距 */
+}
+
+.config-item {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  height: 100%;
+}
+
+.config-item:hover {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.5);
+}
+
+.config-item.active-config {
+  border-color: #409eff;
+  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.3);
+  background-color: #ecf5ff;
+}
+
+.config-header-with-delete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 5px;
+}
+
+.delete-button {
+  margin-top: -5px;
+  margin-right: -5px;
+}
+
+.config-name {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.config-time {
+  font-size: 12px;
+  color: #909399;
+}
+
+.config-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.el-loading-mask {
+  z-index: 2000 !important;
 }
 
 .dialog-content {

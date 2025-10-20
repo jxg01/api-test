@@ -2,7 +2,7 @@
   <div style="padding:24px 0 0 0">
     <el-form :model="localCaseData" label-width="80px" ref="caseForm" :rules="formRules" :disabled="!isEditing">
       <el-form-item label="用例名" prop="name">
-        <el-input v-model="localCaseData.name" @input="emitChange" :disabled="!isEditing"/>
+        <el-input v-model="localCaseData.name" @input="emitChange" :disabled="!isEditing" placeholder="请输入用例名" />
       </el-form-item>
       <el-form-item label="描述">
         <el-input v-model="localCaseData.description" @input="emitChange" type="textarea" :rows="3" :disabled="!isEditing"/>

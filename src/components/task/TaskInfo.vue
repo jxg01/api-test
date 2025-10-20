@@ -144,7 +144,7 @@ const runTaskManually = async () => {
     );
     
     await scheduleTasksApi.runTaskManually(props.task.id);
-    ElMessage.success('API测试任务已手动触发，正在执行中');
+    ElMessage.success('测试任务已手动触发，正在执行中');
   } catch (error) {
     // 如果用户取消，不显示错误消息
     if (error !== 'cancel') {
