@@ -2,51 +2,55 @@
   <!-- <div class="app-layout"> -->
     <el-container class="app-layout">
       <el-aside :width="isCollapse ? '64px' : '200px'" class="sidebar">
-        
-        <el-menu
-          :default-active="activeMenu"
-          background-color="#2f1b86"
-          text-color="#fff"
-          active-text-color="#ffd04b"
-          router
-          :unique-opened="true"
-          :collapse="isCollapse"
-          :collapse-transition="false"
-        >
         <img 
-        v-if="logo" 
-        :src="logo" 
-        class="ban"
-        alt="品牌logo"
-        >
-        <template v-for="route in filteredRoutes" :key="route.path">
-          <el-sub-menu v-if="route.children?.length" :index="route.name">
-            <template #title>
+          v-if="logo" 
+          :src="logo" 
+          class="ban"
+          alt="品牌logo"
+          >
+        <!-- 菜单内容区域 - 可滚动 -->
+        <div class="menu-container">
+          <el-menu
+            :default-active="activeMenu"
+            background-color="#2f1b86"
+            text-color="#fff"
+            active-text-color="#ffd04b"
+            router
+            :unique-opened="true"
+            :collapse="isCollapse"
+            :collapse-transition="false"
+          >
+          
+          <template v-for="route in filteredRoutes" :key="route.path">
+            <el-sub-menu v-if="route.children?.length" :index="route.name">
+              <template #title>
+                <el-icon><component :is="route.meta.icon" /></el-icon>
+                <span>{{ route.meta.title }}</span>
+              </template>
+              <el-menu-item 
+                v-for="child in route.children" 
+                :key="child.path" 
+                :index="`${route.path}/${child.path}`"
+              >
+                <!-- 添加可选链操作符确保类型安全 -->
+                <el-icon><component :is="child.meta?.icon" /></el-icon>
+                <span>{{ child.meta?.title }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+            
+            <el-menu-item v-else :index="route.path">
               <el-icon><component :is="route.meta.icon" /></el-icon>
               <span>{{ route.meta.title }}</span>
-            </template>
-            <el-menu-item 
-              v-for="child in route.children" 
-              :key="child.path" 
-              :index="`${route.path}/${child.path}`"
-            >
-              <!-- 添加可选链操作符确保类型安全 -->
-              <el-icon><component :is="child.meta?.icon" /></el-icon>
-              <span>{{ child.meta?.title }}</span>
             </el-menu-item>
-          </el-sub-menu>
-          
-          <el-menu-item v-else :index="route.path">
-            <el-icon><component :is="route.meta.icon" /></el-icon>
-            <span>{{ route.meta.title }}</span>
-          </el-menu-item>
-        </template>
-      </el-menu>
-      <div class="toggle-button" @click="toggleCollapse">
-          <el-icon>
-            <component :is="isCollapse ? 'Expand' : 'Fold'" />
-          </el-icon>
+          </template>
+        </el-menu>
         </div>
+        <!-- 收缩按钮 - 固定在底部 -->
+        <div class="toggle-button" @click="toggleCollapse">
+            <el-icon>
+              <component :is="isCollapse ? 'Expand' : 'Fold'" />
+            </el-icon>
+          </div>
     </el-aside>
     <el-container>
       <el-header class="header">
@@ -101,6 +105,16 @@ height: 100vh;
 background-color: #2f1b86;
 color: white;
 position: relative;
+height: 100%;
+display: flex;
+flex-direction: column;
+}
+
+/* 菜单容器 - 可滚动 */
+.menu-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* 顶部栏 */
@@ -136,20 +150,37 @@ align-items: center;
   width: 100%;
 }
 
+/* 收缩按钮 - 固定在底部 */
 .toggle-button {
-  position: absolute;
-  bottom: 0;
-  left: 0;
   width: 100%;
   text-align: center;
   padding: 15px 0;
   background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
   transition: background 0.3s;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .toggle-button:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* 自定义滚动条样式 */
+.menu-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.menu-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.menu-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .el-menu-item.is-active {

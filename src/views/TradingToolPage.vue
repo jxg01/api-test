@@ -515,29 +515,54 @@ async function submit() {
   }
 }
 
+function closeAllWsConnections() {
+  try {
+    wsConnections.value.forEach(ws => {
+      try {
+        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+          ws.close()
+        }
+      } catch (e) { /* ignore */ }
+    })
+  } finally {
+    wsConnections.value = []
+    isRunning.value = false
+    currentRunId.value = ''
+  }
+}
+
 // WebSocket消息处理
 function handleWebSocketMessage(event: MessageEvent) {
   try {
     const data = JSON.parse(event.data)
-    
+
     switch (data.type) {
       case 'log':
         addLog(data.message, true)
         break
       case 'status':
         addLog(`状态更新: ${data.status} - ${data.message}`, true)
-        // 如果任务完成或停止，更新状态
+        // 如果任务完成或停止，关闭所有 ws 连接并更新状态
         if (data.status === 'completed' || data.status === 'stopping') {
-          isRunning.value = false
+          addLog('收到完成/停止状态，准备关闭 WebSocket 连接', true)
+          closeAllWsConnections()
         }
         break
       case 'config':
         addLog(`配置信息: ${JSON.stringify(data.config)}`, true)
         break
+      case 'close_connection':
+        // 明确的关闭指令：服务器通知关闭连接
+        addLog(`服务器请求关闭连接: ${data.message}`, true)
+        if (!data.action || data.action === 'close') {
+          closeAllWsConnections()
+        }
+        break
       default:
         addLog(`[WebSocket] ${JSON.stringify(data)}`, true)
     }
   } catch (error) {
+    // 非 JSON 消息或解析失败，直接作为普通日志处理
     addLog(`[WebSocket] ${event.data}`, true)
   }
 }
@@ -546,28 +571,35 @@ function handleWebSocketMessage(event: MessageEvent) {
 async function connectWebSocket(response: any) {
   try {
     // 使用接口返回的websocket_url
-    const ws = new WebSocket(response.websocket_url)
-    
+    console.log('连接WebSocket:', response.websocket_url)
+    const u = response.websocket_url.startsWith('ws') ? response.websocket_url : ('ws://' + response.websocket_url)
+
+    console.log('WebSocket完整URL:', u)
+
+    const ws = new WebSocket(u)
+
     ws.onopen = () => {
       addLog(`WebSocket连接已建立: ${response.websocket_url}`)
     }
-    
+
     ws.onmessage = handleWebSocketMessage
-    
+
     ws.onerror = (error) => {
-      addLog(`WebSocket错误: ${error}`)
-      ws.close()
+      addLog(`WebSocket错误: ${String(error)}`)
+      try { ws.close() } catch (e) { /* ignore */ }
     }
-    
+
     ws.onclose = () => {
       addLog('WebSocket连接已关闭')
-      // 移除关闭的连接
       const index = wsConnections.value.findIndex(conn => conn === ws)
-      if (index > -1) {
-        wsConnections.value.splice(index, 1)
+      if (index > -1) wsConnections.value.splice(index, 1)
+      // 如果没有剩余连接，则确保运行状态已更新
+      if (wsConnections.value.length === 0) {
+        isRunning.value = false
+        currentRunId.value = ''
       }
     }
-    
+
     // 保存WebSocket连接
     wsConnections.value.push(ws)
   } catch (error) {
